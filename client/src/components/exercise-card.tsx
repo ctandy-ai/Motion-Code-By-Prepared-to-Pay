@@ -14,7 +14,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: ExerciseCardProps) {
   return (
     <Card 
-      className="overflow-hidden hover-elevate transition-all duration-200"
+      className="overflow-hidden magnetic-hover transition-all duration-300 group border-2 border-xp/20 hover:border-xp/40"
       data-testid={`exercise-card-${exercise.id}`}
     >
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
@@ -22,11 +22,11 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
           <img 
             src={exercise.thumbnailUrl} 
             alt={exercise.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center">
-            <Play className="h-12 w-12 text-muted-foreground" />
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-xp/10 to-info/10">
+            <Play className="h-12 w-12 text-xp group-hover:scale-110 transition-transform breathe" />
           </div>
         )}
         {exercise.videoUrl && (
