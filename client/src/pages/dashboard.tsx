@@ -1,8 +1,64 @@
 import { StatCard } from "@/components/stat-card";
-import { Users, Dumbbell, TrendingUp, Calendar } from "lucide-react";
+import { Users, Dumbbell, TrendingUp, Trophy, Zap, Target } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { Athlete, Exercise, Program } from "@shared/schema";
+import { XPBar } from "@/components/xp-bar";
+import { StreakCounter } from "@/components/streak-counter";
+import { AchievementBadge } from "@/components/achievement-badge";
+import { DailyChallengeCard } from "@/components/daily-challenge-card";
+
+const mockAthleteStats = {
+  xp: 2750,
+  level: 8,
+  currentStreak: 12,
+  longestStreak: 28,
+};
+
+const mockAchievements = [
+  {
+    id: "1",
+    name: "Century Club",
+    description: "Complete 100 total workouts",
+    category: "Consistency",
+    rarity: "Epic",
+    iconUrl: "",
+    xpReward: 500,
+    requirement: "100 workouts",
+  },
+  {
+    id: "2",
+    name: "First PR",
+    description: "Set your first personal record",
+    category: "Strength",
+    rarity: "Common",
+    iconUrl: "",
+    xpReward: 100,
+    requirement: "1 PR",
+  },
+  {
+    id: "3",
+    name: "Streak Master",
+    description: "Maintain a 30-day workout streak",
+    category: "Consistency",
+    rarity: "Legendary",
+    iconUrl: "",
+    xpReward: 1000,
+    requirement: "30-day streak",
+  },
+];
+
+const mockUnlockedAchievements = ["1", "2"];
+
+const mockDailyChallenge = {
+  id: "daily-1",
+  date: new Date(),
+  title: "Volume King",
+  description: "Complete 50 total sets today",
+  xpReward: 250,
+  targetValue: 50,
+  challengeType: "sets",
+};
 
 export default function Dashboard() {
   const { data: athletes, isLoading: loadingAthletes } = useQuery<Athlete[]>({
@@ -20,108 +76,163 @@ export default function Dashboard() {
   const isLoading = loadingAthletes || loadingExercises || loadingPrograms;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-4xl font-bold text-foreground">Dashboard</h1>
+        <h1 className="font-heading text-4xl font-bold text-foreground">
+          Level Up Your Training
+        </h1>
         <p className="text-muted-foreground mt-2">
-          Welcome back! Here's what's happening with your training programs.
+          Track progress, earn achievements, and compete with your best self.
         </p>
       </div>
+
+      <XPBar 
+        currentXP={mockAthleteStats.xp} 
+        level={mockAthleteStats.level} 
+      />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Athletes"
           value={isLoading ? "-" : athletes?.length || 0}
-          description="Active in programs"
+          description="Training with you"
           icon={Users}
           trend={{ value: 12, isPositive: true }}
         />
         <StatCard
           title="Exercise Library"
           value={isLoading ? "-" : exercises?.length || 0}
-          description="Unique movements"
+          description="Movements available"
           icon={Dumbbell}
         />
         <StatCard
           title="Active Programs"
           value={isLoading ? "-" : programs?.length || 0}
           description="Training plans"
-          icon={Calendar}
+          icon={Target}
         />
         <StatCard
-          title="Avg. Compliance"
-          value="87%"
-          description="Workout completion rate"
-          icon={TrendingUp}
-          trend={{ value: 5, isPositive: true }}
+          title="Total XP Earned"
+          value={mockAthleteStats.xp.toLocaleString()}
+          description="Experience points"
+          icon={Zap}
+          trend={{ value: 15, isPositive: true }}
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading text-xl">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {isLoading ? (
-                <div className="text-center text-sm text-muted-foreground py-8">
-                  Loading activity...
-                </div>
-              ) : (
-                <>
-                  {athletes && athletes.length > 0 ? (
-                    athletes.slice(0, 5).map((athlete) => (
-                      <div 
-                        key={athlete.id} 
-                        className="flex items-center gap-4 p-3 rounded-lg hover-elevate"
-                        data-testid={`activity-${athlete.id}`}
-                      >
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
-                          {athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">
-                            {athlete.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {athlete.team || "No team assigned"}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-sm text-muted-foreground py-8">
-                      No athletes yet. Add your first athlete to get started!
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="border-2 border-warning/30 bg-gradient-to-br from-warning/5 to-transparent">
+            <CardHeader>
+              <CardTitle className="font-heading text-xl flex items-center gap-2">
+                <Target className="h-5 w-5 text-warning" />
+                Daily Challenge
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DailyChallengeCard
+                challenge={mockDailyChallenge}
+                progress={32}
+                completed={false}
+              />
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading text-xl">Quick Stats</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                <span className="text-sm font-medium text-foreground">Workouts This Week</span>
-                <span className="text-2xl font-bold text-foreground">142</span>
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-xl flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-gold" />
+                Recent Achievements
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2">
+                {mockAchievements.slice(0, 4).map((achievement) => (
+                  <AchievementBadge
+                    key={achievement.id}
+                    achievement={achievement}
+                    unlocked={mockUnlockedAchievements.includes(achievement.id)}
+                    unlockedAt={mockUnlockedAchievements.includes(achievement.id) ? new Date() : null}
+                  />
+                ))}
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                <span className="text-sm font-medium text-foreground">Total Volume (lbs)</span>
-                <span className="text-2xl font-bold text-foreground">45.2K</span>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent">
+            <CardHeader>
+              <CardTitle className="font-heading text-xl">Your Streak</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <StreakCounter
+                currentStreak={mockAthleteStats.currentStreak}
+                longestStreak={mockAthleteStats.longestStreak}
+              />
+              <p className="text-sm text-muted-foreground mt-4">
+                Keep the fire burning! Complete a workout today to maintain your streak.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading text-xl">Quick Stats</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-xp/10 to-transparent border border-xp/20">
+                  <span className="text-sm font-medium">Workouts This Week</span>
+                  <span className="text-2xl font-display font-bold text-xp">6</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-success/10 to-transparent border border-success/20">
+                  <span className="text-sm font-medium">New PRs</span>
+                  <span className="text-2xl font-display font-bold text-success">4</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-info/10 to-transparent border border-info/20">
+                  <span className="text-sm font-medium">Total Volume</span>
+                  <span className="text-2xl font-display font-bold text-info">45.2K</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                <span className="text-sm font-medium text-foreground">New PRs</span>
-                <span className="text-2xl font-bold text-foreground">23</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {athletes && athletes.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-heading text-xl">Top Athletes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {athletes.slice(0, 3).map((athlete, index) => (
+                    <div 
+                      key={athlete.id} 
+                      className="flex items-center gap-3 p-2 rounded-lg hover-elevate"
+                      data-testid={`top-athlete-${athlete.id}`}
+                    >
+                      <div className={`
+                        flex h-8 w-8 items-center justify-center rounded-full font-bold text-sm
+                        ${index === 0 ? 'bg-gold/20 text-gold border-2 border-gold/30' : ''}
+                        ${index === 1 ? 'bg-silver/20 text-silver border-2 border-silver/30' : ''}
+                        ${index === 2 ? 'bg-bronze/20 text-bronze border-2 border-bronze/30' : ''}
+                      `}>
+                        #{index + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{athlete.name}</p>
+                        <p className="text-xs text-muted-foreground">{athlete.team}</p>
+                      </div>
+                      <div className="text-sm font-display font-bold text-xp">
+                        L{Math.floor(Math.random() * 10) + 5}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );

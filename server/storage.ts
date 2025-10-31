@@ -15,332 +15,211 @@ import {
   type InsertWorkoutLog,
   type PersonalRecord,
   type InsertPersonalRecord,
+  users,
+  exercises,
+  athletes,
+  programs,
+  programExercises,
+  athletePrograms,
+  workoutLogs,
+  personalRecords,
 } from "@shared/schema";
-import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  // User methods
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
-  // Exercise methods
   getExercises(): Promise<Exercise[]>;
   getExercise(id: string): Promise<Exercise | undefined>;
   createExercise(exercise: InsertExercise): Promise<Exercise>;
   updateExercise(id: string, exercise: Partial<InsertExercise>): Promise<Exercise | undefined>;
   deleteExercise(id: string): Promise<boolean>;
 
-  // Athlete methods
   getAthletes(): Promise<Athlete[]>;
   getAthlete(id: string): Promise<Athlete | undefined>;
   createAthlete(athlete: InsertAthlete): Promise<Athlete>;
   updateAthlete(id: string, athlete: Partial<InsertAthlete>): Promise<Athlete | undefined>;
   deleteAthlete(id: string): Promise<boolean>;
 
-  // Program methods
   getPrograms(): Promise<Program[]>;
   getProgram(id: string): Promise<Program | undefined>;
   createProgram(program: InsertProgram): Promise<Program>;
   updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program | undefined>;
   deleteProgram(id: string): Promise<boolean>;
 
-  // Program Exercise methods
   getProgramExercises(programId: string): Promise<ProgramExercise[]>;
   createProgramExercise(programExercise: InsertProgramExercise): Promise<ProgramExercise>;
   deleteProgramExercise(id: string): Promise<boolean>;
 
-  // Athlete Program methods
   getAthletePrograms(athleteId: string): Promise<AthleteProgram[]>;
   createAthleteProgram(athleteProgram: InsertAthleteProgram): Promise<AthleteProgram>;
   updateAthleteProgram(id: string, status: string): Promise<AthleteProgram | undefined>;
 
-  // Workout Log methods
   getWorkoutLogs(athleteId?: string): Promise<WorkoutLog[]>;
   createWorkoutLog(workoutLog: InsertWorkoutLog): Promise<WorkoutLog>;
 
-  // Personal Record methods
   getPersonalRecords(athleteId?: string): Promise<PersonalRecord[]>;
   createPersonalRecord(record: InsertPersonalRecord): Promise<PersonalRecord>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private exercises: Map<string, Exercise>;
-  private athletes: Map<string, Athlete>;
-  private programs: Map<string, Program>;
-  private programExercises: Map<string, ProgramExercise>;
-  private athletePrograms: Map<string, AthleteProgram>;
-  private workoutLogs: Map<string, WorkoutLog>;
-  private personalRecords: Map<string, PersonalRecord>;
-
-  constructor() {
-    this.users = new Map();
-    this.exercises = new Map();
-    this.athletes = new Map();
-    this.programs = new Map();
-    this.programExercises = new Map();
-    this.athletePrograms = new Map();
-    this.workoutLogs = new Map();
-    this.personalRecords = new Map();
-
-    this.seedData();
-  }
-
-  private seedData() {
-    const sampleExercises: InsertExercise[] = [
-      {
-        name: "Barbell Squat",
-        category: "Strength",
-        muscleGroup: "Legs",
-        equipment: "Barbell",
-        difficulty: "Intermediate",
-        instructions: "Stand with feet shoulder-width apart, bar on upper back. Lower by bending knees and hips, keeping chest up. Drive through heels to return to start.",
-        videoUrl: "https://www.youtube.com/watch?v=ultWZbUMPL8",
-        thumbnailUrl: "",
-      },
-      {
-        name: "Bench Press",
-        category: "Strength",
-        muscleGroup: "Chest",
-        equipment: "Barbell",
-        difficulty: "Intermediate",
-        instructions: "Lie on bench with feet flat on floor. Lower bar to chest with controlled motion. Press bar up until arms are fully extended.",
-        videoUrl: "https://www.youtube.com/watch?v=rT7DgCr-3pg",
-        thumbnailUrl: "",
-      },
-      {
-        name: "Deadlift",
-        category: "Strength",
-        muscleGroup: "Back",
-        equipment: "Barbell",
-        difficulty: "Advanced",
-        instructions: "Stand with feet hip-width apart, bar over midfoot. Bend at hips and knees to grip bar. Lift by extending hips and knees, keeping back straight.",
-        videoUrl: "https://www.youtube.com/watch?v=op9kVnSso6Q",
-        thumbnailUrl: "",
-      },
-      {
-        name: "Pull-ups",
-        category: "Strength",
-        muscleGroup: "Back",
-        equipment: "Bodyweight",
-        difficulty: "Intermediate",
-        instructions: "Hang from bar with overhand grip. Pull body up until chin is over bar. Lower with control to full hang.",
-        videoUrl: "https://www.youtube.com/watch?v=eGo4IYlbE5g",
-        thumbnailUrl: "",
-      },
-      {
-        name: "Push-ups",
-        category: "Strength",
-        muscleGroup: "Chest",
-        equipment: "Bodyweight",
-        difficulty: "Beginner",
-        instructions: "Start in plank position with hands shoulder-width apart. Lower body until chest nearly touches floor. Push back up to start.",
-        videoUrl: "https://www.youtube.com/watch?v=IODxDxX7oi4",
-        thumbnailUrl: "",
-      },
-    ];
-
-    sampleExercises.forEach(exercise => {
-      const id = randomUUID();
-      this.exercises.set(id, { ...exercise, id });
-    });
-
-    const sampleAthletes: InsertAthlete[] = [
-      {
-        name: "John Smith",
-        email: "john.smith@example.com",
-        team: "Varsity Football",
-        position: "Quarterback",
-        avatarUrl: "",
-      },
-      {
-        name: "Sarah Johnson",
-        email: "sarah.j@example.com",
-        team: "Women's Basketball",
-        position: "Point Guard",
-        avatarUrl: "",
-      },
-      {
-        name: "Mike Williams",
-        email: "mike.w@example.com",
-        team: "Track & Field",
-        position: "Sprinter",
-        avatarUrl: "",
-      },
-    ];
-
-    sampleAthletes.forEach(athlete => {
-      const id = randomUUID();
-      this.athletes.set(id, { ...athlete, id, dateJoined: new Date() });
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async getExercises(): Promise<Exercise[]> {
-    return Array.from(this.exercises.values());
+    return await db.select().from(exercises);
   }
 
   async getExercise(id: string): Promise<Exercise | undefined> {
-    return this.exercises.get(id);
+    const [exercise] = await db.select().from(exercises).where(eq(exercises.id, id));
+    return exercise || undefined;
   }
 
   async createExercise(exercise: InsertExercise): Promise<Exercise> {
-    const id = randomUUID();
-    const newExercise: Exercise = { ...exercise, id };
-    this.exercises.set(id, newExercise);
+    const [newExercise] = await db.insert(exercises).values(exercise).returning();
     return newExercise;
   }
 
   async updateExercise(id: string, exercise: Partial<InsertExercise>): Promise<Exercise | undefined> {
-    const existing = this.exercises.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...exercise };
-    this.exercises.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(exercises)
+      .set(exercise)
+      .where(eq(exercises.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteExercise(id: string): Promise<boolean> {
-    return this.exercises.delete(id);
+    const result = await db.delete(exercises).where(eq(exercises.id, id)).returning();
+    return result.length > 0;
   }
 
   async getAthletes(): Promise<Athlete[]> {
-    return Array.from(this.athletes.values());
+    return await db.select().from(athletes);
   }
 
   async getAthlete(id: string): Promise<Athlete | undefined> {
-    return this.athletes.get(id);
+    const [athlete] = await db.select().from(athletes).where(eq(athletes.id, id));
+    return athlete || undefined;
   }
 
   async createAthlete(athlete: InsertAthlete): Promise<Athlete> {
-    const id = randomUUID();
-    const newAthlete: Athlete = { ...athlete, id, dateJoined: new Date() };
-    this.athletes.set(id, newAthlete);
+    const [newAthlete] = await db.insert(athletes).values(athlete).returning();
     return newAthlete;
   }
 
   async updateAthlete(id: string, athlete: Partial<InsertAthlete>): Promise<Athlete | undefined> {
-    const existing = this.athletes.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...athlete };
-    this.athletes.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(athletes)
+      .set(athlete)
+      .where(eq(athletes.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteAthlete(id: string): Promise<boolean> {
-    return this.athletes.delete(id);
+    const result = await db.delete(athletes).where(eq(athletes.id, id)).returning();
+    return result.length > 0;
   }
 
   async getPrograms(): Promise<Program[]> {
-    return Array.from(this.programs.values());
+    return await db.select().from(programs);
   }
 
   async getProgram(id: string): Promise<Program | undefined> {
-    return this.programs.get(id);
+    const [program] = await db.select().from(programs).where(eq(programs.id, id));
+    return program || undefined;
   }
 
   async createProgram(program: InsertProgram): Promise<Program> {
-    const id = randomUUID();
-    const newProgram: Program = { ...program, id, createdAt: new Date() };
-    this.programs.set(id, newProgram);
+    const [newProgram] = await db.insert(programs).values(program).returning();
     return newProgram;
   }
 
   async updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program | undefined> {
-    const existing = this.programs.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, ...program };
-    this.programs.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(programs)
+      .set(program)
+      .where(eq(programs.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteProgram(id: string): Promise<boolean> {
-    return this.programs.delete(id);
+    const result = await db.delete(programs).where(eq(programs.id, id)).returning();
+    return result.length > 0;
   }
 
   async getProgramExercises(programId: string): Promise<ProgramExercise[]> {
-    return Array.from(this.programExercises.values()).filter(
-      (pe) => pe.programId === programId
-    );
+    return await db.select().from(programExercises).where(eq(programExercises.programId, programId));
   }
 
   async createProgramExercise(programExercise: InsertProgramExercise): Promise<ProgramExercise> {
-    const id = randomUUID();
-    const newProgramExercise: ProgramExercise = { ...programExercise, id };
-    this.programExercises.set(id, newProgramExercise);
+    const [newProgramExercise] = await db.insert(programExercises).values(programExercise).returning();
     return newProgramExercise;
   }
 
   async deleteProgramExercise(id: string): Promise<boolean> {
-    return this.programExercises.delete(id);
+    const result = await db.delete(programExercises).where(eq(programExercises.id, id)).returning();
+    return result.length > 0;
   }
 
   async getAthletePrograms(athleteId: string): Promise<AthleteProgram[]> {
-    return Array.from(this.athletePrograms.values()).filter(
-      (ap) => ap.athleteId === athleteId
-    );
+    return await db.select().from(athletePrograms).where(eq(athletePrograms.athleteId, athleteId));
   }
 
   async createAthleteProgram(athleteProgram: InsertAthleteProgram): Promise<AthleteProgram> {
-    const id = randomUUID();
-    const newAthleteProgram: AthleteProgram = { ...athleteProgram, id };
-    this.athletePrograms.set(id, newAthleteProgram);
+    const [newAthleteProgram] = await db.insert(athletePrograms).values(athleteProgram).returning();
     return newAthleteProgram;
   }
 
   async updateAthleteProgram(id: string, status: string): Promise<AthleteProgram | undefined> {
-    const existing = this.athletePrograms.get(id);
-    if (!existing) return undefined;
-    const updated = { ...existing, status };
-    this.athletePrograms.set(id, updated);
-    return updated;
+    const [updated] = await db
+      .update(athletePrograms)
+      .set({ status })
+      .where(eq(athletePrograms.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async getWorkoutLogs(athleteId?: string): Promise<WorkoutLog[]> {
-    const allLogs = Array.from(this.workoutLogs.values());
     if (athleteId) {
-      return allLogs.filter((log) => log.athleteId === athleteId);
+      return await db.select().from(workoutLogs).where(eq(workoutLogs.athleteId, athleteId));
     }
-    return allLogs;
+    return await db.select().from(workoutLogs);
   }
 
   async createWorkoutLog(workoutLog: InsertWorkoutLog): Promise<WorkoutLog> {
-    const id = randomUUID();
-    const newLog: WorkoutLog = { ...workoutLog, id, completedAt: new Date() };
-    this.workoutLogs.set(id, newLog);
+    const [newLog] = await db.insert(workoutLogs).values(workoutLog).returning();
     return newLog;
   }
 
   async getPersonalRecords(athleteId?: string): Promise<PersonalRecord[]> {
-    const allRecords = Array.from(this.personalRecords.values());
     if (athleteId) {
-      return allRecords.filter((record) => record.athleteId === athleteId);
+      return await db.select().from(personalRecords).where(eq(personalRecords.athleteId, athleteId));
     }
-    return allRecords;
+    return await db.select().from(personalRecords);
   }
 
   async createPersonalRecord(record: InsertPersonalRecord): Promise<PersonalRecord> {
-    const id = randomUUID();
-    const newRecord: PersonalRecord = { ...record, id, achievedAt: new Date() };
-    this.personalRecords.set(id, newRecord);
+    const [newRecord] = await db.insert(personalRecords).values(record).returning();
     return newRecord;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

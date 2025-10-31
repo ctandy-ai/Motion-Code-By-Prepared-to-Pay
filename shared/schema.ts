@@ -128,3 +128,77 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export const athleteStats = pgTable("athlete_stats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull().unique(),
+  xp: integer("xp").notNull().default(0),
+  level: integer("level").notNull().default(1),
+  currentStreak: integer("current_streak").notNull().default(0),
+  longestStreak: integer("longest_streak").notNull().default(0),
+  lastWorkoutDate: timestamp("last_workout_date"),
+  totalWorkouts: integer("total_workouts").notNull().default(0),
+  totalSetsCompleted: integer("total_sets_completed").notNull().default(0),
+});
+
+export const insertAthleteStatsSchema = createInsertSchema(athleteStats).omit({ id: true });
+export type InsertAthleteStats = z.infer<typeof insertAthleteStatsSchema>;
+export type AthleteStats = typeof athleteStats.$inferSelect;
+
+export const achievements = pgTable("achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  rarity: text("rarity").notNull(),
+  iconUrl: text("icon_url"),
+  xpReward: integer("xp_reward").notNull(),
+  requirement: text("requirement").notNull(),
+});
+
+export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true });
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type Achievement = typeof achievements.$inferSelect;
+
+export const athleteAchievements = pgTable("athlete_achievements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  achievementId: varchar("achievement_id").notNull(),
+  unlockedAt: timestamp("unlocked_at").defaultNow(),
+});
+
+export const insertAthleteAchievementSchema = createInsertSchema(athleteAchievements).omit({ 
+  id: true,
+  unlockedAt: true 
+});
+export type InsertAthleteAchievement = z.infer<typeof insertAthleteAchievementSchema>;
+export type AthleteAchievement = typeof athleteAchievements.$inferSelect;
+
+export const dailyChallenges = pgTable("daily_challenges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: timestamp("date").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  xpReward: integer("xp_reward").notNull(),
+  targetValue: integer("target_value").notNull(),
+  challengeType: text("challenge_type").notNull(),
+});
+
+export const insertDailyChallengeSchema = createInsertSchema(dailyChallenges).omit({ id: true });
+export type InsertDailyChallenge = z.infer<typeof insertDailyChallengeSchema>;
+export type DailyChallenge = typeof dailyChallenges.$inferSelect;
+
+export const challengeCompletions = pgTable("challenge_completions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  challengeId: varchar("challenge_id").notNull(),
+  completedAt: timestamp("completed_at").defaultNow(),
+  progress: integer("progress").notNull(),
+});
+
+export const insertChallengeCompletionSchema = createInsertSchema(challengeCompletions).omit({
+  id: true,
+  completedAt: true
+});
+export type InsertChallengeCompletion = z.infer<typeof insertChallengeCompletionSchema>;
+export type ChallengeCompletion = typeof challengeCompletions.$inferSelect;
