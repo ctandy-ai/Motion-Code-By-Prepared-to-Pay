@@ -1,0 +1,186 @@
+# Elite Strength & Conditioning Platform
+
+## Overview
+A comprehensive strength and conditioning platform for coaches and athletes, designed to rival and surpass TeamBuildr. The platform enables coaches to manage exercise libraries, create training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface.
+
+## Project Status
+**Current Phase**: MVP Development - Frontend Complete, Backend Implementation In Progress
+
+## Recent Changes
+- **2025-10-31**: Complete MVP implementation with improvements after architect feedback
+  - **Backend**: Added Zod validation to all PATCH endpoints for data integrity
+  - **Frontend**: Implemented full edit functionality for exercises with dialog UI
+  - **Exercise Management**: Complete CRUD operations (Create, Read, Update, Delete) with proper validation
+  - Implemented responsive sidebar navigation with theme toggle (light/dark mode)
+  - Built Dashboard with stat cards showing real data from backend
+  - Created Exercise Library with search, filtering, and category selection
+  - Developed Athletes and Programs management systems with creation/deletion
+  - Built Calendar view and Progress tracking pages (currently using demo data)
+  - Configured Inter and DM Sans fonts for professional typography
+  - Followed design_guidelines.md for consistent spacing, colors, and components
+
+## Architecture
+
+### Tech Stack
+- **Frontend**: React 18 with TypeScript, Wouter for routing
+- **Backend**: Express.js with TypeScript
+- **Data Storage**: In-memory storage (MemStorage) for rapid prototyping
+- **UI Framework**: Shadcn UI components with Tailwind CSS
+- **Charts**: Recharts for data visualization
+- **Forms**: React Hook Form with Zod validation
+
+### Project Structure
+```
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ui/           # Shadcn UI components
+│   │   │   ├── app-sidebar.tsx
+│   │   │   ├── theme-toggle.tsx
+│   │   │   ├── stat-card.tsx
+│   │   │   └── exercise-card.tsx
+│   │   ├── pages/
+│   │   │   ├── dashboard.tsx
+│   │   │   ├── exercises.tsx
+│   │   │   ├── athletes.tsx
+│   │   │   ├── programs.tsx
+│   │   │   ├── calendar.tsx
+│   │   │   └── progress.tsx
+│   │   ├── App.tsx
+│   │   └── index.css
+│   └── index.html
+├── server/
+│   ├── routes.ts
+│   ├── storage.ts
+│   └── vite.ts
+├── shared/
+│   └── schema.ts           # Shared TypeScript types and Zod schemas
+└── design_guidelines.md    # Comprehensive design system documentation
+```
+
+## Data Models
+
+### Core Entities
+1. **Exercises**: Exercise library with categories, muscle groups, difficulty levels, and video demonstrations
+2. **Athletes**: Athlete profiles with team and position information
+3. **Programs**: Training programs with duration and description
+4. **Program Exercises**: Individual exercises within programs with sets, reps, and scheduling
+5. **Athlete Programs**: Assignment of programs to athletes with status tracking
+6. **Workout Logs**: Completed workout data with sets, reps, and weights
+7. **Personal Records**: Athlete PRs for specific exercises
+
+## Features Implemented
+
+### ✅ Completed Features
+- **Dashboard**: Overview with key metrics from backend API, recent activity, and quick stats
+- **Exercise Library**: 
+  - Full CRUD operations (Create, Read, Update, Delete)
+  - Edit dialog with form validation
+  - Filter by category and muscle group
+  - Search functionality across exercise names
+  - Exercise cards with metadata and badges
+  - Seed data: 5 exercises (Barbell Squat, Bench Press, Deadlift, Pull-ups, Push-ups)
+- **Athlete Management**:
+  - Create and delete athlete profiles
+  - Search capabilities
+  - Team and position tracking
+  - Seed data: 3 athletes with realistic profiles
+- **Program Management**:
+  - Create and delete training programs
+  - Program duration and descriptions
+  - Empty state with call-to-action
+- **Calendar View**:
+  - Monthly calendar grid with navigation
+  - Day cells with workout indicators (demo data)
+  - Upcoming workouts sidebar
+- **Progress Tracking**:
+  - Strength progression line charts (demo data)
+  - Training volume bar charts (demo data)
+  - Personal records feed (demo data)
+  - Performance metrics cards
+- **Backend API**: Complete RESTful endpoints with Zod validation on all routes
+- **Theme Support**: Light and dark mode with localStorage persistence
+- **Responsive Design**: Fully optimized for desktop, tablet, and mobile devices
+
+### 🚧 Known Limitations
+- **Edit Flows**: Only exercises have full edit functionality; programs and athletes need edit dialogs
+- **Calendar & Progress**: Using demo data instead of backend integration
+- **Advanced Features**: No workout logging UI, program-assignment workflow, or detailed athlete views yet
+
+### 📋 Planned Features
+- Real-time workout tracking
+- Video playback for exercises
+- Program assignment workflow
+- Advanced analytics and reporting
+- Export capabilities
+- Team communication features
+
+## Design System
+
+### Colors
+- **Primary**: Blue (#2563eb) - CTAs and active states
+- **Backgrounds**: Subtle grays with proper elevation
+- **Accents**: Secondary colors for categories and badges
+
+### Typography
+- **Primary Font**: Inter - Clean, readable sans-serif for UI
+- **Heading Font**: DM Sans - Strong, professional headings
+- **Scale**: Consistent type scale from xs (12px) to 4xl (56px)
+
+### Components
+- Shadcn UI components for consistency
+- Custom stat cards for metrics
+- Exercise cards with hover effects
+- Responsive sidebar navigation
+- Calendar grid with day cells
+- Chart components for analytics
+
+### Spacing & Layout
+- Tailwind spacing scale (2, 4, 6, 8, 12, 16, 24)
+- Max-width containers (max-w-7xl)
+- Grid layouts for responsive content
+- Proper padding and margins throughout
+
+## User Preferences
+- **Design Philosophy**: Clean, professional, athletic aesthetic
+- **Target Users**: Strength coaches, personal trainers, athletes
+- **Priority**: Visual excellence and intuitive UX
+
+## API Endpoints (Planned)
+
+### Exercises
+- `GET /api/exercises` - List all exercises
+- `POST /api/exercises` - Create new exercise
+- `DELETE /api/exercises/:id` - Delete exercise
+
+### Athletes
+- `GET /api/athletes` - List all athletes
+- `POST /api/athletes` - Create new athlete
+- `DELETE /api/athletes/:id` - Delete athlete
+
+### Programs
+- `GET /api/programs` - List all programs
+- `POST /api/programs` - Create new program
+- `DELETE /api/programs/:id` - Delete program
+
+### Workout Logs
+- `GET /api/workout-logs` - Get workout history
+- `POST /api/workout-logs` - Log workout completion
+
+### Personal Records
+- `GET /api/personal-records` - Get athlete PRs
+- `POST /api/personal-records` - Create new PR
+
+## Development Workflow
+1. Schema-first approach with TypeScript types
+2. Frontend components built with Shadcn UI
+3. Backend API following RESTful conventions
+4. React Query for data fetching and caching
+5. Zod validation on both frontend and backend
+
+## Notes
+- All forms use React Hook Form with Zod validation
+- Charts use Recharts library for consistency
+- Sidebar uses Shadcn's Sidebar component
+- Theme toggle persists to localStorage
+- All interactive elements have proper data-testid attributes for testing
