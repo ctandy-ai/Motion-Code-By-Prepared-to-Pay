@@ -76,32 +76,23 @@ export default function Dashboard() {
   const isLoading = loadingAthletes || loadingExercises || loadingPrograms;
 
   return (
-    <div className="space-y-8">
-      <div className="reveal-up bg-gradient-to-r from-primary/10 via-accent/10 to-transparent p-8 rounded-xl border-l-4 border-primary">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="font-heading text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Performance Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-3 text-lg">
-              Monitor athlete performance, track progress, and optimize training programs.
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">Last Updated</p>
-            <p className="text-lg font-semibold text-foreground">{new Date().toLocaleDateString()}</p>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Overview of your training platform
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">Last Updated</p>
+          <p className="text-sm font-medium text-foreground">{new Date().toLocaleDateString()}</p>
         </div>
       </div>
 
-      <div className="reveal-up" style={{ animationDelay: '0.1s' }}>
-        <XPBar 
-          currentXP={mockAthleteStats.xp} 
-          level={mockAthleteStats.level} 
-        />
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Athletes"
           value={isLoading ? "-" : athletes?.length || 0}
@@ -130,65 +121,11 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="hover-elevate border shadow-sm">
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4">
+          <Card className="border shadow-sm">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Target className="h-5 w-5 text-warning" />
-                Daily Challenge
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DailyChallengeCard
-                challenge={mockDailyChallenge}
-                progress={32}
-                completed={false}
-              />
-            </CardContent>
-          </Card>
-
-          <Card className="hover-elevate border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-accent" />
-                Recent Achievements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                {mockAchievements.slice(0, 4).map((achievement) => (
-                  <AchievementBadge
-                    key={achievement.id}
-                    achievement={achievement}
-                    unlocked={mockUnlockedAchievements.includes(achievement.id)}
-                    unlockedAt={mockUnlockedAchievements.includes(achievement.id) ? new Date() : null}
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-6">
-          <Card className="hover-elevate border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">Training Streak</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StreakCounter
-                currentStreak={mockAthleteStats.currentStreak}
-                longestStreak={mockAthleteStats.longestStreak}
-              />
-              <p className="text-sm text-muted-foreground mt-4">
-                Keep the fire burning! Complete a workout today to maintain your streak.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover-elevate border shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
+              <CardTitle className="text-base font-semibold">Activity Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -201,38 +138,60 @@ export default function Dashboard() {
                   <span className="text-xl font-semibold text-success">4</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
-                  <span className="text-sm font-medium text-muted-foreground">Total Volume</span>
-                  <span className="text-xl font-semibold text-foreground">45.2K</span>
+                  <span className="text-sm font-medium text-muted-foreground">Total Volume (lbs)</span>
+                  <span className="text-xl font-semibold text-foreground">45,200</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardTitle className="text-base font-semibold">Performance Level</CardTitle>
+              <div className="text-xs text-muted-foreground">Level {mockAthleteStats.level}</div>
+            </CardHeader>
+            <CardContent>
+              <XPBar 
+                currentXP={mockAthleteStats.xp} 
+                level={mockAthleteStats.level} 
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-4">
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold">Current Streak</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-4">
+                <div className="text-4xl font-bold text-primary mb-2">{mockAthleteStats.currentStreak}</div>
+                <p className="text-sm text-muted-foreground">Days active</p>
+                <p className="text-xs text-muted-foreground mt-3">Best: {mockAthleteStats.longestStreak} days</p>
+              </div>
+            </CardContent>
+          </Card>
+
           {athletes && athletes.length > 0 && (
-            <Card className="hover-elevate border shadow-sm">
+            <Card className="border shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-accent" />
-                  Top Athletes
-                </CardTitle>
+                <CardTitle className="text-base font-semibold">Top Performers</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {athletes.slice(0, 3).map((athlete, index) => (
                     <div 
                       key={athlete.id} 
-                      className="flex items-center gap-3 p-3 rounded-md bg-muted/30 border hover-elevate"
+                      className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
                       data-testid={`top-athlete-${athlete.id}`}
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-semibold text-xs text-primary">
-                        #{index + 1}
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                        {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{athlete.name}</p>
                         <p className="text-xs text-muted-foreground">{athlete.team}</p>
-                      </div>
-                      <div className="text-sm font-semibold text-accent">
-                        L{Math.floor(Math.random() * 10) + 5}
                       </div>
                     </div>
                   ))}
