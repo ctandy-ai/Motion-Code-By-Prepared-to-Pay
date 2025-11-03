@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import Dashboard from "@/pages/dashboard";
 import Exercises from "@/pages/exercises";
 import Programs from "@/pages/programs";
+import ProgramBuilder from "@/pages/program-builder";
 import Athletes from "@/pages/athletes";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/exercises" component={Exercises} />
       <Route path="/programs" component={Programs} />
+      <Route path="/programs/:programId/builder" component={ProgramBuilder} />
       <Route path="/athletes" component={Athletes} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/progress" component={Progress} />

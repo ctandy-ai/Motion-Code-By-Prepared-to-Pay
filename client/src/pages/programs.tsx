@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Program, InsertProgram } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Programs() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: programs, isLoading } = useQuery<Program[]>({
@@ -128,6 +130,7 @@ export default function Programs() {
                           placeholder="Describe the program goals and structure..."
                           className="min-h-[100px]"
                           {...field}
+                          value={field.value || ""}
                           data-testid="textarea-program-description"
                         />
                       </FormControl>
@@ -223,8 +226,14 @@ export default function Programs() {
               </CardContent>
 
               <CardFooter className="gap-2 border-t pt-4">
-                <Button variant="outline" size="sm" className="flex-1" data-testid={`button-edit-${program.id}`}>
-                  Edit Program
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1" 
+                  onClick={() => setLocation(`/programs/${program.id}/builder`)}
+                  data-testid={`button-edit-${program.id}`}
+                >
+                  Build Program
                 </Button>
                 <Button 
                   variant="outline" 
