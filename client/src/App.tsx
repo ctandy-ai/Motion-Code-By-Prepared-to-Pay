@@ -41,12 +41,23 @@ export default function App() {
           <div className="flex h-screen w-full">
             <AppSidebar />
             <div className="flex flex-col flex-1 overflow-hidden">
-              <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-6">
-                <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9" />
+              <header className="flex h-20 shrink-0 items-center justify-between gap-4 border-b bg-card px-8 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      <span className="text-white font-bold text-xl">SC</span>
+                    </div>
+                    <div>
+                      <h1 className="font-heading text-lg font-bold text-foreground">Strength Coach Pro</h1>
+                      <p className="text-xs text-muted-foreground">Elite Performance Platform</p>
+                    </div>
+                  </div>
+                </div>
                 <ThemeToggle />
               </header>
-              <main className="flex-1 overflow-y-auto">
-                <div className="container mx-auto p-6 max-w-7xl">
+              <main className="flex-1 overflow-y-auto bg-background">
+                <div className="container mx-auto p-8 max-w-7xl">
                   <Router />
                 </div>
               </main>

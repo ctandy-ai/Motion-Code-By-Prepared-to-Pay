@@ -77,13 +77,21 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="reveal-up">
-        <h1 className="font-heading text-4xl font-bold text-foreground">
-          Dashboard
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor athlete performance, track progress, and manage training programs.
-        </p>
+      <div className="reveal-up bg-gradient-to-r from-primary/10 via-accent/10 to-transparent p-8 rounded-xl border-l-4 border-primary">
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="font-heading text-5xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Performance Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-3 text-lg">
+              Monitor athlete performance, track progress, and optimize training programs.
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-muted-foreground">Last Updated</p>
+            <p className="text-lg font-semibold text-foreground">{new Date().toLocaleDateString()}</p>
+          </div>
+        </div>
       </div>
 
       <div className="reveal-up" style={{ animationDelay: '0.1s' }}>
