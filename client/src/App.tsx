@@ -11,6 +11,7 @@ import Exercises from "@/pages/exercises";
 import Programs from "@/pages/programs";
 import ProgramBuilder from "@/pages/program-builder";
 import Athletes from "@/pages/athletes";
+import AthleteDetail from "@/pages/athlete-detail";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
 import NotFound from "@/pages/not-found";
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/programs" component={Programs} />
       <Route path="/programs/:programId/builder" component={ProgramBuilder} />
       <Route path="/athletes" component={Athletes} />
+      <Route path="/athletes/:athleteId" component={AthleteDetail} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/progress" component={Progress} />
       <Route component={NotFound} />

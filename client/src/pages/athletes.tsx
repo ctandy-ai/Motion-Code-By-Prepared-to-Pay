@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Athlete, InsertAthlete } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 export default function Athletes() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: athletes, isLoading } = useQuery<Athlete[]>({
@@ -257,7 +259,13 @@ export default function Athletes() {
               </CardContent>
 
               <CardFooter className="gap-2 border-t pt-4">
-                <Button variant="outline" size="sm" className="flex-1" data-testid={`button-view-${athlete.id}`}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1" 
+                  onClick={() => setLocation(`/athletes/${athlete.id}`)}
+                  data-testid={`button-view-${athlete.id}`}
+                >
                   View Profile
                 </Button>
                 <Button 

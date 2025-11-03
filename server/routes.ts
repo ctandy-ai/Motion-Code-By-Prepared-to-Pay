@@ -227,10 +227,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/athlete-programs", async (req, res) => {
     try {
-      const validated = insertAthleteProgramSchema.parse(req.body);
+      const body = {
+        ...req.body,
+        startDate: new Date(req.body.startDate),
+      };
+      const validated = insertAthleteProgramSchema.parse(body);
       const athleteProgram = await storage.createAthleteProgram(validated);
       res.status(201).json(athleteProgram);
     } catch (error) {
+      console.error("Athlete program creation error:", error);
       res.status(400).json({ error: "Invalid athlete program data" });
     }
   });
