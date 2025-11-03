@@ -8,57 +8,17 @@ import { StreakCounter } from "@/components/streak-counter";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { DailyChallengeCard } from "@/components/daily-challenge-card";
 
-const mockAthleteStats = {
-  xp: 2750,
-  level: 8,
-  currentStreak: 12,
-  longestStreak: 28,
-};
-
-const mockAchievements = [
-  {
-    id: "1",
-    name: "Century Club",
-    description: "Complete 100 total workouts",
-    category: "Consistency",
-    rarity: "Epic",
-    iconUrl: "",
-    xpReward: 500,
-    requirement: "100 workouts",
-  },
-  {
-    id: "2",
-    name: "First PR",
-    description: "Set your first personal record",
-    category: "Strength",
-    rarity: "Common",
-    iconUrl: "",
-    xpReward: 100,
-    requirement: "1 PR",
-  },
-  {
-    id: "3",
-    name: "Streak Master",
-    description: "Maintain a 30-day workout streak",
-    category: "Consistency",
-    rarity: "Legendary",
-    iconUrl: "",
-    xpReward: 1000,
-    requirement: "30-day streak",
-  },
-];
-
-const mockUnlockedAchievements = ["1", "2"];
-
-const mockDailyChallenge = {
-  id: "daily-1",
-  date: new Date(),
-  title: "Volume King",
-  description: "Complete 50 total sets today",
-  xpReward: 250,
-  targetValue: 50,
-  challengeType: "sets",
-};
+interface DashboardStats {
+  totalWorkouts: number;
+  totalSets: number;
+  totalXP: number;
+  totalPRs: number;
+  level: number;
+  currentStreak: number;
+  longestStreak: number;
+  topAthletes: (Athlete & { workoutCount: number; xp: number })[];
+  recentPRs: any[];
+}
 
 export default function Dashboard() {
   const { data: athletes, isLoading: loadingAthletes } = useQuery<Athlete[]>({
@@ -73,7 +33,11 @@ export default function Dashboard() {
     queryKey: ["/api/programs"],
   });
 
-  const isLoading = loadingAthletes || loadingExercises || loadingPrograms;
+  const { data: dashboardStats, isLoading: loadingStats } = useQuery<DashboardStats>({
+    queryKey: ["/api/dashboard-stats"],
+  });
+
+  const isLoading = loadingAthletes || loadingExercises || loadingPrograms || loadingStats;
 
   return (
     <div className="space-y-6">
@@ -113,11 +77,10 @@ export default function Dashboard() {
           icon={Target}
         />
         <StatCard
-          title="Total XP Earned"
-          value={mockAthleteStats.xp.toLocaleString()}
-          description="Experience points"
+          title="Total Workouts"
+          value={isLoading ? "-" : dashboardStats?.totalWorkouts || 0}
+          description="Logged sessions"
           icon={Zap}
-          trend={{ value: 15, isPositive: true }}
         />
       </div>
 
@@ -130,16 +93,16 @@ export default function Dashboard() {
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
-                  <span className="text-sm font-medium text-muted-foreground">Workouts This Week</span>
-                  <span className="text-xl font-semibold text-foreground">6</span>
+                  <span className="text-sm font-medium text-muted-foreground">Total Workouts</span>
+                  <span className="text-xl font-semibold text-foreground">{dashboardStats?.totalWorkouts || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
-                  <span className="text-sm font-medium text-muted-foreground">New PRs</span>
-                  <span className="text-xl font-semibold text-success">4</span>
+                  <span className="text-sm font-medium text-muted-foreground">Total Sets</span>
+                  <span className="text-xl font-semibold text-foreground">{dashboardStats?.totalSets || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
-                  <span className="text-sm font-medium text-muted-foreground">Total Volume (lbs)</span>
-                  <span className="text-xl font-semibold text-foreground">45,200</span>
+                  <span className="text-sm font-medium text-muted-foreground">Personal Records</span>
+                  <span className="text-xl font-semibold text-success">{dashboardStats?.totalPRs || 0}</span>
                 </div>
               </div>
             </CardContent>
@@ -148,12 +111,12 @@ export default function Dashboard() {
           <Card className="border shadow-sm">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold">Performance Level</CardTitle>
-              <div className="text-xs text-muted-foreground">Level {mockAthleteStats.level}</div>
+              <div className="text-xs text-muted-foreground">Level {dashboardStats?.level || 1}</div>
             </CardHeader>
             <CardContent>
               <XPBar 
-                currentXP={mockAthleteStats.xp} 
-                level={mockAthleteStats.level} 
+                currentXP={dashboardStats?.totalXP || 0} 
+                level={dashboardStats?.level || 1} 
               />
             </CardContent>
           </Card>
@@ -166,21 +129,21 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-center py-4">
-                <div className="text-4xl font-bold text-primary mb-2">{mockAthleteStats.currentStreak}</div>
+                <div className="text-4xl font-bold text-primary mb-2">{dashboardStats?.currentStreak || 0}</div>
                 <p className="text-sm text-muted-foreground">Days active</p>
-                <p className="text-xs text-muted-foreground mt-3">Best: {mockAthleteStats.longestStreak} days</p>
+                <p className="text-xs text-muted-foreground mt-3">Best: {dashboardStats?.longestStreak || 0} days</p>
               </div>
             </CardContent>
           </Card>
 
-          {athletes && athletes.length > 0 && (
+          {dashboardStats && dashboardStats.topAthletes.length > 0 && (
             <Card className="border shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold">Top Performers</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {athletes.slice(0, 3).map((athlete, index) => (
+                  {dashboardStats.topAthletes.map((athlete, index) => (
                     <div 
                       key={athlete.id} 
                       className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
@@ -191,7 +154,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{athlete.name}</p>
-                        <p className="text-xs text-muted-foreground">{athlete.team}</p>
+                        <p className="text-xs text-muted-foreground">{athlete.team} • {athlete.xp.toLocaleString()} XP</p>
                       </div>
                     </div>
                   ))}

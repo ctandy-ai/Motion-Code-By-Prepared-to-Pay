@@ -69,6 +69,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Athlete stats route
+  app.get("/api/athletes/:id/stats", async (req, res) => {
+    try {
+      const athleteId = req.params.id;
+      const athlete = await storage.getAthlete(athleteId);
+      
+      if (!athlete) {
+        return res.status(404).json({ error: "Athlete not found" });
+      }
+      
+      const workoutLogs = await storage.getWorkoutLogs(athleteId);
+      const personalRecords = await storage.getPersonalRecords(athleteId);
+      
+      const totalWorkouts = workoutLogs.length;
+      const totalSets = workoutLogs.reduce((sum, log) => sum + log.sets, 0);
+      const totalPRs = personalRecords.length;
+      
+      const xp = (totalWorkouts * 50) + (totalSets * 10) + (totalPRs * 100);
+      const level = Math.floor(Math.sqrt(xp / 100)) + 1;
+      
+      res.json({
+        athleteId,
+        totalWorkouts,
+        totalSets,
+        totalPRs,
+        xp,
+        level,
+      });
+    } catch (error) {
+      console.error("Failed to calculate athlete stats:", error);
+      res.status(500).json({ error: "Failed to calculate athlete stats" });
+    }
+  });
+
   // Athlete routes
   app.get("/api/athletes", async (req, res) => {
     try {
@@ -308,6 +342,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to fetch today's workout:", error);
       res.status(500).json({ error: "Failed to fetch today's workout" });
+    }
+  });
+
+  // Dashboard stats route
+  app.get("/api/dashboard-stats", async (req, res) => {
+    try {
+      const allLogs = await storage.getWorkoutLogs();
+      const allAthletes = await storage.getAthletes();
+      const allRecords = await storage.getPersonalRecords();
+      
+      // Calculate total stats
+      const totalWorkouts = allLogs.length;
+      const totalSets = allLogs.reduce((sum, log) => sum + log.sets, 0);
+      
+      // Calculate XP: 50 XP per workout + 10 XP per set + 100 XP per PR
+      const workoutXP = totalWorkouts * 50;
+      const setXP = totalSets * 10;
+      const prXP = allRecords.length * 100;
+      const totalXP = workoutXP + setXP + prXP;
+      
+      // Calculate level (exponential: level = floor(sqrt(xp / 100)))
+      const level = Math.floor(Math.sqrt(totalXP / 100)) + 1;
+      
+      // Calculate global streak (days with at least one workout)
+      const workoutDates = allLogs.map(log => {
+        const date = new Date(log.completedAt);
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+      }).sort((a, b) => b - a); // Sort descending
+      
+      let currentStreak = 0;
+      let longestStreak = 0;
+      let tempStreak = 0;
+      
+      if (workoutDates.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTime = today.getTime();
+        const oneDayMs = 24 * 60 * 60 * 1000;
+        
+        // Check if streak is active (workout today or yesterday)
+        const uniqueDates = [...new Set(workoutDates)];
+        const mostRecentWorkout = uniqueDates[0];
+        const daysSinceLastWorkout = Math.floor((todayTime - mostRecentWorkout) / oneDayMs);
+        
+        if (daysSinceLastWorkout <= 1) {
+          // Active streak
+          let checkDate = todayTime;
+          for (const workoutDate of uniqueDates) {
+            if (workoutDate === checkDate || workoutDate === checkDate - oneDayMs) {
+              currentStreak++;
+              checkDate = workoutDate - oneDayMs;
+            } else {
+              break;
+            }
+          }
+        }
+        
+        // Calculate longest streak
+        for (let i = 0; i < uniqueDates.length; i++) {
+          if (i === 0) {
+            tempStreak = 1;
+          } else {
+            const daysDiff = Math.floor((uniqueDates[i - 1] - uniqueDates[i]) / oneDayMs);
+            if (daysDiff === 1) {
+              tempStreak++;
+            } else {
+              longestStreak = Math.max(longestStreak, tempStreak);
+              tempStreak = 1;
+            }
+          }
+        }
+        longestStreak = Math.max(longestStreak, tempStreak);
+      }
+      
+      // Top athletes by workout count
+      const athleteWorkoutCounts = allAthletes.map(athlete => {
+        const workoutCount = allLogs.filter(log => log.athleteId === athlete.id).length;
+        const athleteSets = allLogs
+          .filter(log => log.athleteId === athlete.id)
+          .reduce((sum, log) => sum + log.sets, 0);
+        const athletePRs = allRecords.filter(record => record.athleteId === athlete.id).length;
+        const athleteXP = (workoutCount * 50) + (athleteSets * 10) + (athletePRs * 100);
+        
+        return {
+          ...athlete,
+          workoutCount,
+          xp: athleteXP,
+        };
+      }).sort((a, b) => b.xp - a.xp).slice(0, 5);
+      
+      // Recent PRs
+      const recentPRs = allRecords
+        .sort((a, b) => new Date(b.achievedAt).getTime() - new Date(a.achievedAt).getTime())
+        .slice(0, 5);
+      
+      res.json({
+        totalWorkouts,
+        totalSets,
+        totalXP,
+        totalPRs: allRecords.length,
+        level,
+        currentStreak,
+        longestStreak,
+        topAthletes: athleteWorkoutCounts,
+        recentPRs,
+      });
+    } catch (error) {
+      console.error("Failed to calculate dashboard stats:", error);
+      res.status(500).json({ error: "Failed to calculate dashboard stats" });
     }
   });
 
