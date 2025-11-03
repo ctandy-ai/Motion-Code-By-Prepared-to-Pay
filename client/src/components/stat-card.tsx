@@ -16,26 +16,25 @@ export function StatCard({ title, value, description, icon: Icon, trend }: StatC
   return (
     <Card 
       data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, "-")}`}
-      className="magnetic-hover overflow-hidden relative group"
+      className="hover-elevate border shadow-sm"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-xp/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2 relative z-10">
+      <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className="p-2 rounded-lg bg-xp/10 border border-xp/20">
-          <Icon className="h-4 w-4 text-xp" />
+        <div className="p-2 rounded-md bg-muted/50">
+          <Icon className="h-4 w-4 text-primary" />
         </div>
       </CardHeader>
-      <CardContent className="relative z-10">
-        <div className="text-3xl font-display font-bold text-foreground group-hover:text-xp transition-colors">
+      <CardContent>
+        <div className="text-2xl font-semibold text-foreground">
           {value}
         </div>
         {description && (
           <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
         {trend && (
-          <p className={`text-xs mt-1 font-semibold ${trend.isPositive ? "text-success" : "text-destructive"}`}>
+          <p className={`text-xs mt-2 font-medium ${trend.isPositive ? "text-success" : "text-destructive"}`}>
             {trend.isPositive ? "↗ +" : "↘ "}{trend.value}% from last month
           </p>
         )}

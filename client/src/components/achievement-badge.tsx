@@ -47,10 +47,10 @@ export function AchievementBadge({
   return (
     <div 
       className={`
-        group relative p-4 rounded-xl border-2 transition-all
+        p-3 rounded-md border transition-all
         ${unlocked 
-          ? `${rarityColor} hover-elevate cursor-pointer` 
-          : 'border-muted/30 bg-muted/5 opacity-50 grayscale'
+          ? `${rarityColor} hover-elevate` 
+          : 'border-muted/30 bg-muted/10 opacity-60'
         }
         ${className}
       `}
@@ -58,14 +58,14 @@ export function AchievementBadge({
     >
       <div className="flex items-start gap-3">
         <div className={`
-          p-2.5 rounded-lg border-2 
-          ${unlocked ? rarityColor : 'border-muted/20 bg-muted/10'}
+          p-2 rounded-md border
+          ${unlocked ? rarityColor : 'border-muted/20 bg-muted/20'}
         `}>
-          <RarityIcon className={`h-6 w-6 ${unlocked ? '' : 'text-muted-foreground'}`} />
+          <RarityIcon className={`h-5 w-5 ${unlocked ? '' : 'text-muted-foreground'}`} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="font-heading font-bold text-sm" data-testid="text-achievement-name">
+            <h4 className="font-semibold text-sm" data-testid="text-achievement-name">
               {achievement.name}
             </h4>
             <Badge 
@@ -80,7 +80,7 @@ export function AchievementBadge({
           </p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1 text-xs">
-              <span className={unlocked ? 'text-info' : 'text-muted-foreground'}>
+              <span className={unlocked ? 'text-accent' : 'text-muted-foreground'}>
                 +{achievement.xpReward} XP
               </span>
             </div>
@@ -92,9 +92,6 @@ export function AchievementBadge({
           </div>
         </div>
       </div>
-      {unlocked && (
-        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-transparent via-transparent to-white/5 pointer-events-none" />
-      )}
     </div>
   );
 }

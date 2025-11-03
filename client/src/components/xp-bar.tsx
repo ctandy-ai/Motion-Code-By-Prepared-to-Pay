@@ -19,18 +19,18 @@ export function XPBar({ currentXP, level, className = "" }: XPBarProps) {
   const progressPercentage = Math.min(100, Math.max(0, (xpProgressInCurrentLevel / xpNeededForNextLevel) * 100));
 
   return (
-    <div className={`space-y-2 ${className}`} data-testid="xp-bar-container">
+    <div className={`space-y-3 ${className}`} data-testid="xp-bar-container">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-xp/20 to-info/20 border border-xp/30">
-            <Trophy className="h-4 w-4 text-gold" />
-            <span className="font-display font-bold text-lg text-xp" data-testid="text-level">
-              LVL {level}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 border">
+            <Trophy className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-base text-foreground" data-testid="text-level">
+              Level {level}
             </span>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <Zap className="h-3.5 w-3.5 text-info" />
-            <span className="text-sm font-medium" data-testid="text-xp-progress">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <Zap className="h-3.5 w-3.5 text-accent" />
+            <span className="text-sm" data-testid="text-xp-progress">
               {xpProgressInCurrentLevel.toLocaleString()} / {xpNeededForNextLevel.toLocaleString()} XP
             </span>
           </div>
@@ -42,12 +42,8 @@ export function XPBar({ currentXP, level, className = "" }: XPBarProps) {
       <div className="relative">
         <Progress 
           value={progressPercentage} 
-          className="h-3 bg-muted/30"
+          className="h-2 bg-muted"
           data-testid="progress-xp"
-        />
-        <div 
-          className="absolute inset-0 h-3 rounded-full bg-gradient-to-r from-xp via-info to-xp bg-[length:200%_100%] animate-shimmer opacity-30 pointer-events-none"
-          style={{ width: `${progressPercentage}%` }}
         />
       </div>
     </div>

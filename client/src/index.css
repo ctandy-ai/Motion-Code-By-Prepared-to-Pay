@@ -16,83 +16,83 @@
 
   --background: 0 0% 100%;
 
-  --foreground: 210 10% 10%;
+  --foreground: 210 15% 15%;
 
-  --border: 210 10% 88%;
+  --border: 210 20% 85%;
 
-  --card: 210 8% 97%;
+  --card: 0 0% 100%;
 
-  --card-foreground: 210 10% 10%;
+  --card-foreground: 210 15% 15%;
 
-  --card-border: 210 10% 92%;
+  --card-border: 210 15% 88%;
 
-  --sidebar: 210 15% 95%;
+  --sidebar: 210 25% 96%;
 
-  --sidebar-foreground: 210 10% 10%;
+  --sidebar-foreground: 210 20% 20%;
 
-  --sidebar-border: 210 10% 90%;
+  --sidebar-border: 210 20% 88%;
 
-  --sidebar-primary: 200 95% 40%;
+  --sidebar-primary: 200 80% 45%;
 
-  --sidebar-primary-foreground: 200 95% 98%;
+  --sidebar-primary-foreground: 0 0% 100%;
 
-  --sidebar-accent: 210 10% 88%;
+  --sidebar-accent: 210 15% 92%;
 
-  --sidebar-accent-foreground: 210 10% 10%;
+  --sidebar-accent-foreground: 210 20% 20%;
 
-  --sidebar-ring: 200 95% 40%;
+  --sidebar-ring: 200 80% 45%;
 
-  --popover: 210 10% 93%;
+  --popover: 0 0% 100%;
 
-  --popover-foreground: 210 10% 10%;
+  --popover-foreground: 210 15% 15%;
 
-  --popover-border: 210 10% 88%;
+  --popover-border: 210 15% 88%;
 
-  --primary: 200 95% 40%;
+  --primary: 200 80% 45%;
 
-  --primary-foreground: 200 95% 98%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 210 10% 88%;
+  --secondary: 210 12% 92%;
 
-  --secondary-foreground: 210 10% 10%;
+  --secondary-foreground: 210 20% 20%;
 
-  --muted: 210 10% 90%;
+  --muted: 210 15% 94%;
 
-  --muted-foreground: 210 8% 35%;
+  --muted-foreground: 210 12% 42%;
 
-  --accent: 175 70% 45%;
+  --accent: 175 55% 48%;
 
-  --accent-foreground: 175 70% 98%;
+  --accent-foreground: 0 0% 100%;
 
-  --destructive: 0 84% 48%;
+  --destructive: 0 70% 50%;
 
-  --destructive-foreground: 0 84% 98%;
+  --destructive-foreground: 0 0% 100%;
 
-  --input: 210 10% 70%;
-  --ring: 200 95% 40%;
-  --chart-1: 200 95% 40%;
-  --chart-2: 15 85% 60%;
-  --chart-3: 150 60% 45%;
-  --chart-4: 175 70% 45%;
-  --chart-5: 45 85% 55%;
+  --input: 210 15% 85%;
+  --ring: 200 80% 45%;
+  --chart-1: 200 75% 48%;
+  --chart-2: 15 75% 55%;
+  --chart-3: 150 55% 45%;
+  --chart-4: 175 60% 48%;
+  --chart-5: 45 75% 52%;
   
-  /* Ocean Depth Professional Palette - Inspired by Lumin but better */
-  --primary: 200 95% 40%;           /* Deep Ocean Blue - trust, primary actions */
-  --accent: 175 70% 45%;            /* Professional Teal - achievements */
-  --coral: 15 85% 60%;              /* Coral Energy - challenges, CTAs */
-  --gold: 45 85% 55%;               /* Professional Gold - premium */
-  --success: 150 60% 45%;           /* Deep Teal-Green - completed */
-  --slate: 210 20% 30%;             /* Professional Slate */
+  /* Ocean Depth Professional Palette - Refined for credibility */
+  --primary: 200 80% 45%;           /* Deep Ocean Blue - trust, primary actions */
+  --accent: 175 55% 48%;            /* Professional Teal - achievements (reduced saturation) */
+  --coral: 15 75% 55%;              /* Coral Energy - challenges, CTAs (reduced saturation) */
+  --gold: 45 75% 52%;               /* Professional Gold - premium (reduced saturation) */
+  --success: 150 55% 45%;           /* Deep Teal-Green - completed */
+  --slate: 210 20% 35%;             /* Professional Slate - text emphasis */
   
   /* Legacy mappings for backward compatibility */
-  --xp-purple: 200 95% 40%;         /* Now ocean blue */
-  --info: 175 70% 45%;              /* Now teal */
-  --warning: 15 85% 60%;            /* Now coral */
+  --xp-purple: 200 75% 48%;         /* Ocean blue - less saturated */
+  --info: 175 55% 48%;              /* Teal - professional tone */
+  --warning: 15 75% 55%;            /* Coral - balanced energy */
   
-  /* Achievement Tier Colors */
-  --achievement-gold: 45 85% 55%;
-  --achievement-silver: 210 15% 70%;
-  --achievement-bronze: 25 60% 50%;
+  /* Achievement Tier Colors - More subdued for professionalism */
+  --achievement-gold: 45 70% 52%;
+  --achievement-silver: 210 12% 65%;
+  --achievement-bronze: 25 50% 48%;
 
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-heading: Rajdhani, Inter, system-ui, sans-serif;

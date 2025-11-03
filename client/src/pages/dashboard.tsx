@@ -76,13 +76,13 @@ export default function Dashboard() {
   const isLoading = loadingAthletes || loadingExercises || loadingPrograms;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="reveal-up">
-        <h1 className="font-heading text-5xl font-bold gradient-text">
-          Level Up Your Training
+        <h1 className="font-heading text-4xl font-bold text-foreground">
+          Dashboard
         </h1>
-        <p className="text-muted-foreground mt-2 text-lg">
-          Track progress, earn achievements, and compete with your best self.
+        <p className="text-muted-foreground mt-2">
+          Monitor athlete performance, track progress, and manage training programs.
         </p>
       </div>
 
@@ -93,7 +93,7 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 stagger-children">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Athletes"
           value={isLoading ? "-" : athletes?.length || 0}
@@ -124,15 +124,14 @@ export default function Dashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="bg-gradient-to-br from-warning/5 to-transparent magnetic-hover overflow-hidden relative border-2 border-warning/30">
-            <div className="absolute inset-0 bg-gradient-to-br from-warning/5 to-transparent opacity-50" />
-            <CardHeader className="relative z-10">
-              <CardTitle className="font-heading text-xl flex items-center gap-2">
-                <Target className="h-5 w-5 text-warning breathe" />
+          <Card className="hover-elevate border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Target className="h-5 w-5 text-warning" />
                 Daily Challenge
               </CardTitle>
             </CardHeader>
-            <CardContent className="relative z-10">
+            <CardContent>
               <DailyChallengeCard
                 challenge={mockDailyChallenge}
                 progress={32}
@@ -141,11 +140,11 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="magnetic-hover">
-            <CardHeader>
-              <CardTitle className="font-heading text-xl flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-gold breathe" />
-                <span className="gradient-text-gold">Recent Achievements</span>
+          <Card className="hover-elevate border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-accent" />
+                Recent Achievements
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -164,12 +163,11 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6">
-          <Card className="bg-gradient-to-br from-success/5 to-transparent magnetic-hover overflow-hidden relative border-2 border-success/30">
-            <div className="absolute inset-0 bg-gradient-to-br from-success/10 to-transparent opacity-30 animate-pulse" />
-            <CardHeader className="relative z-10">
-              <CardTitle className="font-heading text-xl gradient-text">Your Streak</CardTitle>
+          <Card className="hover-elevate border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold">Training Streak</CardTitle>
             </CardHeader>
-            <CardContent className="relative z-10">
+            <CardContent>
               <StreakCounter
                 currentStreak={mockAthleteStats.currentStreak}
                 longestStreak={mockAthleteStats.longestStreak}
@@ -180,57 +178,52 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="magnetic-hover">
-            <CardHeader>
-              <CardTitle className="font-heading text-xl">Quick Stats</CardTitle>
+          <Card className="hover-elevate border shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold">Quick Stats</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-xp/10 to-transparent border border-xp/20 glow-hover ripple-effect">
-                  <span className="text-sm font-medium">Workouts This Week</span>
-                  <span className="text-2xl font-display font-bold text-xp">6</span>
+                <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
+                  <span className="text-sm font-medium text-muted-foreground">Workouts This Week</span>
+                  <span className="text-xl font-semibold text-foreground">6</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-success/10 to-transparent border border-success/20 glow-success ripple-effect">
-                  <span className="text-sm font-medium">New PRs</span>
-                  <span className="text-2xl font-display font-bold text-success">4</span>
+                <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
+                  <span className="text-sm font-medium text-muted-foreground">New PRs</span>
+                  <span className="text-xl font-semibold text-success">4</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-info/10 to-transparent border border-info/20 glow-info ripple-effect">
-                  <span className="text-sm font-medium">Total Volume</span>
-                  <span className="text-2xl font-display font-bold text-info">45.2K</span>
+                <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
+                  <span className="text-sm font-medium text-muted-foreground">Total Volume</span>
+                  <span className="text-xl font-semibold text-foreground">45.2K</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {athletes && athletes.length > 0 && (
-            <Card className="magnetic-hover">
-              <CardHeader>
-                <CardTitle className="font-heading text-xl flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-gold" />
+            <Card className="hover-elevate border shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-accent" />
                   Top Athletes
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {athletes.slice(0, 3).map((athlete, index) => (
                     <div 
                       key={athlete.id} 
-                      className="flex items-center gap-3 p-3 rounded-lg hover-elevate magnetic-hover group"
+                      className="flex items-center gap-3 p-3 rounded-md bg-muted/30 border hover-elevate"
                       data-testid={`top-athlete-${athlete.id}`}
                     >
-                      <div className={`
-                        flex h-10 w-10 items-center justify-center rounded-full font-bold text-sm transition-all
-                        ${index === 0 ? 'bg-gold/20 text-gold border-2 border-gold/30 group-hover:shadow-lg group-hover:shadow-gold/50' : ''}
-                        ${index === 1 ? 'bg-silver/20 text-silver border-2 border-silver/30 group-hover:shadow-lg group-hover:shadow-silver/50' : ''}
-                        ${index === 2 ? 'bg-bronze/20 text-bronze border-2 border-bronze/30 group-hover:shadow-lg group-hover:shadow-bronze/50' : ''}
-                      `}>
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-semibold text-xs text-primary">
                         #{index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate group-hover:text-xp transition-colors">{athlete.name}</p>
+                        <p className="text-sm font-medium truncate">{athlete.name}</p>
                         <p className="text-xs text-muted-foreground">{athlete.team}</p>
                       </div>
-                      <div className="text-lg font-display font-bold text-xp">
+                      <div className="text-sm font-semibold text-accent">
                         L{Math.floor(Math.random() * 10) + 5}
                       </div>
                     </div>
