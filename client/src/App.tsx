@@ -12,6 +12,7 @@ import Programs from "@/pages/programs";
 import ProgramBuilder from "@/pages/program-builder";
 import Athletes from "@/pages/athletes";
 import AthleteDetail from "@/pages/athlete-detail";
+import Workout from "@/pages/workout";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
 import NotFound from "@/pages/not-found";
@@ -20,6 +21,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/workout" component={Workout} />
       <Route path="/exercises" component={Exercises} />
       <Route path="/programs" component={Programs} />
       <Route path="/programs/:programId/builder" component={ProgramBuilder} />

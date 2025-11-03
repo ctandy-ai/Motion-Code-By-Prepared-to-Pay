@@ -256,6 +256,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/athletes/:athleteId/today-workout", async (req, res) => {
+    try {
+      const { athleteId } = req.params;
+      
+      const athletePrograms = await storage.getAthletePrograms(athleteId);
+      const activePrograms = athletePrograms.filter(ap => ap.status === "active");
+      
+      if (activePrograms.length === 0) {
+        return res.json([]);
+      }
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const todayWorkouts = [];
+      
+      for (const ap of activePrograms) {
+        const program = await storage.getProgram(ap.programId);
+        if (!program) continue;
+        
+        const startDate = new Date(ap.startDate);
+        startDate.setHours(0, 0, 0, 0);
+        
+        const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysSinceStart < 0) continue;
+        
+        const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+        const currentDay = (daysSinceStart % 7) + 1;
+        
+        const programExercises = await storage.getProgramExercises(ap.programId);
+        const todayExercises = programExercises.filter(
+          pe => pe.weekNumber === currentWeek && pe.dayNumber === currentDay
+        );
+        
+        for (const pe of todayExercises) {
+          const exercise = await storage.getExercise(pe.exerciseId);
+          if (exercise) {
+            todayWorkouts.push({
+              programExercise: pe,
+              exercise: exercise,
+              program: program,
+              athleteProgramId: ap.id,
+            });
+          }
+        }
+      }
+      
+      res.json(todayWorkouts);
+    } catch (error) {
+      console.error("Failed to fetch today's workout:", error);
+      res.status(500).json({ error: "Failed to fetch today's workout" });
+    }
+  });
+
   // Workout Log routes
   app.get("/api/workout-logs", async (req, res) => {
     try {
