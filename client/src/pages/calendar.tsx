@@ -79,16 +79,51 @@ export default function Calendar() {
     });
   };
 
-  const getScheduledWorkoutsForDay = (day: number) => {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    return filteredPrograms.filter(ap => {
-      if (ap.status !== 'active' || !ap.startDate) return false;
+  // Map program exercises to specific calendar dates
+  const getScheduledExercisesForDay = (day: number) => {
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    const scheduledExercises: Array<{
+      athleteProgram: AthleteProgram;
+      programExercise: ProgramExercise;
+      exercise: Exercise;
+    }> = [];
+    
+    filteredPrograms.forEach(ap => {
+      if (ap.status !== 'active' || !ap.startDate) return;
       
-      const startDate = new Date(ap.startDate);
-      const endDate = ap.endDate ? new Date(ap.endDate) : new Date(2099, 11, 31);
+      const programStartDate = new Date(ap.startDate);
+      programStartDate.setHours(0, 0, 0, 0);
       
-      return isWithinInterval(date, { start: startDate, end: endDate });
+      const programExercises = allProgramExercises.filter(pe => pe.programId === ap.programId);
+      
+      programExercises.forEach(pe => {
+        // Calculate the scheduled date for this exercise
+        const weekOffset = (pe.weekNumber - 1) * 7;
+        const dayOffset = pe.dayNumber - 1;
+        const scheduledDate = new Date(programStartDate);
+        scheduledDate.setDate(scheduledDate.getDate() + weekOffset + dayOffset);
+        
+        // Check if this exercise is scheduled for the target date
+        if (isSameDay(scheduledDate, targetDate)) {
+          const exercise = exercises.find(e => e.id === pe.exerciseId);
+          if (exercise) {
+            scheduledExercises.push({
+              athleteProgram: ap,
+              programExercise: pe,
+              exercise
+            });
+          }
+        }
+      });
     });
+    
+    return scheduledExercises;
+  };
+
+  const getScheduledWorkoutsCountForDay = (day: number) => {
+    return getScheduledExercisesForDay(day).length;
   };
 
   const getUpcomingWorkouts = () => {
@@ -115,7 +150,7 @@ export default function Calendar() {
 
   const selectedDayData = selectedDay ? {
     completed: getCompletedWorkoutsForDay(selectedDay),
-    scheduled: getScheduledWorkoutsForDay(selectedDay),
+    scheduledExercises: getScheduledExercisesForDay(selectedDay),
   } : null;
 
   return (
@@ -190,8 +225,8 @@ export default function Calendar() {
                 currentDate.getFullYear() === new Date().getFullYear();
 
               const completedWorkouts = getCompletedWorkoutsForDay(day);
-              const scheduledWorkouts = getScheduledWorkoutsForDay(day);
-              const hasActivity = completedWorkouts.length > 0 || scheduledWorkouts.length > 0;
+              const scheduledCount = getScheduledWorkoutsCountForDay(day);
+              const hasActivity = completedWorkouts.length > 0 || scheduledCount > 0;
 
               return (
                 <div
@@ -217,10 +252,10 @@ export default function Calendar() {
                           <span className="text-xs text-muted-foreground">{completedWorkouts.length}</span>
                         </div>
                       )}
-                      {scheduledWorkouts.length > 0 && (
+                      {scheduledCount > 0 && (
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3 text-blue-500" />
-                          <span className="text-xs text-muted-foreground">{scheduledWorkouts.length}</span>
+                          <span className="text-xs text-muted-foreground">{scheduledCount}</span>
                         </div>
                       )}
                     </div>
@@ -347,45 +382,43 @@ export default function Calendar() {
                 </div>
               )}
 
-              {selectedDayData.scheduled.length > 0 && (
+              {selectedDayData.scheduledExercises.length > 0 && (
                 <div>
                   <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
                     <Clock className="h-5 w-5 text-blue-500" />
-                    Scheduled Programs ({selectedDayData.scheduled.length})
+                    Scheduled Exercises ({selectedDayData.scheduledExercises.length})
                   </h3>
                   <div className="space-y-3">
-                    {selectedDayData.scheduled.map((program) => {
-                      const athlete = athletes.find(a => a.id === program.athleteId);
-                      const programExercises = getProgramExercises(program.programId);
+                    {selectedDayData.scheduledExercises.map((item, idx) => {
+                      const athlete = athletes.find(a => a.id === item.athleteProgram.athleteId);
                       return (
-                        <Card key={program.id}>
+                        <Card key={`${item.athleteProgram.id}-${item.programExercise.id}-${idx}`}>
                           <CardContent className="p-4">
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="font-semibold">{athlete?.name || 'Unknown Athlete'}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {program.startDate ? format(new Date(program.startDate), 'MMM d') : 'No date'} - 
-                                    {program.endDate ? format(new Date(program.endDate), 'MMM d') : 'Ongoing'}
-                                  </p>
+                            <div className="space-y-2">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-base">{item.exercise.name}</p>
+                                  <p className="text-sm text-muted-foreground">{athlete?.name || 'Unknown'}</p>
                                 </div>
-                                <Badge>{program.status}</Badge>
+                                <Badge variant="secondary" className="shrink-0">
+                                  {item.programExercise.sets}×{item.programExercise.reps}
+                                </Badge>
                               </div>
-                              {programExercises.length > 0 && (
-                                <div className="border-t pt-3">
-                                  <p className="text-xs font-medium text-muted-foreground mb-2">Exercises:</p>
-                                  <div className="space-y-1">
-                                    {programExercises.map((pe) => {
-                                      const exercise = exercises.find(e => e.id === pe.exerciseId);
-                                      return (
-                                        <div key={pe.id} className="text-xs flex items-center justify-between">
-                                          <span>{exercise?.name || 'Unknown'}</span>
-                                          <span className="text-muted-foreground">{pe.sets}×{pe.reps}</span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span>Week {item.programExercise.weekNumber}</span>
+                                <span>•</span>
+                                <span>Day {item.programExercise.dayNumber}</span>
+                                {item.programExercise.restSeconds && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{item.programExercise.restSeconds}s rest</span>
+                                  </>
+                                )}
+                              </div>
+                              {item.programExercise.notes && (
+                                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                                  {item.programExercise.notes}
+                                </p>
                               )}
                             </div>
                           </CardContent>
@@ -396,7 +429,7 @@ export default function Calendar() {
                 </div>
               )}
 
-              {selectedDayData.completed.length === 0 && selectedDayData.scheduled.length === 0 && (
+              {selectedDayData.completed.length === 0 && selectedDayData.scheduledExercises.length === 0 && (
                 <p className="text-center text-muted-foreground py-8">
                   No workouts scheduled or completed on this day
                 </p>
