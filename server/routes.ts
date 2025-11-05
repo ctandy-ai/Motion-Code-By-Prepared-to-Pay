@@ -160,6 +160,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk import athletes from CSV
+  app.post("/api/athletes/import", async (req, res) => {
+    try {
+      const { parseTeamBuildrCSV, extractUniqueTeams } = await import("./csv-parser");
+      const { csvContent } = req.body;
+
+      if (!csvContent) {
+        return res.status(400).json({ error: "CSV content is required" });
+      }
+
+      // Parse CSV
+      const parsedAthletes = parseTeamBuildrCSV(csvContent);
+      
+      // Extract unique team names
+      const teamNames = extractUniqueTeams(parsedAthletes);
+
+      // Create teams (get or create)
+      const teamMap = new Map<string, string>();
+      for (const teamName of teamNames) {
+        const team = await storage.getOrCreateTeam(teamName);
+        teamMap.set(teamName, team.id);
+      }
+
+      // Fetch existing athletes once for duplicate checking
+      const existingAthletes = await storage.getAthletes();
+      const existingEmails = new Set(existingAthletes.map(a => a.email));
+      const emailToAthleteMap = new Map<string, any>();
+      
+      // Add existing athletes to map for team assignment
+      existingAthletes.forEach(a => emailToAthleteMap.set(a.email, a));
+
+      // Create new athletes, skipping duplicates
+      const createdAthletes: any[] = [];
+      const skipped: string[] = [];
+
+      for (const parsed of parsedAthletes) {
+        try {
+          if (existingEmails.has(parsed.athlete.email)) {
+            skipped.push(parsed.athlete.email);
+            continue;
+          }
+          
+          const created = await storage.createAthlete(parsed.athlete);
+          createdAthletes.push(created);
+          emailToAthleteMap.set(created.email, created);
+        } catch (err) {
+          console.error(`Failed to create athlete ${parsed.athlete.email}:`, err);
+          skipped.push(parsed.athlete.email);
+        }
+      }
+
+      // Create athlete-team relationships using email-based mapping
+      for (const parsed of parsedAthletes) {
+        const athlete = emailToAthleteMap.get(parsed.athlete.email);
+        if (!athlete) continue;
+        
+        for (const groupName of parsed.groups) {
+          const teamId = teamMap.get(groupName);
+          if (teamId) {
+            try {
+              await storage.addAthleteToTeam(athlete.id, teamId);
+            } catch (err) {
+              // Ignore duplicate team assignments
+            }
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        athletesCreated: createdAthletes.length,
+        athletesSkipped: skipped.length,
+        teamsCreated: teamNames.length,
+        athletes: createdAthletes,
+      });
+    } catch (error) {
+      console.error("Import error:", error);
+      res.status(500).json({ error: "Failed to import athletes" });
+    }
+  });
+
   // Program routes
   app.get("/api/programs", async (req, res) => {
     try {

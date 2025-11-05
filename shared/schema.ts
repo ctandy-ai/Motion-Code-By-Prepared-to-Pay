@@ -23,8 +23,10 @@ export const athletes = pgTable("athletes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  phone: text("phone"),
   team: text("team"),
   position: text("position"),
+  status: text("status").default("Registered"),
   avatarUrl: text("avatar_url"),
   dateJoined: timestamp("date_joined").defaultNow(),
 });
@@ -35,6 +37,30 @@ export const insertAthleteSchema = createInsertSchema(athletes).omit({
 });
 export type InsertAthlete = z.infer<typeof insertAthleteSchema>;
 export type Athlete = typeof athletes.$inferSelect;
+
+export const teams = pgTable("teams", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTeamSchema = createInsertSchema(teams).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type Team = typeof teams.$inferSelect;
+
+export const athleteTeams = pgTable("athlete_teams", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  teamId: varchar("team_id").notNull(),
+});
+
+export const insertAthleteTeamSchema = createInsertSchema(athleteTeams).omit({ id: true });
+export type InsertAthleteTeam = z.infer<typeof insertAthleteTeamSchema>;
+export type AthleteTeam = typeof athleteTeams.$inferSelect;
 
 export const programs = pgTable("programs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

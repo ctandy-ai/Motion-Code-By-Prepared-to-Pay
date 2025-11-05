@@ -5,6 +5,8 @@ import {
   type InsertExercise,
   type Athlete,
   type InsertAthlete,
+  type Team,
+  type InsertTeam,
   type Program,
   type InsertProgram,
   type ProgramExercise,
@@ -22,6 +24,8 @@ import {
   users,
   exercises,
   athletes,
+  teams,
+  athleteTeams,
   programs,
   programExercises,
   programTemplates,
@@ -31,7 +35,7 @@ import {
   personalRecords,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -49,6 +53,17 @@ export interface IStorage {
   createAthlete(athlete: InsertAthlete): Promise<Athlete>;
   updateAthlete(id: string, athlete: Partial<InsertAthlete>): Promise<Athlete | undefined>;
   deleteAthlete(id: string): Promise<boolean>;
+  bulkCreateAthletes(athletes: InsertAthlete[]): Promise<Athlete[]>;
+
+  getTeams(): Promise<Team[]>;
+  getTeam(id: string): Promise<Team | undefined>;
+  getTeamByName(name: string): Promise<Team | undefined>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  getOrCreateTeam(name: string): Promise<Team>;
+  
+  getAthleteTeams(athleteId: string): Promise<Team[]>;
+  addAthleteToTeam(athleteId: string, teamId: string): Promise<void>;
+  removeAthleteFromTeam(athleteId: string, teamId: string): Promise<void>;
 
   getPrograms(): Promise<Program[]>;
   getProgram(id: string): Promise<Program | undefined>;
@@ -152,6 +167,61 @@ export class DatabaseStorage implements IStorage {
   async deleteAthlete(id: string): Promise<boolean> {
     const result = await db.delete(athletes).where(eq(athletes.id, id)).returning();
     return result.length > 0;
+  }
+
+  async bulkCreateAthletes(athletesList: InsertAthlete[]): Promise<Athlete[]> {
+    if (athletesList.length === 0) return [];
+    const results = await db.insert(athletes).values(athletesList).returning();
+    return results;
+  }
+
+  async getTeams(): Promise<Team[]> {
+    return await db.select().from(teams);
+  }
+
+  async getTeam(id: string): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.id, id));
+    return team;
+  }
+
+  async getTeamByName(name: string): Promise<Team | undefined> {
+    const [team] = await db.select().from(teams).where(eq(teams.name, name));
+    return team;
+  }
+
+  async createTeam(team: InsertTeam): Promise<Team> {
+    const [newTeam] = await db.insert(teams).values(team).returning();
+    return newTeam;
+  }
+
+  async getOrCreateTeam(name: string): Promise<Team> {
+    const existing = await this.getTeamByName(name);
+    if (existing) return existing;
+    return await this.createTeam({ name });
+  }
+
+  async getAthleteTeams(athleteId: string): Promise<Team[]> {
+    const results = await db
+      .select({ team: teams })
+      .from(athleteTeams)
+      .innerJoin(teams, eq(athleteTeams.teamId, teams.id))
+      .where(eq(athleteTeams.athleteId, athleteId));
+    return results.map(r => r.team);
+  }
+
+  async addAthleteToTeam(athleteId: string, teamId: string): Promise<void> {
+    await db.insert(athleteTeams).values({ athleteId, teamId });
+  }
+
+  async removeAthleteFromTeam(athleteId: string, teamId: string): Promise<void> {
+    await db
+      .delete(athleteTeams)
+      .where(
+        and(
+          eq(athleteTeams.athleteId, athleteId),
+          eq(athleteTeams.teamId, teamId)
+        )
+      );
   }
 
   async getPrograms(): Promise<Program[]> {

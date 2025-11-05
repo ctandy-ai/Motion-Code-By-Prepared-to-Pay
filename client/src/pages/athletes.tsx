@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Athlete, InsertAthlete } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Mail, Users as UsersIcon } from "lucide-react";
+import { Plus, Search, Mail, Users as UsersIcon, Upload } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -31,6 +31,9 @@ import { Badge } from "@/components/ui/badge";
 
 export default function Athletes() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [importProgress, setImportProgress] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -76,8 +79,71 @@ export default function Athletes() {
     },
   });
 
+  const importMutation = useMutation({
+    mutationFn: async (csvContent: string) => {
+      const response = await fetch("/api/athletes/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ csvContent }),
+      });
+      if (!response.ok) throw new Error("Import failed");
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes"] });
+      setIsImportDialogOpen(false);
+      setCsvFile(null);
+      setImportProgress("");
+      const message = data.athletesSkipped > 0
+        ? `Imported ${data.athletesCreated} athletes, skipped ${data.athletesSkipped} duplicates. Created ${data.teamsCreated} teams.`
+        : `Successfully imported ${data.athletesCreated} athletes across ${data.teamsCreated} teams.`;
+      toast({
+        title: "Import Complete",
+        description: message,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Import Failed",
+        description: "Failed to import athletes. Please check your CSV format.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertAthlete) => {
     createMutation.mutate(data);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCsvFile(file);
+      setImportProgress(`Selected: ${file.name}`);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!csvFile) return;
+    
+    setImportProgress("Reading file...");
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      const csvContent = e.target?.result as string;
+      setImportProgress("Importing athletes...");
+      importMutation.mutate(csvContent);
+    };
+    
+    reader.onerror = () => {
+      toast({
+        title: "File Read Error",
+        description: "Failed to read the CSV file.",
+        variant: "destructive",
+      });
+    };
+    
+    reader.readAsText(csvFile);
   };
 
   const filteredAthletes = athletes?.filter((athlete) =>
@@ -95,14 +161,71 @@ export default function Athletes() {
             Manage your athlete roster and assign training programs.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-athlete">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Athlete
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
+        <div className="flex gap-2">
+          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-import-athletes">
+                <Upload className="h-4 w-4 mr-2" />
+                Import CSV
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Import Athletes from CSV</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label htmlFor="csv-upload" className="text-sm font-medium">
+                    Upload TeamBuildr CSV Export
+                  </label>
+                  <Input
+                    id="csv-upload"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    data-testid="input-csv-file"
+                  />
+                  {importProgress && (
+                    <p className="text-sm text-muted-foreground">{importProgress}</p>
+                  )}
+                </div>
+                <div className="rounded-lg border p-4 bg-muted/50">
+                  <h4 className="font-semibold text-sm mb-2">CSV Format:</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Expected columns: FIRST, LAST, EMAIL, PHONE, GROUPS, CALENDAR, STATUS
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Athletes will be automatically assigned to their groups/teams.
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsImportDialogOpen(false)}
+                  data-testid="button-cancel-import"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleImport}
+                  disabled={!csvFile || importMutation.isPending}
+                  data-testid="button-start-import"
+                >
+                  {importMutation.isPending ? "Importing..." : "Import Athletes"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button data-testid="button-add-athlete">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Athlete
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-heading text-2xl">Add New Athlete</DialogTitle>
             </DialogHeader>
@@ -204,6 +327,7 @@ export default function Athletes() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="relative max-w-md">
