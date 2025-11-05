@@ -217,6 +217,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Seed Templates route
+  app.post("/api/seed-templates", async (req, res) => {
+    try {
+      const { seedTemplates } = await import("./seed-templates");
+      const templates = await seedTemplates();
+      res.json({ success: true, count: templates.length, templates });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to seed templates" });
+    }
+  });
+
+  // Program Template routes
+  app.get("/api/program-templates", async (req, res) => {
+    try {
+      const templates = await storage.getProgramTemplates();
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch program templates" });
+    }
+  });
+
+  app.get("/api/program-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getProgramTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch template" });
+    }
+  });
+
+  app.post("/api/program-templates", async (req, res) => {
+    try {
+      const template = await storage.createProgramTemplate(req.body);
+      res.status(201).json(template);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create template" });
+    }
+  });
+
+  app.delete("/api/program-templates/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteProgramTemplate(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Template not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  app.get("/api/program-templates/:id/exercises", async (req, res) => {
+    try {
+      const exercises = await storage.getTemplateExercises(req.params.id);
+      res.json(exercises);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch template exercises" });
+    }
+  });
+
+  app.post("/api/program-templates/:id/exercises", async (req, res) => {
+    try {
+      const exercise = await storage.createTemplateExercise({
+        ...req.body,
+        templateId: req.params.id,
+      });
+      res.status(201).json(exercise);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to add exercise to template" });
+    }
+  });
+
+  app.post("/api/program-templates/:id/instantiate", async (req, res) => {
+    try {
+      const { programName } = req.body;
+      if (!programName) {
+        return res.status(400).json({ error: "Program name is required" });
+      }
+      const program = await storage.instantiateProgramFromTemplate(req.params.id, programName);
+      res.status(201).json(program);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to instantiate program from template" });
+    }
+  });
+
   // Program Exercise routes
   app.get("/api/program-exercises", async (req, res) => {
     try {

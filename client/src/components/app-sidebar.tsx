@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -33,6 +33,11 @@ const menuItems = [
     title: "Programs",
     url: "/programs",
     icon: BookOpen,
+  },
+  {
+    title: "Templates",
+    url: "/templates",
+    icon: FileText,
   },
   {
     title: "Athletes",

@@ -9,6 +9,10 @@ import {
   type InsertProgram,
   type ProgramExercise,
   type InsertProgramExercise,
+  type ProgramTemplate,
+  type InsertProgramTemplate,
+  type TemplateExercise,
+  type InsertTemplateExercise,
   type AthleteProgram,
   type InsertAthleteProgram,
   type WorkoutLog,
@@ -20,6 +24,8 @@ import {
   athletes,
   programs,
   programExercises,
+  programTemplates,
+  templateExercises,
   athletePrograms,
   workoutLogs,
   personalRecords,
@@ -53,6 +59,17 @@ export interface IStorage {
   getProgramExercises(programId?: string): Promise<ProgramExercise[]>;
   createProgramExercise(programExercise: InsertProgramExercise): Promise<ProgramExercise>;
   deleteProgramExercise(id: string): Promise<boolean>;
+
+  getProgramTemplates(): Promise<ProgramTemplate[]>;
+  getProgramTemplate(id: string): Promise<ProgramTemplate | undefined>;
+  createProgramTemplate(template: InsertProgramTemplate): Promise<ProgramTemplate>;
+  deleteProgramTemplate(id: string): Promise<boolean>;
+
+  getTemplateExercises(templateId: string): Promise<TemplateExercise[]>;
+  createTemplateExercise(templateExercise: InsertTemplateExercise): Promise<TemplateExercise>;
+  deleteTemplateExercise(id: string): Promise<boolean>;
+
+  instantiateProgramFromTemplate(templateId: string, programName: string): Promise<Program>;
 
   getAthletePrograms(athleteId: string): Promise<AthleteProgram[]>;
   createAthleteProgram(athleteProgram: InsertAthleteProgram): Promise<AthleteProgram>;
@@ -180,6 +197,71 @@ export class DatabaseStorage implements IStorage {
   async deleteProgramExercise(id: string): Promise<boolean> {
     const result = await db.delete(programExercises).where(eq(programExercises.id, id)).returning();
     return result.length > 0;
+  }
+
+  async getProgramTemplates(): Promise<ProgramTemplate[]> {
+    return await db.select().from(programTemplates);
+  }
+
+  async getProgramTemplate(id: string): Promise<ProgramTemplate | undefined> {
+    const [template] = await db.select().from(programTemplates).where(eq(programTemplates.id, id));
+    return template || undefined;
+  }
+
+  async createProgramTemplate(template: InsertProgramTemplate): Promise<ProgramTemplate> {
+    const [newTemplate] = await db.insert(programTemplates).values(template).returning();
+    return newTemplate;
+  }
+
+  async deleteProgramTemplate(id: string): Promise<boolean> {
+    await db.delete(templateExercises).where(eq(templateExercises.templateId, id));
+    const result = await db.delete(programTemplates).where(eq(programTemplates.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getTemplateExercises(templateId: string): Promise<TemplateExercise[]> {
+    return await db.select().from(templateExercises).where(eq(templateExercises.templateId, templateId));
+  }
+
+  async createTemplateExercise(templateExercise: InsertTemplateExercise): Promise<TemplateExercise> {
+    const [newTemplateExercise] = await db.insert(templateExercises).values(templateExercise).returning();
+    return newTemplateExercise;
+  }
+
+  async deleteTemplateExercise(id: string): Promise<boolean> {
+    const result = await db.delete(templateExercises).where(eq(templateExercises.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async instantiateProgramFromTemplate(templateId: string, programName: string): Promise<Program> {
+    const template = await this.getProgramTemplate(templateId);
+    if (!template) {
+      throw new Error("Template not found");
+    }
+
+    const [newProgram] = await db.insert(programs).values({
+      name: programName,
+      description: template.description,
+      duration: template.duration,
+    }).returning();
+
+    const templateExs = await this.getTemplateExercises(templateId);
+    
+    for (const te of templateExs) {
+      await db.insert(programExercises).values({
+        programId: newProgram.id,
+        exerciseId: te.exerciseId,
+        weekNumber: te.weekNumber,
+        dayNumber: te.dayNumber,
+        sets: te.sets,
+        reps: te.reps,
+        restSeconds: te.restSeconds,
+        notes: te.notes,
+        orderIndex: te.orderIndex,
+      });
+    }
+
+    return newProgram;
   }
 
   async getAthletePrograms(athleteId: string): Promise<AthleteProgram[]> {

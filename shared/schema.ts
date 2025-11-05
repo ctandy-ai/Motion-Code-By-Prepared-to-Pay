@@ -51,6 +51,41 @@ export const insertProgramSchema = createInsertSchema(programs).omit({
 export type InsertProgram = z.infer<typeof insertProgramSchema>;
 export type Program = typeof programs.$inferSelect;
 
+export const programTemplates = pgTable("program_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  duration: integer("duration").notNull(),
+  tags: text("tags").array().notNull().default(sql`ARRAY[]::text[]`),
+  isPublic: integer("is_public").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProgramTemplateSchema = createInsertSchema(programTemplates).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertProgramTemplate = z.infer<typeof insertProgramTemplateSchema>;
+export type ProgramTemplate = typeof programTemplates.$inferSelect;
+
+export const templateExercises = pgTable("template_exercises", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull(),
+  exerciseId: varchar("exercise_id").notNull(),
+  weekNumber: integer("week_number").notNull(),
+  dayNumber: integer("day_number").notNull(),
+  sets: integer("sets").notNull(),
+  reps: integer("reps").notNull(),
+  restSeconds: integer("rest_seconds"),
+  notes: text("notes"),
+  orderIndex: integer("order_index").notNull(),
+});
+
+export const insertTemplateExerciseSchema = createInsertSchema(templateExercises).omit({ id: true });
+export type InsertTemplateExercise = z.infer<typeof insertTemplateExerciseSchema>;
+export type TemplateExercise = typeof templateExercises.$inferSelect;
+
 export const programExercises = pgTable("program_exercises", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   programId: varchar("program_id").notNull(),
