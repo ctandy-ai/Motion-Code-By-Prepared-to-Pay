@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, real } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, real, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -56,7 +56,9 @@ export const athleteTeams = pgTable("athlete_teams", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   athleteId: varchar("athlete_id").notNull(),
   teamId: varchar("team_id").notNull(),
-});
+}, (table) => ({
+  uniqueAthleteTeam: unique().on(table.athleteId, table.teamId),
+}));
 
 export const insertAthleteTeamSchema = createInsertSchema(athleteTeams).omit({ id: true });
 export type InsertAthleteTeam = z.infer<typeof insertAthleteTeamSchema>;
