@@ -241,6 +241,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Coach routes
+  app.post("/api/ai/insights", async (req, res) => {
+    try {
+      const { generateCoachingInsights } = await import("./ai-coach");
+      const { athleteId } = req.body;
+
+      if (!athleteId) {
+        return res.status(400).json({ error: "Athlete ID is required" });
+      }
+
+      const athlete = await storage.getAthleteById(athleteId);
+      if (!athlete) {
+        return res.status(404).json({ error: "Athlete not found" });
+      }
+
+      const workoutLogs = await storage.getWorkoutLogsByAthlete(athleteId);
+      const personalRecords = await storage.getPersonalRecords(athleteId);
+      const stats = await storage.getAthleteStats(athleteId);
+
+      const insights = await generateCoachingInsights({
+        athlete,
+        workoutLogs,
+        personalRecords,
+        recentActivity: {
+          totalWorkouts: stats?.totalWorkouts || 0,
+          totalSets: stats?.totalSetsCompleted || 0,
+          totalPRs: personalRecords.length,
+          streak: stats?.currentStreak || 0,
+        }
+      });
+
+      res.json({ insights });
+    } catch (error) {
+      console.error("AI insights error:", error);
+      res.status(500).json({ error: "Failed to generate insights" });
+    }
+  });
+
+  app.post("/api/ai/recommend-program", async (req, res) => {
+    try {
+      const { generateProgramRecommendation } = await import("./ai-coach");
+      const { athleteId, goal } = req.body;
+
+      if (!athleteId) {
+        return res.status(400).json({ error: "Athlete ID is required" });
+      }
+
+      const athlete = await storage.getAthleteById(athleteId);
+      if (!athlete) {
+        return res.status(404).json({ error: "Athlete not found" });
+      }
+
+      const stats = await storage.getAthleteStats(athleteId);
+      const personalRecords = await storage.getPersonalRecords(athleteId);
+
+      const recommendation = await generateProgramRecommendation({
+        athlete,
+        personalRecords,
+        recentActivity: {
+          totalWorkouts: stats?.totalWorkouts || 0,
+          totalSets: stats?.totalSetsCompleted || 0,
+          totalPRs: personalRecords.length,
+          streak: stats?.currentStreak || 0,
+        }
+      }, goal);
+
+      res.json(recommendation);
+    } catch (error) {
+      console.error("Program recommendation error:", error);
+      res.status(500).json({ error: "Failed to generate recommendation" });
+    }
+  });
+
+  app.post("/api/ai/chat", async (req, res) => {
+    try {
+      const { chatWithCoach } = await import("./ai-coach");
+      const { messages, athleteId } = req.body;
+
+      if (!messages || !Array.isArray(messages)) {
+        return res.status(400).json({ error: "Messages array is required" });
+      }
+
+      let athleteContext;
+      if (athleteId) {
+        const athlete = await storage.getAthleteById(athleteId);
+        if (athlete) {
+          const stats = await storage.getAthleteStats(athleteId);
+          const personalRecords = await storage.getPersonalRecords(athleteId);
+          athleteContext = {
+            athlete,
+            personalRecords,
+            recentActivity: {
+              totalWorkouts: stats?.totalWorkouts || 0,
+              totalSets: stats?.totalSetsCompleted || 0,
+              totalPRs: personalRecords.length,
+              streak: stats?.currentStreak || 0,
+            }
+          };
+        }
+      }
+
+      const response = await chatWithCoach(messages, athleteContext);
+      res.json({ message: response });
+    } catch (error) {
+      console.error("Chat error:", error);
+      res.status(500).json({ error: "Failed to process chat" });
+    }
+  });
+
   // Program routes
   app.get("/api/programs", async (req, res) => {
     try {
