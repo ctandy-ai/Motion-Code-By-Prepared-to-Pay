@@ -32,6 +32,7 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
     - **Program Templates**: Pre-built, customizable training programs across categories (Strength, Speed, Rehab, etc.).
     - **Program Builder**: Adding/removing exercises, configuring sets/reps, and organizing by week/day.
 - **Athlete Management**: Comprehensive profiles, team and position tracking, and program assignment with status management.
+    - **CSV Import**: TeamBuildr CSV import with PapaParse for multiline field handling, email placeholders for pending athletes, and duplicate prevention.
 - **Exercise Library**: Full CRUD operations for exercises with categories, muscle groups, difficulty levels, and search/filter functionalities.
 - **Workout Logging**: Intuitive interface for athletes to log workouts, tracking sets, reps, and weights. Features auto-detection of Personal Records (PRs).
 - **Progress Tracking & Analytics**:
@@ -39,6 +40,15 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
     - **XP and Level System**: Calculates XP based on workout activity and derives user levels.
     - **Calendar Integration**: Day-level scheduling and visualization of workouts.
     - **Progress Analytics**: Charts for strength progression, volume trends, and PR history.
+- **AI Coach Assistant** (NEW):
+    - **GPT-4.1 Integration**: Powered by OpenAI via Replit AI Integrations (no API key required).
+    - **Three AI Endpoints**:
+      - `/api/ai/insights`: Generates performance insights with athlete context (stats, PRs, recent workouts).
+      - `/api/ai/recommend-program`: AI-powered program recommendations based on athlete goals and performance.
+      - `/api/ai/chat`: Conversational assistant for training questions and guidance.
+    - **Compliance Safeguards**: All AI responses avoid specific injury diagnoses, medical advice, and treatment recommendations - focusing on general coaching guidance only.
+    - **Floating Chat Widget**: Beautiful UI with minimize/maximize, conversation history, and medical disclaimer (AlertCircle icon).
+    - **Context-Aware**: AI has access to athlete stats (streak, workouts, sets, PRs) for personalized coaching.
 - **Belt System Design**: Planned auto-promotion logic for athletes based on KPI test results and threshold management.
 
 ### System Design Choices
