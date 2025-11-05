@@ -1,0 +1,121 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stride / P2P – Builder & Calendar</title>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 24px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; }
+    h2 { margin: 0 0 8px 0; }
+    label { display:block; margin-top: 8px; }
+    input, select, textarea { padding: 8px; width: 100%; }
+    pre { background: #fafafa; padding: 12px; border-radius: 8px; overflow: auto; }
+    button { padding: 10px 14px; border-radius: 8px; border: 1px solid #222; background: #fff; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Stride / P2P – Builder & Calendar</h1>
+  <div class="grid">
+    <div class="card">
+      <h2>Create Athlete</h2>
+      <label>First <input id="fn"></label>
+      <label>Last <input id="ln"></label>
+      <label>Email <input id="em"></label>
+      <label>Belt
+        <select id="belt">
+          <option>white</option><option>blue_minus</option><option>blue</option><option>black_minus</option><option>black</option>
+        </select>
+      </label>
+      <label>Goal <input id="goal" placeholder="e.g., marathon"></label>
+      <label>Bandwidth
+        <select id="bw">
+          <option>low</option><option selected>medium</option><option>high</option>
+        </select>
+      </label>
+      <p><button onclick="createAthlete()">Create</button></p>
+      <pre id="athleteOut"></pre>
+      <p><button onclick="listAthletes()">List Athletes</button></p>
+      <pre id="athletesList"></pre>
+    </div>
+    <div class="card">
+      <h2>Build Week (Programs)</h2>
+      <label>Athlete ID <input id="aid" type="number"></label>
+      <label>Active Milestones <select id="milestones" multiple size="6"></select></label>
+      <label>Override Bandwidth <select id="obw"><option value="">(none)</option><option>low</option><option>medium</option><option>high</option></select></label>
+      <p><button onclick="buildWeek()">Build</button></p>
+      <pre id="week"></pre>
+      <h3>Save Program</h3>
+      <label>Name <input id="pname"></label>
+      <p><button onclick="saveProgram()">Save Program</button></p>
+      <pre id="programOut"></pre>
+    </div>
+    <div class="card">
+      <h2>Calendar</h2>
+      <label>Athlete ID <input id="caid" type="number"></label>
+      <label>Date (YYYY-MM-DD) <input id="cdate" type="text" placeholder="2025-11-05"></label>
+      <label>Session JSON <textarea id="csession" rows="6">{ "type":"speed", "items":[] }</textarea></label>
+      <p><button onclick="addCal()">Add to Calendar</button></p>
+      <p><button onclick="getCal()">Get Calendar</button></p>
+      <pre id="calOut"></pre>
+    </div>
+    <div class="card">
+      <h2>Libraries</h2>
+      <p><button onclick="loadLib()">Exercises</button> <button onclick="loadMBS()">MBS</button></p>
+      <pre id="lib"></pre>
+    </div>
+  </div>
+<script>
+async function createAthlete(){
+  const payload = { first_name: fn.value, last_name: ln.value, email: em.value||null, belt: belt.value, goal: goal.value||null, bandwidth: bw.value };
+  const res = await fetch('/api/athletes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  athleteOut.textContent = JSON.stringify(await res.json(), null, 2);
+}
+async function listAthletes(){
+  const res = await fetch('/api/athletes');
+  athletesList.textContent = JSON.stringify(await res.json(), null, 2);
+}
+async function loadMilestones(){
+  const res = await fetch('/api/milestones'); const data = await res.json();
+  milestones.innerHTML = "";
+  data.forEach(m => {
+    const opt = document.createElement('option'); opt.value = m.id; opt.textContent = m.id + " — " + m.name;
+    milestones.appendChild(opt);
+  });
+}
+async function buildWeek(){
+  const sel = Array.from(milestones.selectedOptions).map(o=>o.value);
+  const payload = { athlete_id: parseInt(aid.value), active_milestones: sel, override_bandwidth: obw.value||null };
+  const res = await fetch('/api/build-week', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  const data = await res.json();
+  week.textContent = JSON.stringify(data, null, 2);
+}
+async function saveProgram(){
+  const data = JSON.parse(week.textContent||'{"week":{}}');
+  const name = document.getElementById('pname').value || "Untitled Program";
+  const payload = { name, content: data.week, belt: belt.value };
+  const res = await fetch('/api/programs', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  programOut.textContent = JSON.stringify(await res.json(), null, 2);
+}
+async function addCal(){
+  const payload = { athlete_id: parseInt(caid.value), date: cdate.value, session: JSON.parse(csession.value||'{}') };
+  const res = await fetch('/api/calendar', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  calOut.textContent = JSON.stringify(await res.json(), null, 2);
+}
+async function getCal(){
+  const res = await fetch('/api/calendar/' + parseInt(caid.value));
+  calOut.textContent = JSON.stringify(await res.json(), null, 2);
+}
+async function loadLib(){
+  const res = await fetch('/api/library/exercises');
+  lib.textContent = JSON.stringify(await res.json(), null, 2);
+}
+async function loadMBS(){
+  const res = await fetch('/api/library/mbs');
+  lib.textContent = JSON.stringify(await res.json(), null, 2);
+}
+loadMilestones();
+</script>
+</body>
+</html>

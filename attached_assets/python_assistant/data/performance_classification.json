@@ -1,0 +1,328 @@
+{
+  "version": "0.1.0",
+  "orientation": "Performance-first belt system. Injuries are modifiers/constraints, not the driver.",
+  "axes": [
+    {
+      "id": "TA",
+      "name": "Training Age",
+      "scale": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "description": "Years of structured S&C/sport with coaching."
+    },
+    {
+      "id": "SQ",
+      "name": "Speed Qualities",
+      "scale": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "metrics": [
+        "flying20_mps",
+        "accel_0_10m_s",
+        "stride_freq_hz"
+      ]
+    },
+    {
+      "id": "ST",
+      "name": "Strength",
+      "scale": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "metrics": [
+        "squat_1rm_bw",
+        "unilateral_strength_symmetry_pct",
+        "hamstring_iso_nm"
+      ]
+    },
+    {
+      "id": "MQ",
+      "name": "Movement Quality",
+      "scale": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "metrics": [
+        "hip_lock_score",
+        "valgus_control_score",
+        "nature_of_contact_score"
+      ]
+    },
+    {
+      "id": "WC",
+      "name": "Work Capacity",
+      "scale": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "metrics": [
+        "mas_intervals_completed",
+        "session_compliance_pct"
+      ]
+    }
+  ],
+  "belts": [
+    {
+      "id": "white",
+      "name": "White",
+      "descriptor": "Foundation performance"
+    },
+    {
+      "id": "blue_minus",
+      "name": "Blue-",
+      "descriptor": "Emerging performance"
+    },
+    {
+      "id": "blue",
+      "name": "Blue",
+      "descriptor": "Solid club performance"
+    },
+    {
+      "id": "black_minus",
+      "name": "Black-",
+      "descriptor": "Pre-elite performance"
+    },
+    {
+      "id": "black",
+      "name": "Black",
+      "descriptor": "Elite-ready performance"
+    }
+  ],
+  "belt_matrix": {
+    "logic": "Compute a composite per axis (0-100). Map to 1\u20135 tier per axis. Derive belt from a weighted blend with minimum floors.",
+    "weights": {
+      "TA": 0.1,
+      "SQ": 0.3,
+      "ST": 0.2,
+      "MQ": 0.2,
+      "WC": 0.2
+    },
+    "floors": {
+      "white": {
+        "SQ": 1,
+        "ST": 1,
+        "MQ": 1,
+        "WC": 1
+      },
+      "blue_minus": {
+        "SQ": 2,
+        "ST": 2,
+        "MQ": 2,
+        "WC": 2
+      },
+      "blue": {
+        "SQ": 3,
+        "ST": 3,
+        "MQ": 3,
+        "WC": 3
+      },
+      "black_minus": {
+        "SQ": 4,
+        "ST": 4,
+        "MQ": 4,
+        "WC": 3
+      },
+      "black": {
+        "SQ": 5,
+        "ST": 5,
+        "MQ": 4,
+        "WC": 4
+      }
+    },
+    "composite_thresholds": {
+      "white": 0,
+      "blue_minus": 55,
+      "blue": 70,
+      "black_minus": 80,
+      "black": 90
+    }
+  },
+  "injury_modifiers": {
+    "flags": [
+      "acute_injury",
+      "managed_condition",
+      "returning_from_surgery",
+      "pain_gate_4plus"
+    ],
+    "effect": [
+      "Never demote belt solely for injury; instead apply constraints & partial unlocks ('belt-hold').",
+      "Route to a Capability Profile: forbidden exposures, substituted tests, capped volumes (e.g., Vmax, plyo contacts)."
+    ],
+    "capability_profile": {
+      "exposure_caps": {
+        "vmax_contacts": {
+          "blue": 8,
+          "black": 12
+        },
+        "cod_angles_deg": {
+          "blue": 60,
+          "black": 90
+        }
+      },
+      "environment": {
+        "water": true,
+        "sand": true,
+        "trampoline": true
+      }
+    }
+  },
+  "test_to_axis_mapping": {
+    "SQ": [
+      {
+        "metric": "flying20_mps",
+        "norms": {
+          "club_avg_mps": 8.0,
+          "std": 0.6
+        },
+        "higher_better": true
+      },
+      {
+        "metric": "accel_0_10m_s",
+        "norms": {
+          "club_avg_s": 1.85,
+          "std": 0.15
+        },
+        "higher_better": false
+      }
+    ],
+    "ST": [
+      {
+        "metric": "squat_1rm_bw",
+        "bands": {
+          "1": 0.8,
+          "2": 1.0,
+          "3": 1.3,
+          "4": 1.6,
+          "5": 1.9
+        }
+      },
+      {
+        "metric": "unilateral_strength_symmetry_pct",
+        "bands": {
+          "1": 75,
+          "2": 85,
+          "3": 90,
+          "4": 95,
+          "5": 98
+        }
+      }
+    ],
+    "MQ": [
+      {
+        "metric": "hip_lock_score",
+        "bands": {
+          "1": 1,
+          "2": 2,
+          "3": 3,
+          "4": 4,
+          "5": 5
+        }
+      },
+      {
+        "metric": "valgus_control_score",
+        "bands": {
+          "1": 1,
+          "2": 2,
+          "3": 3,
+          "4": 4,
+          "5": 5
+        }
+      }
+    ],
+    "WC": [
+      {
+        "metric": "mas_intervals_completed",
+        "bands": {
+          "1": 3,
+          "2": 5,
+          "3": 7,
+          "4": 9,
+          "5": 11
+        }
+      },
+      {
+        "metric": "session_compliance_pct",
+        "bands": {
+          "1": 50,
+          "2": 65,
+          "3": 80,
+          "4": 90,
+          "5": 95
+        }
+      }
+    ],
+    "TA": [
+      {
+        "metric": "years_structured_training",
+        "bands": {
+          "1": 0,
+          "2": 1,
+          "3": 3,
+          "4": 5,
+          "5": 8
+        }
+      }
+    ]
+  },
+  "subjective_overrides": {
+    "when_to_use": "Use if athlete cannot complete required tests today.",
+    "sources": [
+      "readiness_rpe",
+      "confidence_return",
+      "fear_movement",
+      "self_rated_speed",
+      "self_rated_strength"
+    ],
+    "mapping": {
+      "self_rated_speed": {
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5
+      },
+      "self_rated_strength": {
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5
+      },
+      "confidence_return": {
+        "low": -1,
+        "medium": 0,
+        "high": 1
+      }
+    },
+    "max_duration": "14 days before re-test is required"
+  },
+  "outputs": {
+    "belt": "white|blue_minus|blue|black_minus|black",
+    "axis_levels": {
+      "TA": 1,
+      "SQ": 3,
+      "ST": 2,
+      "MQ": 3,
+      "WC": 3
+    },
+    "capability_profile": "exposure caps + environment constraints",
+    "program_unlocks": "menu filters by belt & axis (e.g., Vmax, COD angle, plyo contacts)"
+  }
+}

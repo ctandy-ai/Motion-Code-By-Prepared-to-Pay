@@ -1,0 +1,246 @@
+{
+  "meta": {
+    "name": "Performance Program \u2013 Milestone/KPI Driven",
+    "version": "0.2.0",
+    "philosophy": "Progress is gated by milestones (KPI targets), not calendar. Programs adapt to weekly bandwidth and injury caps.",
+    "belt_model": [
+      "white",
+      "blue_minus",
+      "blue",
+      "black_minus",
+      "black"
+    ],
+    "weekly_bandwidth": {
+      "low": {
+        "strength_sessions": 2,
+        "speed_sessions": 1,
+        "plyo_sessions": 1
+      },
+      "medium": {
+        "strength_sessions": 2,
+        "speed_sessions": 2,
+        "plyo_sessions": 2
+      },
+      "high": {
+        "strength_sessions": 3,
+        "speed_sessions": 2,
+        "plyo_sessions": 3
+      }
+    }
+  },
+  "milestones": [
+    {
+      "id": "MS_SQ_VMAX_BASE",
+      "name": "Vmax Base Exposure",
+      "belt_min": "blue_minus",
+      "kpi_targets": {
+        "flying20_mps": "cohort_40pct_or_plus3pct_personal",
+        "weekly_vmax_contacts": ">=8"
+      },
+      "exit_gate": {
+        "weeks_above_target": 2
+      },
+      "session_archetypes": {
+        "speed": [
+          {
+            "name": "Vmax + Stepping/Swerving",
+            "efforts": 4,
+            "distance": "20m (10m run-in)",
+            "rest": "full"
+          },
+          {
+            "name": "Reaccel 5\u21922 back\u21927",
+            "efforts": 4,
+            "rest": "full"
+          }
+        ],
+        "plyo": [
+          {
+            "name": "Linear Tic Tacs",
+            "contacts": 30
+          },
+          {
+            "name": "Low Lateral Skipping",
+            "contacts": 40
+          }
+        ],
+        "strength": [
+          {
+            "name": "Back Squat",
+            "scheme": "4x6 @ 72-76%"
+          },
+          {
+            "name": "Unilateral RDL",
+            "scheme": "3x6-8 @ 75-80%"
+          }
+        ]
+      }
+    },
+    {
+      "id": "MS_ST_UNILAT_SYM",
+      "name": "Unilateral Strength Symmetry",
+      "belt_min": "white",
+      "kpi_targets": {
+        "unilateral_strength_symmetry_pct": ">=90"
+      },
+      "exit_gate": {
+        "tests_required": 2,
+        "rolling_median_meets": true
+      },
+      "session_archetypes": {
+        "strength": [
+          {
+            "name": "Split Squat",
+            "scheme": "3x8 each @ RPE 7"
+          },
+          {
+            "name": "Unilateral RDL",
+            "scheme": "3x8 each @ RPE 7-8"
+          },
+          {
+            "name": "Nordic ISO",
+            "scheme": "3x20-30s holds"
+          }
+        ],
+        "plyo": [
+          {
+            "name": "Linear A Skipping",
+            "contacts": 40
+          },
+          {
+            "name": "Lateral A Switching",
+            "contacts": 30
+          }
+        ]
+      }
+    },
+    {
+      "id": "MS_COD_DECEL",
+      "name": "COD & Deceleration Control",
+      "belt_min": "blue",
+      "kpi_targets": {
+        "cod505_delta_pct": "<=10",
+        "decel_braking_index": "within_safe_band"
+      },
+      "exit_gate": {
+        "two_consecutive_weeks": true
+      },
+      "session_archetypes": {
+        "speed": [
+          {
+            "name": "COD 45\u201360\u00b0 entries",
+            "efforts": 12,
+            "rest": "45-60s"
+          },
+          {
+            "name": "COD 90\u00b0 entries",
+            "efforts": 8,
+            "rest": "60-90s"
+          }
+        ],
+        "mbs": [
+          {
+            "name": "High-Low Drop Step (Plate/Aqua)",
+            "scheme": "3x6 each"
+          },
+          {
+            "name": "Lateral Pole Vaulters (Aqua Bag)",
+            "scheme": "4x8m reps"
+          }
+        ]
+      }
+    },
+    {
+      "id": "MS_SQ_VMAX_PERF",
+      "name": "Vmax Performance Consolidation",
+      "belt_min": "black_minus",
+      "kpi_targets": {
+        "flying20_mps": "cohort_60pct_or_plus5pct_personal",
+        "weekly_vmax_contacts": ">=12"
+      },
+      "exit_gate": {
+        "weeks_above_target": 2
+      },
+      "session_archetypes": {
+        "speed": [
+          {
+            "name": "Vmax 2x20m + 2x30m",
+            "rest": "full"
+          },
+          {
+            "name": "Stepping/Swerving @ Vmax",
+            "efforts": 4,
+            "rest": "full"
+          }
+        ],
+        "plyo": [
+          {
+            "name": "Short-contact plyo cluster",
+            "contacts": 60
+          }
+        ],
+        "strength": [
+          {
+            "name": "Back Squat",
+            "scheme": "3x3 @ 88-92%"
+          },
+          {
+            "name": "Power Clean or Hex Pull",
+            "scheme": "4x3 @ fast intent"
+          }
+        ]
+      }
+    }
+  ],
+  "programming_rules": {
+    "hysteresis": {
+      "promote_after_weeks": 2,
+      "no_demote": true
+    },
+    "red_flag_veto": [
+      "effusion",
+      "pain_4plus",
+      "loss_of_extension"
+    ],
+    "injury_caps": {
+      "managed_condition": {
+        "vmax_contacts_cap": 8,
+        "cod_angle_max_deg": 60,
+        "environment": [
+          "water",
+          "sand",
+          "trampoline"
+        ]
+      }
+    },
+    "builder": "Assemble weekly plan from session_archetypes based on belt and weekly_bandwidth; scale contacts/reps using WC tier."
+  },
+  "example_weeks": {
+    "blue_minus_low_bandwidth": {
+      "speed": [
+        "Vmax + Stepping/Swerving (4 efforts)",
+        "Reaccel 5\u21922 back\u21927 (4 efforts)"
+      ],
+      "plyo": [
+        "Linear Tic Tacs 30 contacts"
+      ],
+      "strength": [
+        "Back Squat 4x6 @ 72-76%",
+        "Unilateral RDL 3x8 @ 75-80%"
+      ]
+    },
+    "black_minus_high_bandwidth": {
+      "speed": [
+        "Vmax 2x20m + 2x30m (full rest)",
+        "Stepping/Swerving @ Vmax x4"
+      ],
+      "plyo": [
+        "Short-contact cluster 60 contacts"
+      ],
+      "strength": [
+        "Back Squat 3x3 @ 88-92%",
+        "Hex Pull 4x3 fast intent"
+      ]
+    }
+  }
+}

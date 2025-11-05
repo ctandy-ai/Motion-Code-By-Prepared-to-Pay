@@ -1,0 +1,75 @@
+{
+  "questionnaire": [
+    {
+      "id": "readiness_rpe",
+      "prompt": "How ready do you feel to train hard today?",
+      "scale": "0-10"
+    },
+    {
+      "id": "confidence_return",
+      "prompt": "Confidence in current training capacities?",
+      "options": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    {
+      "id": "fear_movement",
+      "prompt": "Any movements you are avoiding?",
+      "options": [
+        "sprinting",
+        "deceleration",
+        "COD",
+        "heavy_strength",
+        "none"
+      ]
+    },
+    {
+      "id": "self_rated_speed",
+      "prompt": "Rate your sprint speed relative to your best",
+      "scale": "1-5"
+    },
+    {
+      "id": "self_rated_strength",
+      "prompt": "Rate your lower-limb strength",
+      "scale": "1-5"
+    }
+  ],
+  "mapping_rules": {
+    "SQ": {
+      "self_rated_speed": {
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5
+      }
+    },
+    "ST": {
+      "self_rated_strength": {
+        "1": 1,
+        "2": 2,
+        "3": 3,
+        "4": 4,
+        "5": 5
+      }
+    },
+    "QUAL": {
+      "fear_movement": {
+        "sprinting": -1,
+        "deceleration": -1,
+        "COD": -1,
+        "heavy_strength": -1,
+        "none": 0
+      }
+    },
+    "global_adjust": {
+      "confidence_return": {
+        "low": -2,
+        "medium": 0,
+        "high": 1
+      }
+    }
+  }
+}
