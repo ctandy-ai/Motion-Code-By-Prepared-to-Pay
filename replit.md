@@ -1,319 +1,56 @@
 # Elite Strength & Conditioning Platform
 
 ## Overview
-A comprehensive strength and conditioning platform for coaches and athletes, designed to rival and surpass TeamBuildr. The platform enables coaches to manage exercise libraries, create training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface.
-
-## Project Status
-**Current Phase**: MVP Development - Core Features Complete (Tasks 1-8/9)
-
-## Recent Changes
-- **2025-11-05**: PROGRAM TEMPLATES IMPLEMENTATION - Task 8 ✅ COMPLETE
-  - **Program Templates**: Pre-built training programs ready to customize
-    - Database schema: `program_templates` and `template_exercises` tables
-    - Template categories: Strength, Speed, Rehab, In-Season, Conditioning
-    - Tags support: Speed, Power, ACL RTP, etc.
-    - Instantiation logic: Copy template → new program with all exercises
-    - Seed templates: 5 sample programs (Off-Season Power, Speed & Agility, ACL RTP, etc.)
-    - Templates page UI: Search, filter by category, instantiate with custom name
-  - **Belt System Design Document**: Comprehensive 7-hour implementation plan
-    - Auto-promotion logic based on KPI test results (Triple Hop, Speed, COD)
-    - Belt levels: White → Blue → Black
-    - Testing strategy with unit tests, integration tests, QA scripts
-    - UI mockups for BeltBadge component and testing dashboard
-    - Threshold management system
-  - **API Endpoints**:
-    - `GET /api/program-templates` - List all templates
-    - `POST /api/program-templates` - Create new template
-    - `DELETE /api/program-templates/:id` - Delete template
-    - `GET /api/program-templates/:id/exercises` - Get template exercises
-    - `POST /api/program-templates/:id/exercises` - Add exercise to template
-    - `POST /api/program-templates/:id/instantiate` - Create program from template
-    - `POST /api/seed-templates` - Load sample templates
-  - **Branding Proposal**: 3 name options (StridePro, PlayReady, StrideUp) + 10 design enhancements
-
-- **2025-11-05**: CALENDAR & PROGRESS ANALYTICS - Tasks 6-7 ✅ COMPLETE
-  - **Calendar Day-Level Scheduling**: Precise workout mapping using week/day offsets
-  - **Progress Analytics**: Real strength progression charts, volume trends, PR history
-  - Fixed date handling bugs in calendar
-  - Enhanced day detail modal with exercise lists
-
-- **2025-11-03**: CORE FEATURES COMPLETE - Tasks 1-5 ✅ DONE
-  - **Task 1**: Enterprise design polish - Ultra-minimal aesthetic, Ocean Depth palette
-  - **Task 2**: Program Builder - Add/remove exercises, week/day organization, sets/reps config
-  - **Task 3**: Athlete-Program Assignments - Assignment interface, date tracking, status management
-  - **Task 4**: Workout Logging - Multi-athlete support, sets/reps/weight input, PR auto-calculation
-  - **Task 5**: Real Data Dashboard - All mock data replaced with live calculations
-    - `/api/dashboard-stats`: Aggregate platform statistics
-    - `/api/athletes/:id/stats`: Per-athlete verification endpoint
-    - XP Formula: (workouts × 50) + (sets × 10) + (PRs × 100)
-    - Level Formula: floor(sqrt(XP / 100)) + 1
-    - Streak tracking from workout_logs
-    - Top performers ranked by XP
-  - **Critical Bug Fixes**:
-    - Set counting now uses `log.sets` integer field (not string splitting)
-    - State cleanup on athlete switch prevents cross-athlete data leakage
-    - All XP calculations consistent across endpoints
-  
-- **2025-11-02**: PROFESSIONAL COLOR PALETTE REDESIGN - Ocean Depth Theme ✅ COMPLETE
-  - **Inspired by Lumin Sports, Made Better**: Studied their professional approach, then improved it
-  - **Ocean Depth Palette**: Deep ocean blue (primary), professional teal (achievements), coral energy (CTAs), professional gold
-  - **Complete Migration**: ALL color variables updated across light/dark modes
-    - Neutrals: 210 hue (ocean blue tint) for backgrounds, cards, borders, text
-    - Primary: 200 hue (deep ocean blue) for actions, XP bars, primary interactions
-    - Accent: 175 hue (professional teal) for achievements, highlights
-    - Shadows: 210 hue (ocean blue tint) for all elevation levels
-    - Charts: Ocean Depth palette (ocean blue, coral, teal-green, teal, gold)
-  - **Professional Credibility**: More trustworthy than gaming purple, still energetic
-  - **Unique Identity**: Distinctive teal accents, cohesive blue undertones throughout
-  - **Better Than Lumin**: Added gamification layer they don't have, modern interactions, award-winning design
-  - Maintained all gamification features (XP, achievements, streaks, challenges)
-  - Kept award-winning interactions (glassmorphism, magnetic hover, breathing animations)
-  - Full accessibility support (prefers-reduced-motion)
-  - Performance optimized (minimal backdrop-filter usage)
-
-- **2025-10-31**: AWARD-WINNING DESIGN IMPLEMENTATION - Premium Gamified Platform
-  - Design Research: Studied Awwwards Site of the Year 2024, Webby Winners, FWA recipients
-  - Glassmorphism, magnetic interactions, breathing animations, reveal effects
-  - Gradient text, ripple feedback, glow effects
-  - Typography: Rajdhani (headings), Orbitron (stats), Inter (body)
-  - Database: PostgreSQL with Drizzle ORM
-  - Full accessibility and performance optimizations
-
-## Architecture
-
-### Tech Stack
-- **Frontend**: React 18 with TypeScript, Wouter for routing
-- **Backend**: Express.js with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM for full data persistence
-- **UI Framework**: Shadcn UI components with Tailwind CSS
-- **Charts**: Recharts for data visualization
-- **Forms**: React Hook Form with Zod validation
-
-### Project Structure
-```
-├── client/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── ui/           # Shadcn UI components
-│   │   │   ├── app-sidebar.tsx
-│   │   │   ├── theme-toggle.tsx
-│   │   │   ├── stat-card.tsx
-│   │   │   └── exercise-card.tsx
-│   │   ├── pages/
-│   │   │   ├── dashboard.tsx
-│   │   │   ├── exercises.tsx
-│   │   │   ├── athletes.tsx
-│   │   │   ├── programs.tsx
-│   │   │   ├── calendar.tsx
-│   │   │   └── progress.tsx
-│   │   ├── App.tsx
-│   │   └── index.css
-│   └── index.html
-├── server/
-│   ├── routes.ts
-│   ├── storage.ts
-│   └── vite.ts
-├── shared/
-│   └── schema.ts           # Shared TypeScript types and Zod schemas
-└── design_guidelines.md    # Comprehensive design system documentation
-```
-
-## Data Models
-
-### Core Entities
-1. **Exercises**: Exercise library with categories, muscle groups, difficulty levels, and video demonstrations
-2. **Athletes**: Athlete profiles with team and position information
-3. **Programs**: Training programs with duration and description
-4. **Program Exercises**: Individual exercises within programs with sets, reps, and scheduling
-5. **Athlete Programs**: Assignment of programs to athletes with status tracking
-6. **Workout Logs**: Completed workout data with sets, reps, and weights
-7. **Personal Records**: Athlete PRs for specific exercises
-
-## Features Implemented
-
-### ✅ Completed Features (Tasks 1-5)
-- **Real Data Dashboard** ✅:
-  - Live statistics from workout_logs and personal_records
-  - XP calculation: (workouts × 50) + (sets × 10) + (PRs × 100)
-  - Level progression: floor(sqrt(XP / 100)) + 1
-  - Active streak tracking (consecutive workout days)
-  - Top performers leaderboard with real XP rankings
-  - Activity overview with total workouts, sets, and PRs
-  - Performance level card with XP progress bar
-
-- **Workout Logging Interface** ✅:
-  - Multi-athlete workout selector (dropdown)
-  - Today's scheduled workouts from athlete_programs
-  - Sets/reps/weight input with dynamic set management
-  - Save to workout_logs table with validation
-  - PR auto-detection and creation
-  - State cleanup on athlete switch (prevents data leakage)
-
-- **Program Builder** ✅:
-  - Add/remove exercises to programs
-  - Week and day organization (drag-and-drop coming later)
-  - Sets, reps, and week configuration per exercise
-  - Real database operations (program_exercises table)
-  - Exercise library integration
-
-- **Athlete-Program Assignment System** ✅:
-  - Assignment interface on Athletes page
-  - Multi-athlete and multi-program selection
-  - Start/end date tracking
-  - Status management (active/completed/pending)
-  - Display assigned athletes per program
-
-- **Exercise Library** ✅: 
-  - Full CRUD operations (Create, Read, Update, Delete)
-  - Edit dialog with form validation
-  - Filter by category and muscle group
-  - Search functionality across exercise names
-  - Exercise cards with metadata and badges
-  - Seed data: 5 exercises
-
-- **Athlete Management** ✅:
-  - Create and delete athlete profiles
-  - Search capabilities
-  - Team and position tracking
-  - Seed data: 5 athletes with realistic profiles
-
-- **Program Management** ✅:
-  - Create and delete training programs
-  - Program duration and descriptions
-  - Exercise assignment workflow
-
-- **Database** ✅: 
-  - PostgreSQL with Drizzle ORM
-  - Full data persistence across all features
-  - Seed data loaded
-
-- **Backend API** ✅: 
-  - RESTful endpoints with Zod validation
-  - `/api/dashboard-stats` - Platform statistics
-  - `/api/athletes/:id/stats` - Per-athlete verification
-  - All CRUD operations for exercises, athletes, programs
-  - Workout logging and PR tracking endpoints
-
-- **Enterprise Design** ✅:
-  - Ocean Depth professional color palette
-  - Ultra-minimal layout (Lumin-inspired)
-  - Strategic gamification (XP, levels, streaks)
-  - Dark mode support
-  - Responsive design (desktop/tablet/mobile)
-  - Accessibility optimizations
-
-### 🚧 Remaining Tasks (2/7)
-- **Task 6**: Calendar Integration - Connect to real workout data, show scheduled vs completed
-- **Task 7**: Progress Analytics - Real strength charts, volume trends, PR history with filters
-
-### ✨ Design Excellence Achieved
-- **Accessibility**: Full `prefers-reduced-motion` support for all animations
-- **Performance**: Optimized backdrop-filter usage for smooth 60fps performance
-- **Award-Winning Patterns**: Magnetic hover, gradient text, breathing animations, reveal effects
-- **Gaming Aesthetic**: Electric purple/cyan theme with neon accents and glassmorphism
-
-### 📋 Planned Features
-- Real-time workout tracking
-- Video playback for exercises
-- Program assignment workflow
-- Advanced analytics and reporting
-- Export capabilities
-- Team communication features
-
-## Design System
-
-### Colors (Gamified Theme)
-- **Primary**: Electric Purple (hsl(270, 91%, 65%)) - XP bars, primary actions, level-ups
-- **Accent**: Neon Cyan (hsl(180, 100%, 50%)) - Achievements, highlights, streaks
-- **Challenge**: Vibrant Orange (hsl(25, 95%, 58%)) - Daily challenges, warnings
-- **Success**: Green (hsl(142, 71%, 45%)) - Completed workouts, PRs
-- **Backgrounds**: Deep space (hsl(240, 15%, 8%)) with charcoal cards
-- **Achievements**: Gold/Silver/Bronze metallic gradients for rarity tiers
-
-### Typography
-- **Primary Font**: Inter - Clean, readable sans-serif for UI
-- **Heading Font**: Rajdhani - Bold, futuristic, gaming-inspired headings
-- **Display Font**: Orbitron - Tech/gaming aesthetic for stats and numbers
-- **Scale**: Consistent type scale from xs (12px) to 4xl (56px)
-
-### Components
-- Shadcn UI components for consistency
-- **XPBar**: Gradient progress bar with shimmer animation, level badges with trophy icons
-- **AchievementBadge**: Rarity-based metallic gradients, shine effects, unlock dates
-- **StreakCounter**: Fire/ice animations, current vs. longest streak display
-- **DailyChallengeCard**: Progress tracking, XP rewards, accept/complete states
-- Custom stat cards with game-like number displays
-- Exercise cards with hover glow effects
-- Responsive sidebar navigation with purple accents
-- Calendar grid with day cells
-- Chart components for analytics
-
-### Spacing & Layout
-- Tailwind spacing scale (2, 4, 6, 8, 12, 16, 24)
-- Max-width containers (max-w-7xl)
-- Grid layouts for responsive content
-- Proper padding and margins throughout
+A comprehensive strength and conditioning platform for coaches and athletes, designed to manage exercise libraries, create training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface. This platform aims to surpass existing solutions by offering a highly visual, gamified, and modern user experience. The business vision is to provide a leading-edge tool for performance optimization in strength and conditioning.
 
 ## User Preferences
 - **Design Philosophy**: Clean, professional, athletic aesthetic
 - **Target Users**: Strength coaches, personal trainers, athletes
 - **Priority**: Visual excellence and intuitive UX
 
-## API Endpoints
+## System Architecture
+The platform is built with a modern web stack, prioritizing a seamless and engaging user experience.
 
-### Dashboard & Stats
-- `GET /api/dashboard-stats` - Platform-wide statistics (workouts, sets, PRs, XP, levels, streaks, top athletes)
-- `GET /api/athletes/:id/stats` - Per-athlete stats verification (workouts, sets, PRs, XP, level)
+### Tech Stack
+- **Frontend**: React 18 with TypeScript, Wouter for routing
+- **Backend**: Express.js with TypeScript
+- **Database**: PostgreSQL with Drizzle ORM
+- **UI Framework**: Shadcn UI components with Tailwind CSS
+- **Charts**: Recharts for data visualization
+- **Forms**: React Hook Form with Zod validation
 
-### Exercises
-- `GET /api/exercises` - List all exercises
-- `POST /api/exercises` - Create new exercise
-- `PATCH /api/exercises/:id` - Update exercise
-- `DELETE /api/exercises/:id` - Delete exercise
+### UI/UX Decisions & Design System
+- **Color Palette**: "Ocean Depth" theme, featuring deep ocean blue, professional teal, coral energy, and professional gold. This provides a professional yet energetic feel, moving away from generic corporate aesthetics.
+- **Typography**: Rajdhani (headings), Orbitron (stats), Inter (body) for a blend of professionalism and modern edge.
+- **Interactive Elements**: Incorporates award-winning design patterns such as glassmorphism, magnetic interactions, breathing animations, reveal effects, gradient text, ripple feedback, and glow effects to create a dynamic and engaging interface.
+- **Gamification**: Strategic use of XP, levels, streaks, and achievements with visual components like XP bars, achievement badges, and streak counters to motivate users.
+- **Accessibility**: Full `prefers-reduced-motion` support and performance optimizations.
+- **Layout**: Ultra-minimal, responsive design inspired by high-end sports analytics platforms, ensuring usability across desktop, tablet, and mobile.
 
-### Athletes
-- `GET /api/athletes` - List all athletes
-- `GET /api/athletes/:id` - Get athlete details
-- `POST /api/athletes` - Create new athlete
-- `DELETE /api/athletes/:id` - Delete athlete
+### Technical Implementations & Feature Specifications
+- **Program Management**: Coaches can create, manage, and assign training programs. Key features include:
+    - **Program Templates**: Pre-built, customizable training programs across categories (Strength, Speed, Rehab, etc.).
+    - **Program Builder**: Adding/removing exercises, configuring sets/reps, and organizing by week/day.
+- **Athlete Management**: Comprehensive profiles, team and position tracking, and program assignment with status management.
+- **Exercise Library**: Full CRUD operations for exercises with categories, muscle groups, difficulty levels, and search/filter functionalities.
+- **Workout Logging**: Intuitive interface for athletes to log workouts, tracking sets, reps, and weights. Features auto-detection of Personal Records (PRs).
+- **Progress Tracking & Analytics**:
+    - **Real Data Dashboard**: Displays platform-wide and per-athlete statistics (workouts, sets, PRs, XP, levels, streaks, top performers).
+    - **XP and Level System**: Calculates XP based on workout activity and derives user levels.
+    - **Calendar Integration**: Day-level scheduling and visualization of workouts.
+    - **Progress Analytics**: Charts for strength progression, volume trends, and PR history.
+- **Belt System Design**: Planned auto-promotion logic for athletes based on KPI test results and threshold management.
 
-### Programs
-- `GET /api/programs` - List all programs
-- `GET /api/programs/:id` - Get program details
-- `POST /api/programs` - Create new program
-- `DELETE /api/programs/:id` - Delete program
+### System Design Choices
+- **Data Models**: Core entities include Exercises, Athletes, Programs, Program Exercises, Athlete Programs, Workout Logs, and Personal Records.
+- **Project Structure**: Organized `client/` and `server/` directories with a `shared/` folder for common TypeScript types and Zod schemas, facilitating a schema-first development approach.
+- **API Design**: RESTful endpoints with Zod validation for robust data handling on both frontend and backend.
+- **Development Workflow**: Employs a schema-first approach, uses React Query for data fetching, and integrates Zod validation for robust data handling.
 
-### Program Exercises
-- `GET /api/programs/:id/exercises` - List exercises in program
-- `POST /api/programs/:id/exercises` - Add exercise to program
-- `DELETE /api/program-exercises/:id` - Remove exercise from program
-
-### Athlete Programs
-- `GET /api/athlete-programs` - List all athlete-program assignments
-- `GET /api/athlete-programs/athlete/:athleteId` - Get programs for athlete
-- `POST /api/athlete-programs` - Assign program to athlete
-- `DELETE /api/athlete-programs/:id` - Unassign program from athlete
-
-### Workout Logs
-- `GET /api/workout-logs` - Get all workout history
-- `GET /api/workout-logs/:athleteId` - Get athlete's workout history
-- `POST /api/workout-logs` - Log workout completion
-
-### Personal Records
-- `GET /api/personal-records` - Get all PRs
-- `GET /api/personal-records/:athleteId` - Get athlete's PRs
-- `POST /api/personal-records` - Create new PR
-
-## Development Workflow
-1. Schema-first approach with TypeScript types
-2. Frontend components built with Shadcn UI
-3. Backend API following RESTful conventions
-4. React Query for data fetching and caching
-5. Zod validation on both frontend and backend
-
-## Notes
-- All forms use React Hook Form with Zod validation
-- Charts use Recharts library for consistency
-- Sidebar uses Shadcn's Sidebar component
-- Theme toggle persists to localStorage
-- All interactive elements have proper data-testid attributes for testing
+## External Dependencies
+- **PostgreSQL**: Primary database for all persistent data.
+- **Drizzle ORM**: Used for interacting with the PostgreSQL database.
+- **Shadcn UI**: A collection of reusable UI components based on Tailwind CSS.
+- **Recharts**: JavaScript charting library for data visualization.
+- **Wouter**: A tiny routing library for React.
+- **React Hook Form with Zod**: For form management and validation.
