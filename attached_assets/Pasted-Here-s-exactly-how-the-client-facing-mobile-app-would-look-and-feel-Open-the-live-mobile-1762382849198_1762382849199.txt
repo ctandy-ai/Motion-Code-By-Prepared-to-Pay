@@ -1,0 +1,58 @@
+Here’s exactly how the **client-facing mobile app** would look and feel.
+
+### Open the live mobile preview
+
+* **StrideCode Go — Athlete App (mobile):** [Open preview](sandbox:/mnt/data/StrideCode_Client_Mobile_Preview.html)
+
+What athletes get (mobile-first, thumb-friendly):
+
+* **Today tab**: readiness slider (RPE), quick flags (“sore calves”), **Today’s session** with 1-tap **Details**, **Start Session**, and built-in **rest timers**.
+* **Exercise drawer**: video placeholder, concise **coaching notes**, **progressions/constraints** pattern ready to wire to your library.
+* **Program tab**: this week view + upcoming tiles, driven by the templates you build in the coach console (White/Blue/Black).
+* **Progress tab**: **belt readiness bar** + last **test gateways** (Triple Hop symmetry, ADR, Flying 20).
+* **Messages tab**: lightweight chat with coach (threads later if you want).
+* **Profile tab**: basics + notification toggles.
+* Bottom nav: **Today · Program · Progress · Messages · Profile**.
+
+Design choices aimed at retention + compliance:
+
+* One-hand use, large touch targets, **floating + quick-log**.
+* Ultra-clear microcopy (“fly-ins”, “shin vertical”), no fluff.
+* Minimal decisions per screen; session ≠ wall of text.
+
+---
+
+### How this ships with your Replit backend
+
+1. **Name & bundle**
+
+   * Client app name: **StrideCode Go** (Coach console = **StrideCode Pro**).
+   * Drop this file into your Replit project under `/static/client.html` (or keep separate as `go.stridecode.app` later).
+
+2. **Auth model**
+
+   * Email + magic link (Clerk/Auth0) or OTP via SMS; map to `athlete_id`, `belt`, `program_id`.
+
+3. **Endpoints to add**
+
+   * `GET /api/athlete/me` → belt, goals, readiness baseline.
+   * `GET /api/program/week?athlete_id=` → seven-day plan (exercises with sets/reps/notes).
+   * `POST /api/logs/readiness` → { rpe, flags[] }.
+   * `POST /api/logs/set` → { exercise_id, set_no, load, reps, rpe }.
+   * `GET/POST /api/messages` → simple thread with coach.
+   * `GET /api/tests/latest` → gateways (TH Sym %, ADR, Flying 20).
+
+4. **Wire-ups (quick)**
+
+   * Replace mocked arrays with `fetch()` to those endpoints.
+   * Exercise **drawer** loads `notes/progressions/constraints` from your MBS library.
+   * Timer + “Mark Set Done” posts to `/logs/set`.
+
+5. **Brand & polish**
+
+   * Switch brand palette to your Stride/P2P colours.
+   * Drop in real exercise thumbnails or 3-sec muted loops.
+
+Want this **wrapped as a PWA** (installable, offline session cache, push alerts)? Say the word and I’ll ship a service worker + manifest so athletes can “Add to Home Screen” and get push for session reminders and coach messages.
+
+If you want changes before I wire it to your API, tell me your top 3 (e.g., denser session layout, bigger video, different nav icons, belt badge at top).
