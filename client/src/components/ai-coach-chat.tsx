@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
+import { StrideLogo } from "@/components/stride-logo";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -83,8 +84,8 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/10 to-accent/10">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-sm">SC</span>
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md p-1.5">
+            <StrideLogo className="h-full w-full text-white" />
           </div>
           <div>
             <h3 className="font-semibold text-sm">StrideCode AI Coach</h3>

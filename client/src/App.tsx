@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { StrideLogo } from "@/components/stride-logo";
 import Dashboard from "@/pages/dashboard";
 import Exercises from "@/pages/exercises";
 import Programs from "@/pages/programs";
@@ -54,14 +55,14 @@ export default function App() {
                 <div className="flex items-center gap-4">
                   <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9" />
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-                      <span className="text-white font-extrabold text-2xl">SC</span>
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg p-2">
+                      <StrideLogo className="h-full w-full text-white" />
                     </div>
                     <div>
                       <h1 className="font-heading text-lg font-bold text-foreground">
                         StrideCode <span className="text-primary">Pro</span>
                       </h1>
-                      <p className="text-xs text-muted-foreground">Build · Measure · Adapt</p>
+                      <p className="text-xs text-muted-foreground">Train Smarter · Perform Better</p>
                     </div>
                   </div>
                 </div>

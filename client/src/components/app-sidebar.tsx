@@ -12,6 +12,7 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
+import { StrideLogo } from "@/components/stride-logo";
 
 const menuItems = [
   {
@@ -63,14 +64,14 @@ export function AppSidebar() {
     <Sidebar data-testid="app-sidebar">
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-            <span className="text-white font-extrabold text-lg">SC</span>
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg p-2">
+            <StrideLogo className="h-full w-full text-white" />
           </div>
           <div>
             <h2 className="font-heading text-base font-bold text-foreground">
               StrideCode <span className="text-primary">Pro</span>
             </h2>
-            <p className="text-[10px] text-muted-foreground">Build · Measure · Adapt</p>
+            <p className="text-[10px] text-muted-foreground">Train Smarter · Perform Better</p>
           </div>
         </div>
       </SidebarHeader>
