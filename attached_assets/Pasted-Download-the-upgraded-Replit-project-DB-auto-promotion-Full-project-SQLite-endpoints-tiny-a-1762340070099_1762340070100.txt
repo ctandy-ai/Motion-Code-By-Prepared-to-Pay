@@ -1,0 +1,161 @@
+Download the upgraded Replit project (DB + auto-promotion)
+
+
+Full project (SQLite, endpoints, tiny admin UI): replit_p2p_app_db.zip
+
+
+What’s added vs last version:
+
+
+SQLite models: Athlete, TestResult
+
+
+Endpoints:
+
+
+POST /api/athletes — create athlete
+
+
+GET /api/athletes, GET /api/athletes/{id}
+
+
+POST /api/test-results/triple-hop — stores result, auto-promotes belt using KPI gates
+
+
+All seed endpoints still available (/api/exercises, /api/program-templates, /api/acl-rtp, /api/progression-graph, /api/kpis)
+
+
+
+
+Service logic: Triple Hop RSI-symmetry → belt recommendation (Black ≤7%, Blue ≤15% by default), upgrade only (no downgrades).
+
+
+Tiny admin UI at /: create athletes, post Triple Hop, browse data.
+
+
+
+Fast integration into Replit (no fluff)
+
+
+New Python Repl → upload & extract the zip above into the root of the Repl.
+
+
+Install & run:
+pip install -r requirements.txt
+python seed.py
+uvicorn main:app --host 0.0.0.0 --port 8000
+
+
+
+Open webview:
+
+
+Create an athlete → note the returned id
+
+
+Add a Triple Hop result (e.g., rsi_symmetry_pct=6.8) → belt auto-promotes to black
+
+
+Inspect exercises/templates/ACL RTP from the UI panels
+
+
+
+
+
+Minimal API surface (for your front end)
+
+
+Create athlete
+POST /api/athletes
+{ "first_name":"Chris","last_name":"Tandy","email":"chris@stride" }
+
+
+
+Ingest Triple Hop (auto-promotion happens here)
+POST /api/test-results/triple-hop
+{ "athlete_id": 1, "rsi_symmetry_pct": 6.9 }
+
+
+
+Read seeds
+
+
+GET /api/exercises?tag=Speed&belt=blue
+
+
+GET /api/program-templates
+
+
+GET /api/acl-rtp
+
+
+
+
+
+How to QA belt logic in 60 seconds
+
+
+White: rsi_symmetry_pct: 22 → expect white
+
+
+Blue: 12 → expect blue
+
+
+Black: 6.9 → expect black
+
+
+Thresholds live in data/kpis.json. Change once, it drives both UI and promotions.
+
+Where to tweak to “feel” like TeamBuildr (fast)
+
+
+Exercise library → data/exercises.json
+
+
+Add tags: Accelerate, Decelerate, COD, Speed, Coordination, environment: water|sand|trampoline
+
+
+Set belt_min to gate by level
+
+
+
+
+12-month templates → data/program_templates.json
+
+
+Adjust block names/focus, M/H/L patterns, weekly menus
+
+
+
+
+ACL RTP staging → data/acl_rtp_template.json
+
+
+Add session menus per stage (water start → floor → sand → Vmax/stepping)
+
+
+
+
+Promotion rules → services.py
+
+
+Current rule uses RSI symmetry only. Add linear speed/COD gates as you like.
+
+
+
+
+
+Want me to wire a real DB layer for prod later?
+Happy to add:
+
+
+/api/athletes/{id}/plan — instantiate a plan from templates, filtered by belt & tags
+
+
+/api/test-results/speed, /api/test-results/cod — multi-KPI promotions
+
+
+Auth (coach/athlete), CSV/Docx importers to bulk-create exercises, and a nicer admin UI
+
+
+If you want the plan-instantiation endpoint next, say the word and I’ll ship a new zip with /api/athletes/{id}/plan that materialises week 1 from the belt-appropriate menu. 
