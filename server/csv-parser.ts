@@ -50,8 +50,8 @@ function parseCsvLine(line: string): ParsedAthlete | null {
   // TeamBuildr format: FIRST, LAST, EMAIL, PHONE, GROUPS, CALENDAR, STATUS
   const [first, last, email, phone, groups, calendar, status] = fields;
   
-  // Skip if no email (invalid athlete)
-  if (!email || email === 'N/A' || !email.includes('@')) {
+  // Skip if no name
+  if (!first || !last) {
     return null;
   }
   
@@ -65,6 +65,17 @@ function parseCsvLine(line: string): ParsedAthlete | null {
     }
   }
   
+  // Handle missing/invalid emails - generate placeholder for Pending athletes
+  let cleanEmail: string | undefined = undefined;
+  if (email && email !== 'N/A' && email.includes('@')) {
+    cleanEmail = email.trim();
+  } else if (cleanStatus === 'Pending') {
+    // Generate unique placeholder email for pending invites
+    const namePart = `${first}.${last}`.toLowerCase().replace(/[^a-z0-9.]/g, '');
+    const randomId = Math.random().toString(36).substring(2, 10);
+    cleanEmail = `pending.${namePart}.${randomId}@placeholder.stridepro.com`;
+  }
+  
   // Parse groups (comma-separated list)
   const groupList = groups && groups !== 'N/A'
     ? groups.split(',').map(g => g.trim()).filter(g => g.length > 0)
@@ -73,7 +84,7 @@ function parseCsvLine(line: string): ParsedAthlete | null {
   return {
     athlete: {
       name: `${first} ${last}`.trim(),
-      email: email.trim(),
+      email: cleanEmail,
       phone: phone && phone !== '' ? phone.trim() : undefined,
       status: cleanStatus,
     },

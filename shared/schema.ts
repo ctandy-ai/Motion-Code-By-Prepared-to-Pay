@@ -22,7 +22,7 @@ export type Exercise = typeof exercises.$inferSelect;
 export const athletes = pgTable("athletes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  email: text("email").notNull().unique(),
+  email: text("email").unique(),
   phone: text("phone"),
   team: text("team"),
   position: text("position"),
