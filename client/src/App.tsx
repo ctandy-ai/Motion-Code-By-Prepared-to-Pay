@@ -62,7 +62,7 @@ export default function App() {
                       <h1 className="font-heading text-lg font-bold text-foreground">
                         StrideCode <span className="text-primary">Pro</span>
                       </h1>
-                      <p className="text-xs text-muted-foreground">Train Smarter · Perform Better</p>
+                      <p className="text-xs text-muted-foreground">Design Programs · Track Progress</p>
                     </div>
                   </div>
                 </div>

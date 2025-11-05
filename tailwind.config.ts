@@ -11,6 +11,28 @@ export default {
         sm: ".1875rem", /* 3px */
       },
       colors: {
+        // Ink colors (professional dark palette from prototypes)
+        ink: {
+          0: "#0b0f1a",
+          1: "#0e1422",
+          2: "#12192a",
+          3: "#162035",
+          4: "#1b2944",
+          5: "#213252",
+        },
+        // Brand colors (indigo/violet scale from prototypes)
+        brand: {
+          50: "#eef2ff",
+          100: "#e0e7ff",
+          200: "#c7d2fe",
+          300: "#a5b4fc",
+          400: "#818cf8",
+          500: "#6366f1",
+          600: "#4f46e5",
+          700: "#4338ca",
+          800: "#3730a3",
+          900: "#312e81",
+        },
         // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
@@ -95,6 +117,10 @@ export default {
         display: ["Orbitron", "monospace"],
         mono: ["var(--font-mono)"],
       },
+      boxShadow: {
+        glass: "0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 30px rgba(0,0,0,0.35)",
+        glow: "0 14px 40px rgba(99,102,241,0.38)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -116,6 +142,10 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-4px)" },
         },
+        pop: {
+          "0%": { transform: "scale(0.96)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -123,6 +153,7 @@ export default {
         "pulse-glow": "pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "shimmer": "shimmer 2s linear infinite",
         "bounce-subtle": "bounce-subtle 1s ease-in-out infinite",
+        pop: "pop 0.18s ease-out both",
       },
     },
   },

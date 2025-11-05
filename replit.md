@@ -1,7 +1,7 @@
 # StrideCode Pro - Elite Strength & Conditioning Platform
 
 ## Overview
-**StrideCode Pro** is a comprehensive strength and conditioning platform for coaches and athletes. Tagline: "Train Smarter · Perform Better". Designed to manage exercise libraries, create training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface. Part of the Stride Health Group family, this platform aims to surpass existing solutions by offering a highly visual, gamified, and modern user experience with AI-powered coaching. The business vision is to provide a leading-edge tool for performance optimization in strength and conditioning.
+**StrideCode Pro** is a comprehensive strength and conditioning platform for coaches and athletes. Tagline: "Design Programs · Track Progress" (coach-focused). Designed to manage exercise libraries, create training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface. Part of the Stride Health Group family, this platform aims to surpass existing solutions by offering a highly visual, gamified, and modern user experience with AI-powered coaching. The business vision is to provide a leading-edge tool for performance optimization in strength and conditioning.
 
 ## User Preferences
 - **Design Philosophy**: Clean, professional, athletic aesthetic

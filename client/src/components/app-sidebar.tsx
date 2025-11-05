@@ -71,7 +71,7 @@ export function AppSidebar() {
             <h2 className="font-heading text-base font-bold text-foreground">
               StrideCode <span className="text-primary">Pro</span>
             </h2>
-            <p className="text-[10px] text-muted-foreground">Train Smarter · Perform Better</p>
+            <p className="text-[10px] text-muted-foreground">Design Programs · Track Progress</p>
           </div>
         </div>
       </SidebarHeader>
