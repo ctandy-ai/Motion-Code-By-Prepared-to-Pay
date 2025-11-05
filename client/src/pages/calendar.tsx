@@ -1,11 +1,18 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { Athlete, AthleteProgram, WorkoutLog, Exercise, ProgramExercise } from "@shared/schema";
+import { format, isSameDay, startOfMonth, endOfMonth, parseISO, isWithinInterval, isBefore, isAfter } from "date-fns";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string>("all");
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
   
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -35,13 +42,104 @@ export default function Calendar() {
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: firstDayOfMonth }, (_, i) => i);
 
+  const { data: athletes = [] } = useQuery<Athlete[]>({
+    queryKey: ['/api/athletes'],
+  });
+
+  const { data: athletePrograms = [] } = useQuery<AthleteProgram[]>({
+    queryKey: ['/api/athlete-programs'],
+  });
+
+  const { data: allWorkoutLogs = [] } = useQuery<WorkoutLog[]>({
+    queryKey: ['/api/workout-logs'],
+  });
+
+  const { data: exercises = [] } = useQuery<Exercise[]>({
+    queryKey: ['/api/exercises'],
+  });
+
+  const { data: allProgramExercises = [] } = useQuery<ProgramExercise[]>({
+    queryKey: ['/api/program-exercises'],
+  });
+
+  const filteredPrograms = selectedAthleteId === "all" 
+    ? athletePrograms 
+    : athletePrograms.filter(ap => ap.athleteId === selectedAthleteId);
+
+  const filteredLogs = selectedAthleteId === "all"
+    ? allWorkoutLogs
+    : allWorkoutLogs.filter(log => log.athleteId === selectedAthleteId);
+
+  const getCompletedWorkoutsForDay = (day: number) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return filteredLogs.filter(log => {
+      if (!log.completedAt) return false;
+      const completedDate = new Date(log.completedAt);
+      return isSameDay(completedDate, date);
+    });
+  };
+
+  const getScheduledWorkoutsForDay = (day: number) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    return filteredPrograms.filter(ap => {
+      if (ap.status !== 'active' || !ap.startDate) return false;
+      
+      const startDate = new Date(ap.startDate);
+      const endDate = ap.endDate ? new Date(ap.endDate) : new Date(2099, 11, 31);
+      
+      return isWithinInterval(date, { start: startDate, end: endDate });
+    });
+  };
+
+  const getUpcomingWorkouts = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return filteredPrograms
+      .filter(ap => {
+        if (ap.status !== 'active' || !ap.startDate) return false;
+        const startDate = new Date(ap.startDate);
+        return !isBefore(startDate, today);
+      })
+      .sort((a, b) => {
+        const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+        const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+        return dateA - dateB;
+      })
+      .slice(0, 4);
+  };
+
+  const getProgramExercises = (programId: string) => {
+    return allProgramExercises.filter(pe => pe.programId === programId);
+  };
+
+  const selectedDayData = selectedDay ? {
+    completed: getCompletedWorkoutsForDay(selectedDay),
+    scheduled: getScheduledWorkoutsForDay(selectedDay),
+  } : null;
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-4xl font-bold text-foreground">Training Calendar</h1>
-        <p className="text-muted-foreground mt-2">
-          Schedule and track workouts across your entire program.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-4xl font-bold text-foreground">Training Calendar</h1>
+          <p className="text-muted-foreground mt-2">
+            Schedule and track workouts across your entire program.
+          </p>
+        </div>
+        <Select value={selectedAthleteId} onValueChange={setSelectedAthleteId}>
+          <SelectTrigger className="w-[200px]" data-testid="select-athlete-filter">
+            <SelectValue placeholder="Filter by athlete" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Athletes</SelectItem>
+            {athletes.map((athlete) => (
+              <SelectItem key={athlete.id} value={athlete.id}>
+                {athlete.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
@@ -91,14 +189,17 @@ export default function Calendar() {
                 currentDate.getMonth() === new Date().getMonth() &&
                 currentDate.getFullYear() === new Date().getFullYear();
 
-              const hasWorkout = day % 3 === 0;
+              const completedWorkouts = getCompletedWorkoutsForDay(day);
+              const scheduledWorkouts = getScheduledWorkoutsForDay(day);
+              const hasActivity = completedWorkouts.length > 0 || scheduledWorkouts.length > 0;
 
               return (
                 <div
                   key={day}
-                  className={`aspect-square p-2 border rounded-lg hover-elevate cursor-pointer transition-all ${
-                    isToday ? "border-primary bg-primary/5" : "border-border"
-                  }`}
+                  onClick={() => hasActivity && setSelectedDay(day)}
+                  className={`aspect-square p-2 border rounded-lg transition-all ${
+                    hasActivity ? "hover-elevate cursor-pointer" : ""
+                  } ${isToday ? "border-primary bg-primary/5" : "border-border"}`}
                   data-testid={`calendar-day-${day}`}
                 >
                   <div className="flex flex-col h-full">
@@ -109,13 +210,20 @@ export default function Calendar() {
                     >
                       {day}
                     </span>
-                    {hasWorkout && (
-                      <div className="mt-1 flex-1 flex flex-col gap-1">
-                        <Badge variant="secondary" className="text-xs px-1 py-0 h-5">
-                          Strength
-                        </Badge>
-                      </div>
-                    )}
+                    <div className="mt-1 flex-1 flex flex-col gap-1 items-center justify-center">
+                      {completedWorkouts.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Check className="h-3 w-3 text-green-600" />
+                          <span className="text-xs text-muted-foreground">{completedWorkouts.length}</span>
+                        </div>
+                      )}
+                      {scheduledWorkouts.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-blue-500" />
+                          <span className="text-xs text-muted-foreground">{scheduledWorkouts.length}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -131,56 +239,172 @@ export default function Calendar() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div 
-                  key={i} 
-                  className="flex items-center gap-4 p-3 rounded-lg border hover-elevate"
-                  data-testid={`upcoming-workout-${i}`}
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <CalendarIcon className="h-6 w-6" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">
-                      Upper Body Strength
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Tomorrow at 9:00 AM
-                    </p>
-                  </div>
-                  <Badge variant="secondary">12 athletes</Badge>
-                </div>
-              ))}
+              {getUpcomingWorkouts().length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No active programs scheduled
+                </p>
+              ) : (
+                getUpcomingWorkouts().map((program) => {
+                  const athlete = athletes.find(a => a.id === program.athleteId);
+                  return (
+                    <div 
+                      key={program.id} 
+                      className="flex items-center gap-4 p-3 rounded-lg border hover-elevate"
+                      data-testid={`upcoming-workout-${program.id}`}
+                    >
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                        <CalendarIcon className="h-6 w-6" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {athlete?.name || 'Unknown Athlete'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {program.startDate ? format(parseISO(program.startDate.toString()), 'MMM d, yyyy') : 'No date'}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">{program.status}</Badge>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-heading text-xl">Workout Types</CardTitle>
+            <CardTitle className="font-heading text-xl">Workout Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {[
-                { type: "Strength", count: 45, color: "bg-blue-500" },
-                { type: "Conditioning", count: 28, color: "bg-green-500" },
-                { type: "Mobility", count: 15, color: "bg-purple-500" },
-                { type: "Recovery", count: 12, color: "bg-orange-500" },
-              ].map((item) => (
-                <div key={item.type} className="flex items-center gap-4">
-                  <div className={`h-3 w-3 rounded-full ${item.color}`} />
-                  <span className="text-sm font-medium text-foreground flex-1">
-                    {item.type}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {item.count} sessions
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Completed</p>
+                <p className="text-3xl font-bold text-foreground">{filteredLogs.length}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Active Programs</p>
+                <p className="text-3xl font-bold text-foreground">
+                  {filteredPrograms.filter(ap => ap.status === 'active').length}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">This Month</p>
+                <p className="text-3xl font-bold text-foreground">
+                  {filteredLogs.filter(log => {
+                    if (!log.completedAt) return false;
+                    const logDate = parseISO(log.completedAt.toString());
+                    return logDate.getMonth() === currentDate.getMonth() &&
+                           logDate.getFullYear() === currentDate.getFullYear();
+                  }).length}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={selectedDay !== null} onOpenChange={(open) => !open && setSelectedDay(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">
+              {selectedDay && format(new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay), 'MMMM d, yyyy')}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedDayData && (
+            <div className="space-y-6">
+              {selectedDayData.completed.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Check className="h-5 w-5 text-green-600" />
+                    Completed Workouts ({selectedDayData.completed.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedDayData.completed.map((log) => {
+                      const athlete = athletes.find(a => a.id === log.athleteId);
+                      const exercise = exercises.find(e => e.id === log.exerciseId);
+                      return (
+                        <Card key={log.id}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold">{exercise?.name || 'Unknown Exercise'}</p>
+                                <p className="text-sm text-muted-foreground">{athlete?.name || 'Unknown Athlete'}</p>
+                              </div>
+                              <div className="text-right">
+                                <Badge variant="secondary">{log.sets} sets</Badge>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {log.weightPerSet} lbs
+                                </p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {selectedDayData.scheduled.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-blue-500" />
+                    Scheduled Programs ({selectedDayData.scheduled.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedDayData.scheduled.map((program) => {
+                      const athlete = athletes.find(a => a.id === program.athleteId);
+                      const programExercises = getProgramExercises(program.programId);
+                      return (
+                        <Card key={program.id}>
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-semibold">{athlete?.name || 'Unknown Athlete'}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {program.startDate ? format(new Date(program.startDate), 'MMM d') : 'No date'} - 
+                                    {program.endDate ? format(new Date(program.endDate), 'MMM d') : 'Ongoing'}
+                                  </p>
+                                </div>
+                                <Badge>{program.status}</Badge>
+                              </div>
+                              {programExercises.length > 0 && (
+                                <div className="border-t pt-3">
+                                  <p className="text-xs font-medium text-muted-foreground mb-2">Exercises:</p>
+                                  <div className="space-y-1">
+                                    {programExercises.map((pe) => {
+                                      const exercise = exercises.find(e => e.id === pe.exerciseId);
+                                      return (
+                                        <div key={pe.id} className="text-xs flex items-center justify-between">
+                                          <span>{exercise?.name || 'Unknown'}</span>
+                                          <span className="text-muted-foreground">{pe.sets}×{pe.reps}</span>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {selectedDayData.completed.length === 0 && selectedDayData.scheduled.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  No workouts scheduled or completed on this day
+                </p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

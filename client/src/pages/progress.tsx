@@ -2,33 +2,149 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { TrendingUp, Award, Target, Zap } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Badge } from "@/components/ui/badge";
-
-const strengthData = [
-  { week: "Week 1", bench: 185, squat: 225, deadlift: 275 },
-  { week: "Week 2", bench: 190, squat: 235, deadlift: 285 },
-  { week: "Week 3", bench: 195, squat: 245, deadlift: 295 },
-  { week: "Week 4", bench: 200, squat: 255, deadlift: 305 },
-  { week: "Week 5", bench: 205, squat: 265, deadlift: 315 },
-  { week: "Week 6", bench: 210, squat: 275, deadlift: 325 },
-];
-
-const volumeData = [
-  { week: "Week 1", volume: 42500 },
-  { week: "Week 2", volume: 45200 },
-  { week: "Week 3", volume: 48100 },
-  { week: "Week 4", volume: 46800 },
-  { week: "Week 5", volume: 51200 },
-  { week: "Week 6", volume: 53400 },
-];
+import { useQuery } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useMemo } from "react";
+import type { WorkoutLog, PersonalRecord, Athlete, Exercise } from "@shared/schema";
+import { format, parseISO, startOfWeek, differenceInWeeks, subWeeks } from "date-fns";
 
 export default function Progress() {
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string>("all");
+  const [timeRange, setTimeRange] = useState<string>("6");
+
+  const { data: athletes = [] } = useQuery<Athlete[]>({
+    queryKey: ['/api/athletes'],
+  });
+
+  const { data: allWorkoutLogs = [] } = useQuery<WorkoutLog[]>({
+    queryKey: ['/api/workout-logs'],
+  });
+
+  const { data: allPersonalRecords = [] } = useQuery<PersonalRecord[]>({
+    queryKey: ['/api/personal-records'],
+  });
+
+  const { data: exercises = [] } = useQuery<Exercise[]>({
+    queryKey: ['/api/exercises'],
+  });
+
+  const filteredLogs = selectedAthleteId === "all"
+    ? allWorkoutLogs
+    : allWorkoutLogs.filter(log => log.athleteId === selectedAthleteId);
+
+  const filteredPRs = selectedAthleteId === "all"
+    ? allPersonalRecords
+    : allPersonalRecords.filter(pr => pr.athleteId === selectedAthleteId);
+
+  const strengthData = useMemo(() => {
+    const weeks = parseInt(timeRange);
+    const now = new Date();
+    const weeklyData: Record<string, Record<string, number>> = {};
+
+    filteredLogs.forEach(log => {
+      if (!log.completedAt) return;
+      const logDate = parseISO(log.completedAt.toString());
+      const weeksDiff = differenceInWeeks(now, logDate);
+      
+      if (weeksDiff >= weeks) return;
+
+      const weekKey = `Week ${weeks - weeksDiff}`;
+      if (!weeklyData[weekKey]) {
+        weeklyData[weekKey] = {};
+      }
+
+      const exercise = exercises.find(e => e.id === log.exerciseId);
+      if (!exercise) return;
+
+      const weights = log.weightPerSet.split(',').map(w => parseFloat(w)).filter(w => !isNaN(w));
+      const maxWeight = Math.max(...weights, 0);
+
+      if (!weeklyData[weekKey][exercise.name] || weeklyData[weekKey][exercise.name] < maxWeight) {
+        weeklyData[weekKey][exercise.name] = maxWeight;
+      }
+    });
+
+    return Array.from({ length: weeks }, (_, i) => {
+      const weekKey = `Week ${i + 1}`;
+      return { week: weekKey, ...(weeklyData[weekKey] || {}) };
+    });
+  }, [filteredLogs, exercises, timeRange]);
+
+  const volumeData = useMemo(() => {
+    const weeks = parseInt(timeRange);
+    const now = new Date();
+    const weeklyVolume: Record<string, number> = {};
+
+    filteredLogs.forEach(log => {
+      if (!log.completedAt) return;
+      const logDate = parseISO(log.completedAt.toString());
+      const weeksDiff = differenceInWeeks(now, logDate);
+      
+      if (weeksDiff >= weeks) return;
+
+      const weekKey = `Week ${weeks - weeksDiff}`;
+      
+      const weights = log.weightPerSet.split(',').map(w => parseFloat(w)).filter(w => !isNaN(w));
+      const reps = log.repsPerSet.split(',').map(r => parseInt(r)).filter(r => !isNaN(r));
+      
+      let logVolume = 0;
+      for (let i = 0; i < Math.min(weights.length, reps.length); i++) {
+        logVolume += weights[i] * reps[i];
+      }
+
+      weeklyVolume[weekKey] = (weeklyVolume[weekKey] || 0) + logVolume;
+    });
+
+    return Array.from({ length: weeks }, (_, i) => {
+      const weekKey = `Week ${i + 1}`;
+      return { week: weekKey, volume: weeklyVolume[weekKey] || 0 };
+    });
+  }, [filteredLogs, timeRange]);
+
+  const totalPRs = filteredPRs.length;
+  const totalVolume = volumeData.reduce((sum, week) => sum + week.volume, 0);
+  const recentPRs = filteredPRs
+    .sort((a, b) => {
+      const dateA = a.achievedAt ? parseISO(a.achievedAt.toString()) : new Date(0);
+      const dateB = b.achievedAt ? parseISO(b.achievedAt.toString()) : new Date(0);
+      return dateB.getTime() - dateA.getTime();
+    })
+    .slice(0, 4);
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="font-heading text-4xl font-bold text-foreground">Progress Tracking</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor performance metrics and personal records over time.
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-heading text-4xl font-bold text-foreground">Progress Tracking</h1>
+          <p className="text-muted-foreground mt-2">
+            Monitor performance metrics and personal records over time.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-[140px]" data-testid="select-time-range">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="4">4 Weeks</SelectItem>
+              <SelectItem value="6">6 Weeks</SelectItem>
+              <SelectItem value="8">8 Weeks</SelectItem>
+              <SelectItem value="12">12 Weeks</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={selectedAthleteId} onValueChange={setSelectedAthleteId}>
+            <SelectTrigger className="w-[180px]" data-testid="select-athlete-filter">
+              <SelectValue placeholder="Filter by athlete" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Athletes</SelectItem>
+              {athletes.map((athlete) => (
+                <SelectItem key={athlete.id} value={athlete.id}>
+                  {athlete.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -40,21 +156,21 @@ export default function Progress() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">127</div>
-            <p className="text-xs text-green-600 mt-1">+8 this week</p>
+            <div className="text-3xl font-bold text-foreground" data-testid="text-total-prs">{totalPRs}</div>
+            <p className="text-xs text-muted-foreground mt-1">All time</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Avg Strength Gain
+              Total Workouts
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">+12%</div>
-            <p className="text-xs text-muted-foreground mt-1">Past 6 weeks</p>
+            <div className="text-3xl font-bold text-foreground" data-testid="text-total-workouts">{filteredLogs.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Completed</p>
           </CardContent>
         </Card>
 
@@ -66,21 +182,27 @@ export default function Progress() {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">287K</div>
-            <p className="text-xs text-muted-foreground mt-1">lbs this month</p>
+            <div className="text-3xl font-bold text-foreground" data-testid="text-total-volume">
+              {Math.round(totalVolume).toLocaleString()}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">lbs total</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Goal Progress
+              Avg Sets/Workout
             </CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground">73%</div>
-            <p className="text-xs text-muted-foreground mt-1">On track</p>
+            <div className="text-3xl font-bold text-foreground">
+              {filteredLogs.length > 0 
+                ? Math.round(filteredLogs.reduce((sum, log) => sum + log.sets, 0) / filteredLogs.length)
+                : 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Average</p>
           </CardContent>
         </Card>
       </div>
@@ -89,56 +211,54 @@ export default function Progress() {
         <CardHeader>
           <CardTitle className="font-heading text-xl">Strength Progression</CardTitle>
           <CardDescription>
-            Track your progress across major lifts over the past 6 weeks
+            Track max weight lifted per exercise over time
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={strengthData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis 
-                  dataKey="week" 
-                  className="text-xs" 
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                />
-                <YAxis 
-                  className="text-xs"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
-                  label={{ value: 'Weight (lbs)', angle: -90, position: 'insideLeft' }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="bench" 
-                  stroke="hsl(var(--chart-1))" 
-                  strokeWidth={2}
-                  name="Bench Press"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="squat" 
-                  stroke="hsl(var(--chart-2))" 
-                  strokeWidth={2}
-                  name="Squat"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="deadlift" 
-                  stroke="hsl(var(--chart-3))" 
-                  strokeWidth={2}
-                  name="Deadlift"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          {strengthData.every(week => Object.keys(week).length === 1) ? (
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
+              No workout data available for the selected time range
+            </div>
+          ) : (
+            <div className="h-[400px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={strengthData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <XAxis 
+                    dataKey="week" 
+                    className="text-xs" 
+                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  />
+                  <YAxis 
+                    className="text-xs"
+                    tick={{ fill: "hsl(var(--muted-foreground))" }}
+                    label={{ value: 'Weight (lbs)', angle: -90, position: 'insideLeft' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Legend />
+                  {Object.keys(strengthData[0] || {})
+                    .filter(key => key !== 'week')
+                    .map((exerciseName, index) => (
+                      <Line 
+                        key={exerciseName}
+                        type="monotone" 
+                        dataKey={exerciseName}
+                        stroke={`hsl(var(--chart-${(index % 5) + 1}))`}
+                        strokeWidth={2}
+                        name={exerciseName}
+                        connectNulls
+                      />
+                    ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -187,38 +307,43 @@ export default function Progress() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { athlete: "John Smith", exercise: "Bench Press", weight: 225, date: "2 days ago" },
-                { athlete: "Sarah Johnson", exercise: "Squat", weight: 185, date: "3 days ago" },
-                { athlete: "Mike Williams", exercise: "Deadlift", weight: 405, date: "5 days ago" },
-                { athlete: "Emily Davis", exercise: "Power Clean", weight: 135, date: "1 week ago" },
-              ].map((pr, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-4 p-3 rounded-lg border hover-elevate"
-                  data-testid={`pr-${index}`}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                    <Award className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">
-                      {pr.athlete}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {pr.exercise}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <Badge variant="secondary" className="font-semibold">
-                      {pr.weight} lbs
-                    </Badge>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {pr.date}
-                    </p>
-                  </div>
-                </div>
-              ))}
+              {recentPRs.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No personal records yet
+                </p>
+              ) : (
+                recentPRs.map((pr) => {
+                  const athlete = athletes.find(a => a.id === pr.athleteId);
+                  const exercise = exercises.find(e => e.id === pr.exerciseId);
+                  return (
+                    <div 
+                      key={pr.id}
+                      className="flex items-center gap-4 p-3 rounded-lg border hover-elevate"
+                      data-testid={`pr-${pr.id}`}
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <Award className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground truncate">
+                          {athlete?.name || 'Unknown'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {exercise?.name || 'Unknown Exercise'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="secondary" className="font-semibold">
+                          {pr.maxWeight} lbs
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {pr.achievedAt ? format(parseISO(pr.achievedAt.toString()), 'MMM d') : 'Unknown'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </CardContent>
         </Card>

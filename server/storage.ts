@@ -50,7 +50,7 @@ export interface IStorage {
   updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program | undefined>;
   deleteProgram(id: string): Promise<boolean>;
 
-  getProgramExercises(programId: string): Promise<ProgramExercise[]>;
+  getProgramExercises(programId?: string): Promise<ProgramExercise[]>;
   createProgramExercise(programExercise: InsertProgramExercise): Promise<ProgramExercise>;
   deleteProgramExercise(id: string): Promise<boolean>;
 
@@ -165,8 +165,11 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getProgramExercises(programId: string): Promise<ProgramExercise[]> {
-    return await db.select().from(programExercises).where(eq(programExercises.programId, programId));
+  async getProgramExercises(programId?: string): Promise<ProgramExercise[]> {
+    if (programId) {
+      return await db.select().from(programExercises).where(eq(programExercises.programId, programId));
+    }
+    return await db.select().from(programExercises);
   }
 
   async createProgramExercise(programExercise: InsertProgramExercise): Promise<ProgramExercise> {

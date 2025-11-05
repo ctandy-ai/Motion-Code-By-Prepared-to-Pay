@@ -73,6 +73,7 @@ export const athletePrograms = pgTable("athlete_programs", {
   athleteId: varchar("athlete_id").notNull(),
   programId: varchar("program_id").notNull(),
   startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
   status: text("status").notNull(),
 });
 

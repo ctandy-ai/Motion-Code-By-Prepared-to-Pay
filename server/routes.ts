@@ -218,6 +218,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Program Exercise routes
+  app.get("/api/program-exercises", async (req, res) => {
+    try {
+      const programExercises = await storage.getProgramExercises();
+      res.json(programExercises);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch program exercises" });
+    }
+  });
+
   app.get("/api/programs/:programId/exercises", async (req, res) => {
     try {
       const exercises = await storage.getProgramExercises(req.params.programId);
