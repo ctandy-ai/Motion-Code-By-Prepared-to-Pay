@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StrideCode Pro — v2 Prototype</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
+        ink: {'0':'#0b0f1a','1':'#0e1422','2':'#12192a','3':'#162035','4':'#1b2944','5':'#213252'}
+      },
+      boxShadow: {
+        glass: '0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 30px rgba(0,0,0,0.35)',
+        glow: '0 12px 32px rgba(99,102,241,0.35)'
+      },
+      keyframes: {
+        pulseSoft: { '0%,100%':{opacity:.85}, '50%':{opacity:1}},
+        floaty: { '0%':{transform:'translateY(0)'}, '50%':{transform:'translateY(-6px)'}, '100%':{transform:'translateY(0)'} },
+        pop: { '0%':{transform:'scale(.96)', opacity:0}, '100%':{transform:'scale(1)', opacity:1}}
+      },
+      animation: {
+        pulseSoft: 'pulseSoft 3s ease-in-out infinite',
+        floaty: 'floaty 6s ease-in-out infinite',
+        pop: 'pop .18s ease-out both'
+      }
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --ring: rgba(99,102,241,.3); }
+  *{ font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+  .glass{ background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02)); backdrop-filter: blur(10px); }
+  .bglass{ background: linear-gradient(180deg, rgba(34,37,63,.6), rgba(20,22,40,.7)); backdrop-filter: blur(10px); }
+  .ring-focus{ outline: 3px solid var(--ring); outline-offset: 0; }
+  .chip{ padding:6px 10px; border-radius:999px; font-size:12px; }
+  .btn{ padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08); }
+  .btn-pri{ background:#4f46e5; color:white; box-shadow: 0 10px 24px rgba(99,102,241,.35); }
+  .btn-sec{ background:rgba(255,255,255,.06); color:#cbd5e1; }
+  .code{ background:#0b1020; color:#d6e2ff; border-radius:12px; padding:12px; }
+  .ringify{ box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .ghost{ opacity:.6; transform: scale(.98); }
+  .draggable{ cursor: grab; }
+  .dropzone{ min-height: 170px; transition: .15s ease; }
+  .dropzone.hover{ outline:2px dashed #6366f1; outline-offset:-6px; background: rgba(99,102,241,.07); }
+  .masonry{ column-count: 2; column-gap: 14px; }
+  .masonry .card{ break-inside: avoid; margin-bottom:14px; }
+  .ring { width: 80px; height: 80px; border-radius: 50%; background: conic-gradient(#6366f1 var(--p,60%), #1f233a 0); position: relative; }
+  .ring::after { content:''; position:absolute; inset:6px; background:#0f1427; border-radius:50%; box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+  .rlabel{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:700; color:#e5e7eb; }
+  .cmdk{ position:fixed; inset:0; display:none; place-items:center; background: rgba(2,4,12,.55); backdrop-filter: blur(6px); z-index:50; }
+  .cmdk.open{ display:grid; }
+  .cmdk-panel{ width: 720px; border-radius: 14px; background: #0e1425; box-shadow: var(--shadow, 0 10px 30px rgba(0,0,0,.5)); border:1px solid rgba(255,255,255,.06); }
+  .cmdk-item{ padding:10px 12px; border-radius:10px; display:flex; align-items:center; justify-content:space-between; }
+  .cmdk-item:hover{ background: rgba(255,255,255,.06); }
+</style>
+</head>
+<body class="bg-ink-1 text-slate-200">
+  <!-- Backdrop gradients -->
+  <div class="fixed -z-10 inset-0 pointer-events-none">
+    <div class="absolute -top-24 -left-20 w-[720px] h-[720px] rounded-full blur-[120px] opacity-40" style="background: radial-gradient(circle at 30% 30%, #4f46e5, transparent 60%);"></div>
+    <div class="absolute -top-16 right-0 w-[680px] h-[680px] rounded-full blur-[120px] opacity-30" style="background: radial-gradient(circle at 60% 20%, #22c55e, transparent 55%);"></div>
+  </div>
+
+  <!-- Shell -->
+  <div class="min-h-screen grid grid-cols-[280px_1fr] gap-5 p-5">
+    <!-- Sidebar -->
+    <aside class="bglass rounded-2xl shadow-glass p-4">
+      <div class="flex items-center gap-3 pb-4 border-b border-white/10">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center font-extrabold">SC</div>
+        <div>
+          <div class="font-bold -mb-0.5">StrideCode <span class="text-brand-300">Pro</span></div>
+          <div class="text-[11px] text-slate-400">Build · Measure · Adapt</div>
+        </div>
+      </div>
+
+      <nav class="mt-4 space-y-1">
+        <button data-tab="dashboard" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">🏠 Dashboard</button>
+        <button data-tab="programs" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">🏗️ Programs</button>
+        <button data-tab="planner" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">📅 Weekly Planner</button>
+        <button data-tab="assistant" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">💬 Assistant</button>
+        <button data-tab="library" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">📚 Library</button>
+      </nav>
+
+      <div class="mt-6 p-3 rounded-xl ringify">
+        <div class="text-xs text-slate-400 mb-2">Current Athlete</div>
+        <div class="flex items-center gap-3">
+          <img class="w-10 h-10 rounded-xl" src="https://images.unsplash.com/photo-1571732196218-0f9806f26f3a?q=80&w=200&auto=format&fit=crop" />
+          <div>
+            <div class="font-semibold">Aimee W</div>
+            <div class="text-[11px] text-slate-400">Blue Belt · Marathon</div>
+          </div>
+        </div>
+        <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+          <div><div class="ring" style="--p:72%"></div><div class="text-[10px] mt-1 text-slate-400">Vmax</div></div>
+          <div><div class="ring" style="--p:62%"></div><div class="text-[10px] mt-1 text-slate-400">RSI</div></div>
+          <div><div class="ring" style="--p:88%"></div><div class="text-[10px] mt-1 text-slate-400">Sym</div></div>
+        </div>
+      </div>
+
+      <div class="mt-6 p-3 rounded-xl ringify">
+        <div class="flex items-center justify-between text-xs text-slate-400">
+          <span>Environment</span><span class="chip bg-emerald-500/20 text-emerald-300">OK</span>
+        </div>
+        <div class="mt-2 h-2 rounded-full bg-white/5 overflow-hidden">
+          <div class="h-2 bg-brand-500 w-3/4 animate-pulseSoft"></div>
+        </div>
+      </div>
+
+      <div class="mt-6 text-[11px] text-slate-400">⌘K Command Palette</div>
+    </aside>
+
+    <!-- Main -->
+    <main class="space-y-5">
+      <!-- Topbar -->
+      <header class="bglass rounded-2xl shadow-glass px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <input id="search" class="w-[360px] px-4 py-2 rounded-xl bg-white/5 border border-white/10 focus:outline-none ring-focus" placeholder="Search athletes, programs, exercises…" />
+          <span class="chip bg-white/5 text-slate-300 border border-white/10">Preview</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="theme" class="btn btn-sec">Toggle Theme</button>
+          <button id="openCmd" class="btn btn-pri">Open Command (⌘K)</button>
+        </div>
+      </header>
+
+      <!-- Tabs -->
+      <section id="tab-dashboard" class="tab grid lg:grid-cols-3 gap-5">
+        <div class="bglass rounded-2xl shadow-glass p-5 lg:col-span-2">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-lg">Performance Snapshot</h2>
+            <div class="text-xs text-slate-400">Last 7 days</div>
+          </div>
+          <div class="mt-4 grid md:grid-cols-3 gap-4">
+            <div class="ringify rounded-xl p-4">
+              <div class="text-xs text-slate-400">Vmax Exposure</div>
+              <div class="mt-2 text-3xl font-semibold">+14%</div>
+              <div class="text-xs text-emerald-300">Within guardrails</div>
+            </div>
+            <div class="ringify rounded-xl p-4">
+              <div class="text-xs text-slate-400">Decel / COD</div>
+              <div class="mt-2 text-3xl font-semibold">3.2k reps</div>
+              <div class="text-xs text-amber-300">Watch asymmetry</div>
+            </div>
+            <div class="ringify rounded-xl p-4">
+              <div class="text-xs text-slate-400">Plyo Contacts</div>
+              <div class="mt-2 text-3xl font-semibold">380</div>
+              <div class="text-xs text-slate-400">Under cap (marathon)</div>
+            </div>
+          </div>
+          <div class="mt-4 code text-xs">Auto-rules active: {"goal":"marathon","plyo_cap":"-30%","added":["MAS Intervals","Long Run"]}</div>
+        </div>
+        <div class="bglass rounded-2xl shadow-glass p-5">
+          <h2 class="font-semibold text-lg">Belt Progress</h2>
+          <div class="mt-3 space-y-2">
+            <div class="flex items-center justify-between text-sm"><span>Blue → Black− readiness</span><span class="text-brand-300">72%</span></div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden"><div class="h-2 bg-brand-500 w-[72%]"></div></div>
+            <div class="flex items-center justify-between text-sm"><span>Strength symmetry</span><span class="text-brand-300">92%</span></div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden"><div class="h-2 bg-emerald-500 w-[92%]"></div></div>
+            <div class="flex items-center justify-between text-sm"><span>Vmax exposure</span><span class="text-brand-300">64%</span></div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden"><div class="h-2 bg-sky-500 w-[64%]"></div></div>
+          </div>
+          <button class="mt-4 btn btn-pri w-full">View Test Gateways</button>
+        </div>
+      </section>
+
+      <!-- Programs -->
+      <section id="tab-programs" class="tab hidden">
+        <div class="grid lg:grid-cols-5 gap-5">
+          <div class="lg:col-span-2 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Program Gallery</h2>
+              <button id="newProgram" class="btn btn-pri text-sm">New Program</button>
+            </div>
+            <div class="mt-4 masonry">
+              <div class="card ringify rounded-xl p-4 hover:shadow-glow transition">
+                <div class="text-sm font-semibold">Blue — Marathon Base (4w)</div>
+                <div class="text-[11px] text-slate-400">Running · MBS</div>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <span class="chip bg-white/5 border border-white/10">MAS Intervals</span>
+                  <span class="chip bg-white/5 border border-white/10">Long Run</span>
+                  <span class="chip bg-white/5 border border-white/10">High–Low Drop Step</span>
+                </div>
+              </div>
+              <div class="card ringify rounded-xl p-4 hover:shadow-glow transition">
+                <div class="text-sm font-semibold">Black− — Vmax/COD</div>
+                <div class="text-[11px] text-slate-400">Speed · Plyo</div>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <span class="chip bg-white/5 border border-white/10">Vmax + Stepping</span>
+                  <span class="chip bg-white/5 border border-white/10">Short-contact hops</span>
+                </div>
+              </div>
+              <div class="card ringify rounded-xl p-4 hover:shadow-glow transition">
+                <div class="text-sm font-semibold">White — Foundational Strength (2w)</div>
+                <div class="text-[11px] text-slate-400">Strength</div>
+                <div class="mt-2 flex flex-wrap gap-1">
+                  <span class="chip bg-white/5 border border-white/10">Split Squat 4×6</span>
+                  <span class="chip bg-white/5 border border-white/10">Hinge ISO 3×20s</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="lg:col-span-3 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Program Preview</h2>
+              <div class="text-xs text-slate-400">Hover a card to preview · Click to load</div>
+            </div>
+            <div class="mt-3 grid grid-cols-7 gap-2 text-xs">
+              <template id="dayTemplate">
+                <div class="p-2 ringify rounded-xl min-h-[120px]">
+                  <div class="text-[11px] text-slate-400 mb-1">Mon</div>
+                  <div class="space-y-1"></div>
+                </div>
+              </template>
+              <div id="previewGrid" class="contents"></div>
+            </div>
+            <div class="mt-4 flex items-center gap-2">
+              <button class="btn btn-sec">Clone as New</button>
+              <button class="btn btn-pri">Load in Planner</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Weekly Planner -->
+      <section id="tab-planner" class="tab hidden">
+        <div class="grid lg:grid-cols-4 gap-5">
+          <div class="lg:col-span-3 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Weekly Planner (Drag & Drop)</h2>
+              <div class="text-xs text-slate-400">Ghost drag · Caps & guardrails</div>
+            </div>
+            <div class="mt-3 grid grid-cols-7 gap-2">
+              <!-- 7 dropzones -->
+              <script></script>
+            </div>
+            <div id="weekGrid" class="mt-1 grid grid-cols-7 gap-2"></div>
+            <div class="mt-4 flex items-center gap-3">
+              <button id="autoPlan" class="btn btn-sec">Auto-build (Marathon)</button>
+              <button id="savePlan" class="btn btn-pri">Save Week</button>
+              <span id="saveToast" class="chip bg-emerald-500/20 text-emerald-300 hidden">Saved</span>
+            </div>
+          </div>
+          <div class="bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Exercise Palette</h2>
+              <select id="cat" class="bg-white/5 border border-white/10 rounded-xl px-2 py-1 text-sm">
+                <option value="all">All</option>
+                <option value="mbs">MBS</option>
+                <option value="speed">Speed</option>
+                <option value="plyo">Plyo</option>
+                <option value="strength">Strength</option>
+                <option value="running">Running</option>
+              </select>
+            </div>
+            <div id="chips" class="mt-3 grid gap-2 max-h-[520px] overflow-auto pr-1"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Assistant -->
+      <section id="tab-assistant" class="tab hidden">
+        <div class="grid lg:grid-cols-3 gap-5">
+          <div class="lg:col-span-2 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Coach Assistant</h2>
+              <span class="chip bg-white/5 border border-white/10">NLP prototype</span>
+            </div>
+            <div id="chat" class="mt-3 space-y-3 max-h-[420px] overflow-auto pr-1">
+              <div class="flex justify-start"><div class="max-w-[70%] bg-white/5 border border-white/10 rounded-2xl p-3">Hi Chris—tell me athlete goals, bandwidth and any milestones to prioritize.</div></div>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+              <input id="msg" class="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none ring-focus" placeholder="Blue belt, low bandwidth, training for a marathon. Add MS_ST_UNILAT_SYM." />
+              <button id="send" class="btn btn-pri">Send</button>
+            </div>
+          </div>
+          <div class="bglass rounded-2xl shadow-glass p-5">
+            <h3 class="font-semibold text-lg">Assistant Readback</h3>
+            <div id="readback" class="mt-2 code text-xs">Awaiting input…</div>
+            <div class="mt-3">
+              <button id="applyBuilder" class="btn btn-sec w-full">Apply to Planner</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Library -->
+      <section id="tab-library" class="tab hidden">
+        <div class="bglass rounded-2xl shadow-glass p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-lg">Exercise Library</h2>
+            <div class="chip bg-white/5 border border-white/10">Mocked from your docs</div>
+          </div>
+          <div id="lib" class="mt-3 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Command Palette -->
+  <div id="cmdk" class="cmdk">
+    <div class="cmdk-panel">
+      <div class="p-3 border-b border-white/10">
+        <input id="cmdInput" placeholder="Type a command… (e.g., Build Week, Open Planner, New Program)" class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:outline-none ring-focus" />
+      </div>
+      <div id="cmdList" class="p-2 max-h-[360px] overflow-auto"></div>
+    </div>
+  </div>
+
+<script>
+// theme
+const themeBtn=document.getElementById('theme');
+themeBtn.addEventListener('click',()=>{
+  document.body.classList.toggle('light');
+  if(document.body.classList.contains('light')){
+    document.body.classList.remove('bg-ink-1'); document.body.classList.add('bg-slate-50','text-slate-900');
+  }else{
+    document.body.classList.add('bg-ink-1'); document.body.classList.remove('bg-slate-50','text-slate-900');
+  }
+});
+
+// tabs
+const tabs=['dashboard','programs','planner','assistant','library'];
+const show=(t)=>{ tabs.forEach(x=>document.getElementById('tab-'+x).classList.toggle('hidden',x!==t));
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    if(b.dataset.tab===t){ b.classList.add('bg-white/5'); } else { b.classList.remove('bg-white/5'); }
+  });
+};
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
+show('dashboard');
+
+// Command palette
+const cmdk=document.getElementById('cmdk'); const cmdInput=document.getElementById('cmdInput'); const cmdList=document.getElementById('cmdList');
+const commands=[
+  {label:'Open Dashboard', do:()=>show('dashboard')},
+  {label:'Open Programs', do:()=>show('programs')},
+  {label:'Open Planner', do:()=>show('planner')},
+  {label:'Open Assistant', do:()=>show('assistant')},
+  {label:'Open Library', do:()=>show('library')},
+  {label:'Build Week (Marathon rules)', do:()=>autoBuild()},
+  {label:'New Program', do:()=>alert('New Program modal (mock)')},
+];
+function openCmd(){ cmdk.classList.add('open'); cmdInput.focus(); renderCmd(''); }
+document.getElementById('openCmd').addEventListener('click', openCmd);
+document.addEventListener('keydown',(e)=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openCmd(); } if(e.key==='Escape') cmdk.classList.remove('open'); });
+cmdInput.addEventListener('input',()=>renderCmd(cmdInput.value));
+function renderCmd(q){
+  cmdList.innerHTML=''; const ql=q.toLowerCase();
+  commands.filter(c=>c.label.toLowerCase().includes(ql)).forEach(c=>{
+    const row=document.createElement('div'); row.className='cmdk-item'; row.innerHTML=`<span>${c.label}</span><span class="text-xs text-slate-400">↵</span>`;
+    row.addEventListener('click',()=>{ c.do(); cmdk.classList.remove('open'); });
+    cmdList.appendChild(row);
+  });
+}
+
+// data
+const ex = [
+  {name:'High–Low Drop Step', cat:'mbs'},
+  {name:'Lateral Pole Vaulters', cat:'mbs'},
+  {name:'Cross-over March', cat:'mbs'},
+  {name:'Vmax + Stepping/Swerving', cat:'speed'},
+  {name:'Short-contact hops', cat:'plyo'},
+  {name:'Split Squat 4×6', cat:'strength'},
+  {name:'Trap Bar Deadlift 3×5', cat:'strength'},
+  {name:'MAS Intervals', cat:'running'},
+  {name:'Long Run', cat:'running'},
+];
+const lib=document.getElementById('lib');
+ex.forEach(item=>{
+  const card=document.createElement('div');
+  card.className='ringify rounded-xl p-3 hover:shadow-glow transition';
+  card.innerHTML=`<div class="text-sm font-semibold">${item.name}</div><div class="text-[11px] text-slate-400 mt-1">${item.cat.toUpperCase()}</div>`;
+  lib.appendChild(card);
+});
+
+// Program preview grid (hover effect)
+const previewGrid=document.getElementById('previewGrid');
+const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+days.forEach(d=>{
+  const wrap=document.createElement('div');
+  wrap.className='p-2 ringify rounded-xl min-h-[120px]';
+  wrap.innerHTML=`<div class="text-[11px] text-slate-400 mb-1">${d}</div><div class="space-y-1"></div>`;
+  previewGrid.appendChild(wrap);
+});
+function previewMarathon(){
+  const slots=[
+    ['MAS Intervals','High–Low Drop Step'],
+    ['Split Squat 4×6'],
+    ['Long Run'],
+    ['Vmax + Stepping/Swerving'],
+    ['Short-contact hops'],
+    ['Lateral Pole Vaulters'],
+    ['Cross-over March'],
+  ];
+  Array.from(previewGrid.children).forEach((col,i)=>{
+    const area=col.querySelector('.space-y-1'); area.innerHTML='';
+    slots[i].forEach(name=>{
+      const chip=document.createElement('div');
+      chip.className='chip bg-white/5 border border-white/10'; chip.textContent=name;
+      area.appendChild(chip);
+    });
+  });
+}
+previewMarathon();
+
+// Weekly Planner — drag/drop
+const weekGrid=document.getElementById('weekGrid');
+days.forEach(d=>{
+  const z=document.createElement('div');
+  z.className='dropzone ringify rounded-xl p-2 min-h-[170px]';
+  z.innerHTML=`<div class="text-[11px] text-slate-400 mb-1">${d}</div><div class="space-y-1"></div>`;
+  weekGrid.appendChild(z);
+});
+const chips=document.getElementById('chips');
+const cat=document.getElementById('cat');
+function renderChips(filter='all'){
+  chips.innerHTML='';
+  ex.filter(x=>filter==='all'||x.cat===filter).forEach(item=>{
+    const c=document.createElement('div');
+    c.className='chip bg-white/5 border border-white/10 draggable'; c.textContent=item.name; c.draggable=true;
+    c.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', item.name); e.target.classList.add('ghost'); });
+    c.addEventListener('dragend',e=>e.target.classList.remove('ghost'));
+    chips.appendChild(c);
+  });
+}
+renderChips(); cat.addEventListener('change',()=>renderChips(cat.value));
+document.querySelectorAll('.dropzone').forEach(zone=>{
+  zone.addEventListener('dragover',e=>{ e.preventDefault(); zone.classList.add('hover'); });
+  zone.addEventListener('dragleave',()=>zone.classList.remove('hover'));
+  zone.addEventListener('drop',e=>{
+    e.preventDefault(); zone.classList.remove('hover');
+    const name=e.dataTransfer.getData('text/plain');
+    const pill=document.createElement('div'); pill.className='chip bg-white/5 border border-white/10 animate-pop'; pill.textContent=name;
+    zone.querySelector('.space-y-1').appendChild(pill);
+  });
+});
+
+// auto-build
+function autoBuild(){
+  const slots=[
+    ['Vmax + Stepping/Swerving','High–Low Drop Step'],
+    ['Short-contact hops'],
+    ['Split Squat 4×6'],
+    ['MAS Intervals'],
+    ['Long Run'],
+    ['Lateral Pole Vaulters'],
+    ['Cross-over March']
+  ];
+  Array.from(weekGrid.children).forEach((z,i)=>{
+    const area=z.querySelector('.space-y-1'); area.innerHTML='';
+    slots[i].forEach(n=>{
+      const pill=document.createElement('div'); pill.className='chip bg-white/5 border border-white/10'; pill.textContent=n;
+      area.appendChild(pill);
+    });
+  });
+}
+document.getElementById('autoPlan').addEventListener('click',autoBuild);
+document.getElementById('savePlan').addEventListener('click',()=>{
+  const t=document.getElementById('saveToast'); t.classList.remove('hidden'); setTimeout(()=>t.classList.add('hidden'),1200);
+});
+
+// Assistant mock
+const chat=document.getElementById('chat'); const msg=document.getElementById('msg'); const send=document.getElementById('send'); const readback=document.getElementById('readback');
+const bubble=(who,txt)=>{
+  const wrap=document.createElement('div'); wrap.className='flex '+(who==='me'?'justify-end':'justify-start');
+  const b=document.createElement('div'); b.className='max-w-[72%] '+(who==='me'?'bg-brand-600 text-white':'bg-white/5 border border-white/10')+' rounded-2xl p-3'; b.textContent=txt;
+  wrap.appendChild(b); chat.appendChild(wrap); chat.scrollTop=chat.scrollHeight;
+};
+send.addEventListener('click',()=>{
+  const t=msg.value.trim(); if(!t) return; bubble('me',t); msg.value='';
+  setTimeout(()=>{
+    bubble('bot','Applied goal → marathon; bandwidth → low. Suggested: MS_ST_UNILAT_SYM, MS_SQ_VMAX_BASE.');
+    readback.textContent = JSON.stringify({
+      assistant_readback:{ applied_changes:["Set goal -> marathon","Set bandwidth -> low"], suggested_milestones:["MS_ST_UNILAT_SYM","MS_SQ_VMAX_BASE"]},
+      next_step:{ build_week_body:{ athlete_id:1, active_milestones:["MS_ST_UNILAT_SYM","MS_SQ_VMAX_BASE"], override_bandwidth:"low" } }
+    }, null, 2);
+  }, 450);
+});
+document.getElementById('applyBuilder').addEventListener('click',()=>show('planner'));
+</script>
+</body>
+</html>

@@ -251,25 +251,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Athlete ID is required" });
       }
 
-      const athlete = await storage.getAthleteById(athleteId);
+      const athlete = await storage.getAthlete(athleteId);
       if (!athlete) {
         return res.status(404).json({ error: "Athlete not found" });
       }
 
-      const workoutLogs = await storage.getWorkoutLogsByAthlete(athleteId);
+      const workoutLogs = await storage.getWorkoutLogs(athleteId);
       const personalRecords = await storage.getPersonalRecords(athleteId);
-      const stats = await storage.getAthleteStats(athleteId);
+      const athleteStats = await storage.getAthleteStatsOrCreate(athleteId);
+      
+      const recentActivity = {
+        totalWorkouts: athleteStats.totalWorkouts,
+        totalSets: athleteStats.totalSetsCompleted,
+        totalPRs: personalRecords.length,
+        streak: athleteStats.currentStreak,
+      };
 
       const insights = await generateCoachingInsights({
         athlete,
         workoutLogs,
         personalRecords,
-        recentActivity: {
-          totalWorkouts: stats?.totalWorkouts || 0,
-          totalSets: stats?.totalSetsCompleted || 0,
-          totalPRs: personalRecords.length,
-          streak: stats?.currentStreak || 0,
-        }
+        recentActivity
       });
 
       res.json({ insights });
@@ -288,22 +290,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Athlete ID is required" });
       }
 
-      const athlete = await storage.getAthleteById(athleteId);
+      const athlete = await storage.getAthlete(athleteId);
       if (!athlete) {
         return res.status(404).json({ error: "Athlete not found" });
       }
 
-      const stats = await storage.getAthleteStats(athleteId);
       const personalRecords = await storage.getPersonalRecords(athleteId);
+      const athleteStats = await storage.getAthleteStatsOrCreate(athleteId);
 
       const recommendation = await generateProgramRecommendation({
         athlete,
         personalRecords,
         recentActivity: {
-          totalWorkouts: stats?.totalWorkouts || 0,
-          totalSets: stats?.totalSetsCompleted || 0,
+          totalWorkouts: athleteStats.totalWorkouts,
+          totalSets: athleteStats.totalSetsCompleted,
           totalPRs: personalRecords.length,
-          streak: stats?.currentStreak || 0,
+          streak: athleteStats.currentStreak,
         }
       }, goal);
 
@@ -325,18 +327,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let athleteContext;
       if (athleteId) {
-        const athlete = await storage.getAthleteById(athleteId);
+        const athlete = await storage.getAthlete(athleteId);
         if (athlete) {
-          const stats = await storage.getAthleteStats(athleteId);
           const personalRecords = await storage.getPersonalRecords(athleteId);
+          const athleteStats = await storage.getAthleteStatsOrCreate(athleteId);
           athleteContext = {
             athlete,
             personalRecords,
             recentActivity: {
-              totalWorkouts: stats?.totalWorkouts || 0,
-              totalSets: stats?.totalSetsCompleted || 0,
+              totalWorkouts: athleteStats.totalWorkouts,
+              totalSets: athleteStats.totalSetsCompleted,
               totalPRs: personalRecords.length,
-              streak: stats?.currentStreak || 0,
+              streak: athleteStats.currentStreak,
             }
           };
         }

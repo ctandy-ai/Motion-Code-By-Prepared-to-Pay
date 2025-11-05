@@ -17,6 +17,7 @@ import Workout from "@/pages/workout";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
 import NotFound from "@/pages/not-found";
+import { AICoachChat } from "@/components/ai-coach-chat";
 
 function Router() {
   return (
@@ -72,6 +73,7 @@ export default function App() {
             </div>
           </div>
         </SidebarProvider>
+        <AICoachChat />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

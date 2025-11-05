@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>StrideCode Pro — v3 Prototype</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
+        ink: {'0':'#0b0f1a','1':'#0e1422','2':'#12192a','3':'#162035','4':'#1b2944','5':'#213252'},
+        accent: {'a':'#22c55e', 'b':'#06b6d4', 'c':'#f59e0b'}
+      },
+      boxShadow: {
+        glass: '0 1px 0 rgba(255,255,255,0.06) inset, 0 10px 30px rgba(0,0,0,0.35)',
+        glow: '0 14px 40px rgba(99,102,241,0.38)'
+      },
+      keyframes: {
+        shimmer: {'0%':{backgroundPosition:'-200% 0'}, '100%':{backgroundPosition:'200% 0'}},
+        pop: {'0%':{transform:'scale(.96)', opacity:0}, '100%':{transform:'scale(1)', opacity:1}},
+      },
+      animation: {
+        shimmer: 'shimmer 1.2s linear infinite',
+        pop: 'pop .18s ease-out both'
+      }
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --ring: rgba(99,102,241,.3); }
+  *{ font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+  .bglass{ background: linear-gradient(180deg, rgba(34,37,63,.6), rgba(20,22,40,.7)); backdrop-filter: blur(10px); }
+  .ringify{ box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .chip{ padding:6px 10px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); }
+  .chip.sel{ outline: 2px solid rgba(99,102,241,.6); }
+  .btn{ padding:10px 14px; border-radius:12px; border:1px solid rgba(255,255,255,.08); }
+  .btn-pri{ background:#4f46e5; color:white; box-shadow: 0 10px 24px rgba(99,102,241,.35); }
+  .btn-sec{ background:rgba(255,255,255,.06); color:#cbd5e1; }
+  .dropzone{ min-height: 170px; transition: .15s ease; }
+  .dropzone.hover{ outline:2px dashed #6366f1; outline-offset:-6px; background: rgba(99,102,241,.07); }
+  .toast{ position: fixed; right: 16px; bottom: 16px; background: #111827; color:#e5e7eb; padding: 12px 14px; border-radius: 12px; box-shadow: 0 12px 30px rgba(0,0,0,.45); display:none; }
+  .toast.show{ display:block; animation: pop .2s ease-out; }
+  .skeleton{ background: linear-gradient(90deg, rgba(255,255,255,.08), rgba(255,255,255,.16), rgba(255,255,255,.08)); background-size: 200% 100%; }
+  .drawer{ position: fixed; top:0; right:-480px; width: 420px; height:100vh; background:#0f1427; border-left:1px solid rgba(255,255,255,.08); box-shadow: -20px 0 40px rgba(0,0,0,.45); transition: right .25s ease; z-index:60; }
+  .drawer.open{ right: 0; }
+  .overlay{ position:fixed; inset:0; background: rgba(2,4,12,.5); backdrop-filter: blur(4px); display:none; z-index:50; }
+  .overlay.show{ display:block; }
+  .diffDel{ background: rgba(239,68,68,.15); border-color: rgba(239,68,68,.35); }
+  .diffAdd{ background: rgba(34,197,94,.15); border-color: rgba(34,197,94,.35); }
+  .sticky-dock{ position: sticky; bottom: 0; background: #0f1427bf; backdrop-filter: blur(6px); padding: 10px; border-top: 1px solid rgba(255,255,255,.08); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+</style>
+</head>
+<body class="bg-ink-1 text-slate-200">
+  <div class="min-h-screen grid grid-cols-[300px_1fr] gap-5 p-5">
+    <!-- Sidebar -->
+    <aside class="bglass rounded-2xl shadow-glass p-4">
+      <div class="flex items-center gap-3 pb-4 border-b border-white/10">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center font-extrabold">SC</div>
+        <div>
+          <div class="font-bold -mb-0.5">StrideCode <span class="text-brand-300">Pro</span></div>
+          <div class="text-[11px] text-slate-400">Build · Measure · Adapt</div>
+        </div>
+      </div>
+      <nav class="mt-4 space-y-1">
+        <button data-tab="dashboard" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">🏠 Dashboard</button>
+        <button data-tab="programs" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">🏗️ Programs</button>
+        <button data-tab="planner" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">📅 Weekly Planner</button>
+        <button data-tab="assistant" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">💬 Assistant</button>
+        <button data-tab="library" class="tab-btn w-full text-left px-3 py-2 rounded-xl hover:bg-white/5 font-medium">📚 Library</button>
+      </nav>
+      <div class="mt-6 p-3 rounded-xl ringify">
+        <div class="text-xs text-slate-400 mb-2">Density</div>
+        <div class="flex items-center gap-2">
+          <button id="cozy" class="btn btn-sec text-xs">Cozy</button>
+          <button id="compact" class="btn btn-sec text-xs">Compact</button>
+        </div>
+      </div>
+      <div class="mt-6 p-3 rounded-xl ringify">
+        <div class="text-xs text-slate-400 mb-2">Current Athlete</div>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-800 flex items-center justify-center font-bold">AW</div>
+          <div>
+            <div class="font-semibold">Aimee W</div>
+            <div class="text-[11px] text-slate-400">Blue · Marathon</div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 text-[11px] text-slate-400">⌘K Command Palette</div>
+    </aside>
+
+    <!-- Main -->
+    <main class="space-y-5">
+      <!-- Topbar -->
+      <header class="bglass rounded-2xl shadow-glass px-5 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <input id="search" class="w-[360px] px-4 py-2 rounded-xl bg-white/5 border border-white/10 focus:outline-none" placeholder="Search athletes, programs, exercises…" />
+          <span class="chip">Preview</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="toggleTheme" class="btn btn-sec">Toggle Theme</button>
+          <button id="openCmd" class="btn btn-pri">Open Command (⌘K)</button>
+        </div>
+      </header>
+
+      <!-- Tabs -->
+      <section id="tab-dashboard" class="tab grid lg:grid-cols-3 gap-5">
+        <div class="bglass rounded-2xl shadow-glass p-5 lg:col-span-2">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-lg">Performance Snapshot</h2>
+            <div class="text-xs text-slate-400">Last 7 days</div>
+          </div>
+          <div class="mt-4 grid md:grid-cols-3 gap-4">
+            <div class="ringify rounded-xl p-4">
+              <div class="text-xs text-slate-400">Vmax Exposure</div>
+              <div class="mt-2 text-3xl font-semibold">+14%</div>
+              <div class="text-xs text-emerald-300">Within guardrails</div>
+            </div>
+            <div class="ringify rounded-xl p-4">
+              <div class="text-xs text-slate-400">Decel / COD</div>
+              <div class="mt-2 text-3xl font-semibold">3.2k reps</div>
+              <div class="text-xs text-amber-300">Watch asymmetry</div>
+            </div>
+            <div class="ringify rounded-xl p-4">
+              <div class="text-xs text-slate-400">Plyo Contacts</div>
+              <div class="mt-2 text-3xl font-semibold">380</div>
+              <div class="text-xs text-slate-400">Under cap (marathon)</div>
+            </div>
+          </div>
+          <div class="mt-4 text-xs bg-black/60 p-3 rounded-xl border border-white/10">Auto-rules active: {"goal":"marathon","plyo_cap":"-30%","added":["MAS Intervals","Long Run"]}</div>
+        </div>
+        <div class="bglass rounded-2xl shadow-glass p-5">
+          <h2 class="font-semibold text-lg">Belt Progress</h2>
+          <div class="mt-3 space-y-2">
+            <div class="flex items-center justify-between text-sm"><span>Blue → Black− readiness</span><span class="text-brand-300">72%</span></div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden"><div class="h-2 bg-brand-500 w-[72%]"></div></div>
+            <div class="flex items-center justify-between text-sm"><span>Strength symmetry</span><span class="text-brand-300">92%</span></div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden"><div class="h-2 bg-emerald-500 w-[92%]"></div></div>
+            <div class="flex items-center justify-between text-sm"><span>Vmax exposure</span><span class="text-brand-300">64%</span></div>
+            <div class="h-2 bg-white/5 rounded-full overflow-hidden"><div class="h-2 bg-sky-500 w-[64%]"></div></div>
+          </div>
+          <button class="mt-4 btn btn-pri w-full">View Test Gateways</button>
+        </div>
+      </section>
+
+      <!-- Programs with Diff Compare -->
+      <section id="tab-programs" class="tab hidden">
+        <div class="grid lg:grid-cols-5 gap-5">
+          <div class="lg:col-span-2 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Program Gallery</h2>
+              <button id="newProgram" class="btn btn-pri text-sm">New Program</button>
+            </div>
+            <div id="programList" class="mt-4 space-y-2">
+              <!-- injected -->
+            </div>
+          </div>
+          <div class="lg:col-span-3 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Program Diff Compare</h2>
+              <div class="text-xs text-slate-400">Select two programs</div>
+            </div>
+            <div id="diffWrap" class="mt-3 grid grid-cols-2 gap-3">
+              <div class="ringify rounded-xl p-3"><div class="text-xs text-slate-400 mb-1">A</div><div id="diffA" class="space-y-1 text-xs"></div></div>
+              <div class="ringify rounded-xl p-3"><div class="text-xs text-slate-400 mb-1">B</div><div id="diffB" class="space-y-1 text-xs"></div></div>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+              <button id="loadToPlanner" class="btn btn-sec">Load A → Planner</button>
+              <button id="swapAB" class="btn btn-sec">Swap</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Weekly Planner (with sticky dock + keyboard) -->
+      <section id="tab-planner" class="tab hidden">
+        <div class="bglass rounded-2xl shadow-glass">
+          <div class="p-5 pb-3 flex items-center justify-between">
+            <h2 class="font-semibold text-lg">Weekly Planner</h2>
+            <div class="text-xs text-slate-400">Shift-click to multi-select · ⌫ delete</div>
+          </div>
+          <div id="weekGrid" class="px-5 grid grid-cols-7 gap-2"></div>
+          <div class="sticky-dock flex items-center justify-between">
+            <div class="text-xs text-slate-400">Selected: <span id="selCount">0</span></div>
+            <div class="flex items-center gap-2">
+              <button id="autoPlan" class="btn btn-sec">Auto-build (Marathon)</button>
+              <button id="savePlan" class="btn btn-pri">Save Week</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid lg:grid-cols-4 gap-5 mt-5">
+          <div class="lg:col-span-1 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Exercise Palette</h2>
+              <select id="cat" class="bg-white/5 border border-white/10 rounded-xl px-2 py-1 text-sm">
+                <option value="all">All</option>
+                <option value="mbs">MBS</option>
+                <option value="speed">Speed</option>
+                <option value="plyo">Plyo</option>
+                <option value="strength">Strength</option>
+                <option value="running">Running</option>
+              </select>
+            </div>
+            <div id="chips" class="mt-3 grid gap-2 max-h-[520px] overflow-auto pr-1">
+              <!-- skeleton shimmer -->
+              <div class="h-8 rounded-xl skeleton animate-shimmer"></div>
+              <div class="h-8 rounded-xl skeleton animate-shimmer"></div>
+              <div class="h-8 rounded-xl skeleton animate-shimmer"></div>
+            </div>
+          </div>
+          <div class="lg:col-span-3 bglass rounded-2xl shadow-glass p-5">
+            <h2 class="font-semibold text-lg">Exercise Details</h2>
+            <div class="text-xs text-slate-400">Click an exercise chip to open details</div>
+            <div class="mt-3 grid grid-cols-3 gap-3">
+              <div class="ringify rounded-xl p-3"><div class="text-xs text-slate-400">Coaching Notes</div><div id="notes" class="text-sm mt-1">—</div></div>
+              <div class="ringify rounded-xl p-3"><div class="text-xs text-slate-400">Progressions</div><div id="progs" class="text-sm mt-1">—</div></div>
+              <div class="ringify rounded-xl p-3"><div class="text-xs text-slate-400">Constraints</div><div id="cons" class="text-sm mt-1">—</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Assistant -->
+      <section id="tab-assistant" class="tab hidden">
+        <div class="grid lg:grid-cols-3 gap-5">
+          <div class="lg:col-span-2 bglass rounded-2xl shadow-glass p-5">
+            <div class="flex items-center justify-between">
+              <h2 class="font-semibold text-lg">Coach Assistant</h2>
+              <span class="chip">NLP prototype</span>
+            </div>
+            <div id="chat" class="mt-3 space-y-3 max-h-[420px] overflow-auto pr-1">
+              <div class="flex justify-start"><div class="max-w-[70%] bg-white/5 border border-white/10 rounded-2xl p-3">Hi Chris—tell me athlete goals, bandwidth and milestones.</div></div>
+            </div>
+            <div class="mt-3 flex items-center gap-2">
+              <input id="msg" class="flex-1 px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:outline-none" placeholder="Blue belt, low bandwidth, training for a marathon. Add MS_ST_UNILAT_SYM." />
+              <button id="send" class="btn btn-pri">Send</button>
+            </div>
+          </div>
+          <div class="bglass rounded-2xl shadow-glass p-5">
+            <h3 class="font-semibold text-lg">Assistant Readback</h3>
+            <div id="readback" class="mt-2 text-xs bg-black/60 p-3 rounded-xl border border-white/10">Awaiting input…</div>
+            <div class="mt-3">
+              <button id="applyBuilder" class="btn btn-sec w-full">Apply to Planner</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Library -->
+      <section id="tab-library" class="tab hidden">
+        <div class="bglass rounded-2xl shadow-glass p-5">
+          <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-lg">Exercise Library</h2>
+            <div class="chip">Mocked from your docs</div>
+          </div>
+          <div id="lib" class="mt-3 grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Slide-over Exercise Drawer -->
+  <div id="overlay" class="overlay"></div>
+  <div id="drawer" class="drawer">
+    <div class="p-4 border-b border-white/10 flex items-center justify-between">
+      <div>
+        <div id="dTitle" class="font-semibold">Exercise</div>
+        <div id="dCat" class="text-[11px] text-slate-400">Category</div>
+      </div>
+      <button id="closeDrawer" class="btn btn-sec text-xs">Close</button>
+    </div>
+    <div class="p-4 space-y-3">
+      <div class="rounded-xl ringify p-3">
+        <div class="text-xs text-slate-400 mb-1">Preview</div>
+        <div class="w-full h-40 rounded-lg bg-gradient-to-r from-brand-700 to-brand-500"></div>
+      </div>
+      <div class="rounded-xl ringify p-3">
+        <div class="text-xs text-slate-400 mb-1">Coaching Notes</div>
+        <div id="dNotes" class="text-sm">—</div>
+      </div>
+      <div class="rounded-xl ringify p-3">
+        <div class="text-xs text-slate-400 mb-1">Progressions</div>
+        <div id="dProgs" class="text-sm">—</div>
+      </div>
+      <div class="rounded-xl ringify p-3">
+        <div class="text-xs text-slate-400 mb-1">Constraints</div>
+        <div id="dCons" class="text-sm">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Command Palette -->
+  <div id="cmdk" class="fixed inset-0 hidden place-items-center bg-black/50 backdrop-blur-sm z-50">
+    <div class="w-[720px] rounded-2xl bg-[#0f1427] border border-white/10 overflow-hidden shadow-2xl">
+      <div class="p-3 border-b border-white/10">
+        <input id="cmdInput" placeholder="Type a command… (e.g., Build Week, Open Planner, New Program)" class="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 focus:outline-none" />
+      </div>
+      <div id="cmdList" class="p-2 max-h-[360px] overflow-auto"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast">Saved</div>
+
+<script>
+// Theme
+document.getElementById('toggleTheme').addEventListener('click',()=>{
+  document.body.classList.toggle('light');
+  if(document.body.classList.contains('light')){
+    document.body.classList.remove('bg-ink-1'); document.body.classList.add('bg-slate-50','text-slate-900');
+  }else{
+    document.body.classList.add('bg-ink-1'); document.body.classList.remove('bg-slate-50','text-slate-900');
+  }
+});
+
+// Tabs
+const tabs=['dashboard','programs','planner','assistant','library'];
+const show=(t)=>{ tabs.forEach(x=>document.getElementById('tab-'+x).classList.toggle('hidden',x!==t));
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    if(b.dataset.tab===t){ b.classList.add('bg-white/5'); } else { b.classList.remove('bg-white/5'); }
+  });
+};
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
+show('dashboard');
+
+// Density
+const cozy=document.getElementById('cozy'), compact=document.getElementById('compact');
+cozy.addEventListener('click',()=>document.documentElement.style.setProperty('--pad','10px'));
+compact.addEventListener('click',()=>document.querySelectorAll('.chip').forEach(c=>c.style.padding='4px 8px'));
+
+// Command Palette
+const cmdk=document.getElementById('cmdk'); const cmdInput=document.getElementById('cmdInput'); const cmdList=document.getElementById('cmdList');
+const commands=[
+  {label:'Open Dashboard', do:()=>show('dashboard')},
+  {label:'Open Programs', do:()=>show('programs')},
+  {label:'Open Planner', do:()=>show('planner')},
+  {label:'Open Assistant', do:()=>show('assistant')},
+  {label:'Open Library', do:()=>show('library')},
+  {label:'Build Week (Marathon rules)', do:()=>autoBuild()},
+  {label:'Toggle Theme', do:()=>document.getElementById('toggleTheme').click()},
+];
+document.getElementById('openCmd').addEventListener('click',()=>{ cmdk.classList.remove('hidden'); cmdInput.focus(); renderCmd(''); });
+document.addEventListener('keydown',(e)=>{ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); cmdk.classList.remove('hidden'); cmdInput.focus(); renderCmd(''); } if(e.key==='Escape') cmdk.classList.add('hidden'); });
+cmdInput.addEventListener('input',()=>renderCmd(cmdInput.value));
+function renderCmd(q){
+  cmdList.innerHTML=''; const ql=q.toLowerCase();
+  commands.filter(c=>c.label.toLowerCase().includes(ql)).forEach(c=>{
+    const row=document.createElement('div'); row.className='px-3 py-2 rounded-xl hover:bg-white/5 flex items-center justify-between';
+    row.innerHTML=`<span>${c.label}</span><span class="text-xs text-slate-400">↵</span>`;
+    row.addEventListener('click',()=>{ c.do(); cmdk.classList.add('hidden'); });
+    cmdList.appendChild(row);
+  });
+}
+
+// Data
+const programs=[
+  {id:1, name:'Blue — Marathon Base (4w)', items:['MAS Intervals','Long Run','High–Low Drop Step','Split Squat 4×6']},
+  {id:2, name:'Black− — Vmax/COD', items:['Vmax + Stepping/Swerving','Short-contact hops','Trap Bar Deadlift 3×5']},
+  {id:3, name:'White — Foundational Strength (2w)', items:['Split Squat 4×6','Hinge ISO 3×20s']},
+];
+const ex = [
+  {name:'High–Low Drop Step', cat:'mbs', notes:'Cue ribs down, hip lock; smooth tempo. Avoid trunk sway.', progs:'High→Low, add reach; add stick.', cons:'Keep contacts <80 if marathon goal.'},
+  {name:'Lateral Pole Vaulters', cat:'mbs', notes:'Tall posture; stiff ankle; snap through midline.', progs:'Short → long steps; add band pull.', cons:'Watch adductor tweak—reduce ROM.'},
+  {name:'Cross-over March', cat:'mbs', notes:'Cross-over path; avoid valgus knee; keep shin angle.', progs:'March → bound; add metronome.', cons:'If hip pinch, reduce range.'},
+  {name:'Vmax + Stepping/Swerving', cat:'speed', notes:'Fast feet, hips tall, smooth arc into swerve.', progs:'Short reps → flying 20s.', cons:'No max effort if <72% readiness.'},
+  {name:'Short-contact hops', cat:'plyo', notes:'Quiet landings; <120ms contact; low amplitude.', progs:'In-place → lateral → multidirectional.', cons:'Cap contacts for marathon.'},
+  {name:'Split Squat 4×6', cat:'strength', notes:'Front-foot pressure; shin vertical; ribs stacked.', progs:'DB → BB; tempo 3-1-1.', cons:'If knee pain, reduce ROM or rear-foot elevate.'},
+  {name:'Trap Bar Deadlift 3×5', cat:'strength', notes:'Neutral spine; push floor away; fast concentric.', progs:'3×5 → 5×3; add jumps.', cons:'Avoid heavy pulls after speed day.'},
+  {name:'MAS Intervals', cat:'running', notes:'3–6 x 3min @MAS, 2min easy; even pacing.', progs:'Build # reps; progress work:rest.', cons:'No heavy strength same day.'},
+  {name:'Long Run', cat:'running', notes:'60–90min; nasal breathing; keep talk-test.', progs:'+10–15% duration per 7–10d.', cons:'No plyo day after >90min long run.'},
+];
+
+// Program list + selection for diff
+const programList=document.getElementById('programList'); const diffA=document.getElementById('diffA'); const diffB=document.getElementById('diffB');
+let selA=null, selB=null;
+programs.forEach(p=>{
+  const row=document.createElement('div'); row.className='ringify rounded-xl p-3 hover:shadow-glow transition cursor-pointer';
+  row.innerHTML=`<div class="font-semibold">${p.name}</div><div class="text-[11px] text-slate-400">${p.items.length} items</div>`;
+  row.addEventListener('click',()=>{
+    if(!selA){ selA=p; renderDiff(); row.classList.add('bg-white/5'); return; }
+    if(!selB && p.id!==selA.id){ selB=p; renderDiff(); row.classList.add('bg-white/5'); return; }
+    // reset selection
+    selA=p; selB=null; renderDiff();
+    Array.from(programList.children).forEach(c=>c.classList.remove('bg-white/5'));
+    row.classList.add('bg-white/5');
+  });
+  programList.appendChild(row);
+});
+function renderDiff(){
+  diffA.innerHTML=''; diffB.innerHTML='';
+  if(!selA){ diffA.innerHTML='<div class="text-slate-500">Select program A</div>'; }
+  else { selA.items.forEach(i=>{ const el=document.createElement('div'); el.className='chip'; el.textContent=i; diffA.appendChild(el); }); }
+  if(!selB){ diffB.innerHTML='<div class="text-slate-500">Select program B</div>'; return; }
+  // mark diffs
+  const setA=new Set(selA.items); const setB=new Set(selB.items);
+  diffA.querySelectorAll('.chip').forEach(ch=>{ if(!setB.has(ch.textContent)) ch.classList.add('diffDel'); });
+  selB.items.forEach(i=>{
+    const el=document.createElement('div'); el.className='chip'; el.textContent=i;
+    if(!setA.has(i)) el.classList.add('diffAdd'); diffB.appendChild(el);
+  });
+}
+document.getElementById('swapAB').addEventListener('click',()=>{ const t=selA; selA=selB; selB=t; renderDiff(); });
+document.getElementById('loadToPlanner').addEventListener('click',()=>{ if(selA){ show('planner'); autoBuildFrom(selA.items); toast('Loaded to Planner'); } });
+
+// Planner
+const weekGrid=document.getElementById('weekGrid');
+const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const selection = new Set();
+function renderWeek(){
+  weekGrid.innerHTML='';
+  days.forEach(d=>{
+    const z=document.createElement('div');
+    z.className='dropzone ringify rounded-xl p-2 min-h-[170px]';
+    z.tabIndex=0;
+    z.innerHTML=`<div class="text-[11px] text-slate-400 mb-1">${d}</div><div class="space-y-1"></div>`;
+    weekGrid.appendChild(z);
+  });
+  bindZones();
+}
+renderWeek();
+
+function bindZones(){
+  document.querySelectorAll('.dropzone').forEach(zone=>{
+    zone.addEventListener('dragover',e=>{ e.preventDefault(); zone.classList.add('hover'); });
+    zone.addEventListener('dragleave',()=>zone.classList.remove('hover'));
+    zone.addEventListener('drop',e=>{
+      e.preventDefault(); zone.classList.remove('hover');
+      const items=e.dataTransfer.getData('text/plain').split('|');
+      const area=zone.querySelector('.space-y-1');
+      items.forEach(n=>{ const pill=makePill(n); area.appendChild(pill); });
+      toast('Added to '+zone.querySelector('div').textContent);
+    });
+    zone.addEventListener('keydown',e=>{
+      if(e.key==='Backspace'){ const pills=zone.querySelectorAll('.chip'); if(pills.length){ pills[pills.length-1].remove(); toast('Removed'); } }
+    });
+  });
+}
+function makePill(n){
+  const pill=document.createElement('div'); pill.className='chip text-xs cursor-pointer'; pill.textContent=n;
+  pill.addEventListener('click',(e)=>{
+    if(e.shiftKey){ pill.classList.toggle('sel'); if(pill.classList.contains('sel')) selection.add(pill); else selection.delete(pill); document.getElementById('selCount').textContent=selection.size; }
+    else { openDrawer(n); }
+  });
+  return pill;
+}
+
+// Palette
+const chips=document.getElementById('chips'); const cat=document.getElementById('cat');
+function renderChips(filter='all'){
+  chips.innerHTML='';
+  ex.filter(x=>filter==='all'||x.cat===filter).forEach(item=>{
+    const c=document.createElement('div');
+    c.className='chip draggable'; c.textContent=item.name; c.draggable=true;
+    c.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', clusterPayload(item.name)); });
+    c.addEventListener('click',()=>openDrawer(item.name));
+    chips.appendChild(c);
+  });
+}
+function clusterPayload(first){
+  // if user multi-selected, drag them as a cluster; else single
+  if(selection.size){
+    const names=[...selection].map(p=>p.textContent);
+    selection.clear(); document.getElementById('selCount').textContent=0;
+    document.querySelectorAll('.chip.sel').forEach(p=>p.classList.remove('sel'));
+    return names.join('|');
+  }
+  return first;
+}
+renderChips(); cat.addEventListener('change',()=>renderChips(cat.value));
+
+// Auto-build
+function autoBuild(){
+  const plan=[
+    ['Vmax + Stepping/Swerving','High–Low Drop Step'],
+    ['Short-contact hops'],
+    ['Split Squat 4×6'],
+    ['MAS Intervals'],
+    ['Long Run'],
+    ['Lateral Pole Vaulters'],
+    ['Cross-over March']
+  ];
+  Array.from(weekGrid.children).forEach((z,i)=>{
+    const area=z.querySelector('.space-y-1'); area.innerHTML='';
+    plan[i].forEach(n=> area.appendChild(makePill(n)));
+  });
+  toast('Auto-built (Marathon rules)');
+}
+function autoBuildFrom(items){
+  Array.from(weekGrid.children).forEach((z,i)=>{
+    const area=z.querySelector('.space-y-1'); area.innerHTML='';
+    items.slice(i*1,i*1+1).forEach(n=> area.appendChild(makePill(n)));
+  });
+}
+document.getElementById('autoPlan').addEventListener('click',autoBuild);
+document.getElementById('savePlan').addEventListener('click',()=>toast('Week saved'));
+
+// Drawer
+const overlay=document.getElementById('overlay'); const drawer=document.getElementById('drawer');
+function openDrawer(name){
+  const item=ex.find(e=>e.name===name) || {name, cat:'', notes:'—', progs:'—', cons:'—'};
+  document.getElementById('dTitle').textContent=item.name;
+  document.getElementById('dCat').textContent=item.cat.toUpperCase();
+  document.getElementById('dNotes').textContent=item.notes;
+  document.getElementById('dProgs').textContent=item.progs;
+  document.getElementById('dCons').textContent=item.cons;
+  overlay.classList.add('show'); drawer.classList.add('open');
+}
+document.getElementById('closeDrawer').addEventListener('click',()=>{ overlay.classList.remove('show'); drawer.classList.remove('open'); });
+overlay.addEventListener('click',()=>{ overlay.classList.remove('show'); drawer.classList.remove('open'); });
+
+// Assistant
+const chat=document.getElementById('chat'); const msg=document.getElementById('msg'); const send=document.getElementById('send'); const readback=document.getElementById('readback');
+const bubble=(who,txt)=>{
+  const wrap=document.createElement('div'); wrap.className='flex '+(who==='me'?'justify-end':'justify-start');
+  const b=document.createElement('div'); b.className='max-w-[72%] '+(who==='me'?'bg-brand-600 text-white':'bg-white/5 border border-white/10')+' rounded-2xl p-3'; b.textContent=txt;
+  wrap.appendChild(b); chat.appendChild(wrap); chat.scrollTop=chat.scrollHeight;
+};
+send.addEventListener('click',()=>{
+  const t=msg.value.trim(); if(!t) return; bubble('me',t); msg.value='';
+  setTimeout(()=>{
+    bubble('bot','Applied goal → marathon; bandwidth → low. Suggested: MS_ST_UNILAT_SYM, MS_SQ_VMAX_BASE. Loading into Planner…');
+    readback.textContent = '{"assistant_readback":{"applied_changes":["Set goal -> marathon","Set bandwidth -> low"],"suggested_milestones":["MS_ST_UNILAT_SYM","MS_SQ_VMAX_BASE"]},"next_step":{"build_week_body":{"athlete_id":1,"active_milestones":["MS_ST_UNILAT_SYM","MS_SQ_VMAX_BASE"],"override_bandwidth":"low"}}}';
+    show('planner'); autoBuild();
+  }, 450);
+});
+document.getElementById('applyBuilder').addEventListener('click',()=>{ show('planner'); autoBuild(); });
+
+// Library
+const lib=document.getElementById('lib');
+ex.forEach(item=>{
+  const card=document.createElement('div');
+  card.className='ringify rounded-xl p-3 hover:shadow-glow transition cursor-pointer';
+  card.innerHTML=`<div class="text-sm font-semibold">${item.name}</div><div class="text-[11px] text-slate-400 mt-1">${item.cat.toUpperCase()}</div>`;
+  card.addEventListener('click',()=>openDrawer(item.name));
+  lib.appendChild(card);
+});
+
+// Toast
+function toast(txt){ const t=document.getElementById('toast'); t.textContent=txt; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1200); }
+</script>
+</body>
+</html>
