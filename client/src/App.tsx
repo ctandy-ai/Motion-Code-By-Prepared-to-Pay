@@ -54,12 +54,14 @@ export default function App() {
                 <div className="flex items-center gap-4">
                   <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9" />
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <span className="text-white font-bold text-xl">SC</span>
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                      <span className="text-white font-extrabold text-2xl">SC</span>
                     </div>
                     <div>
-                      <h1 className="font-heading text-lg font-bold text-foreground">Strength Coach Pro</h1>
-                      <p className="text-xs text-muted-foreground">Elite Performance Platform</p>
+                      <h1 className="font-heading text-lg font-bold text-foreground">
+                        StrideCode <span className="text-primary">Pro</span>
+                      </h1>
+                      <p className="text-xs text-muted-foreground">Build · Measure · Adapt</p>
                     </div>
                   </div>
                 </div>

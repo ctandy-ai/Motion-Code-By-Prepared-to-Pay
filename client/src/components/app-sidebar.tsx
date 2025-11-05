@@ -63,12 +63,14 @@ export function AppSidebar() {
     <Sidebar data-testid="app-sidebar">
       <SidebarHeader className="p-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-            <Dumbbell className="h-6 w-6 text-primary-foreground" />
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+            <span className="text-white font-extrabold text-lg">SC</span>
           </div>
           <div>
-            <h2 className="font-heading text-lg font-bold text-foreground">Elite Training</h2>
-            <p className="text-xs text-muted-foreground">Strength Platform</p>
+            <h2 className="font-heading text-base font-bold text-foreground">
+              StrideCode <span className="text-primary">Pro</span>
+            </h2>
+            <p className="text-[10px] text-muted-foreground">Build · Measure · Adapt</p>
           </div>
         </div>
       </SidebarHeader>

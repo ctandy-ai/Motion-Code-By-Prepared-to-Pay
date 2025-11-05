@@ -83,12 +83,11 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/10 to-accent/10">
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <Bot className="h-5 w-5 text-primary" />
-            <Sparkles className="h-3 w-3 text-accent absolute -top-1 -right-1 animate-pulse" />
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+            <span className="text-white font-bold text-sm">SC</span>
           </div>
           <div>
-            <h3 className="font-semibold text-sm">Coach AI</h3>
+            <h3 className="font-semibold text-sm">StrideCode AI Coach</h3>
             <Badge variant="secondary" className="text-xs">Powered by GPT-4.1</Badge>
           </div>
         </div>
