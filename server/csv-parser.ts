@@ -1,3 +1,4 @@
+import Papa from 'papaparse';
 import type { InsertAthlete } from "@shared/schema";
 
 export interface ParsedAthlete {
@@ -6,79 +7,80 @@ export interface ParsedAthlete {
 }
 
 export function parseTeamBuildrCSV(csvContent: string): ParsedAthlete[] {
-  const lines = csvContent.split('\n');
   const results: ParsedAthlete[] = [];
   
-  // Skip header row
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    
+  // Use PapaParse to handle multiline CSV properly
+  const parsed = Papa.parse(csvContent, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: (header: string) => header.trim(),
+  });
+  
+  console.log(`CSV parsing complete: ${parsed.data.length} rows found`);
+  
+  if (parsed.errors.length > 0) {
+    console.warn(`CSV parsing warnings (${parsed.errors.length} errors):`, parsed.errors.slice(0, 5));
+  }
+  
+  let skippedCount = 0;
+  for (const row of parsed.data as any[]) {
     try {
-      const athlete = parseCsvLine(line);
+      const athlete = parseAthleteRow(row);
       if (athlete) {
         results.push(athlete);
+      } else {
+        skippedCount++;
       }
     } catch (error) {
-      console.error(`Failed to parse line ${i + 1}:`, error);
+      console.error('Failed to parse athlete row:', error, row);
+      skippedCount++;
     }
   }
+  
+  console.log(`Parsed ${results.length} athletes, skipped ${skippedCount} rows`);
   
   return results;
 }
 
-function parseCsvLine(line: string): ParsedAthlete | null {
-  // Parse CSV respecting quoted fields
-  const fields: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      fields.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  fields.push(current.trim());
-  
-  // TeamBuildr format: FIRST, LAST, EMAIL, PHONE, GROUPS, CALENDAR, STATUS
-  const [first, last, email, phone, groups, calendar, status] = fields;
-  
+function parseAthleteRow(row: any): ParsedAthlete | null {
+  const first = row.FIRST?.trim();
+  const last = row.LAST?.trim();
+  const email = row.EMAIL?.trim();
+  const phone = row.PHONE?.trim();
+  const groups = row.GROUPS?.trim();
+  const status = row.STATUS?.trim();
   // Skip if no name
   if (!first || !last) {
     return null;
   }
   
-  // Clean up status field - extract Registered/Pending from the HTML-like content
-  let cleanStatus = 'Registered';
-  if (status) {
-    if (status.includes('Pending')) {
-      cleanStatus = 'Pending';
-    } else if (status.includes('Registered')) {
-      cleanStatus = 'Registered';
-    }
-  }
-  
-  // Handle missing/invalid emails - generate placeholder for Pending athletes
+  // Handle missing/invalid emails - generate placeholder for any athlete without valid email
   let cleanEmail: string | undefined = undefined;
-  if (email && email !== 'N/A' && email.includes('@')) {
+  let hasRealEmail = email && email !== 'N/A' && email.includes('@');
+  
+  if (hasRealEmail) {
     cleanEmail = email.trim();
-  } else if (cleanStatus === 'Pending') {
-    // Generate unique placeholder email for pending invites
+  } else {
+    // Generate unique placeholder email for athletes without valid emails
     const namePart = `${first}.${last}`.toLowerCase().replace(/[^a-z0-9.]/g, '');
     const randomId = Math.random().toString(36).substring(2, 10);
     cleanEmail = `pending.${namePart}.${randomId}@placeholder.stridepro.com`;
   }
   
+  // Clean up status field - extract Registered/Pending from the HTML-like content
+  // If no real email, mark as Pending regardless of status field
+  let cleanStatus = hasRealEmail ? 'Registered' : 'Pending';
+  if (status) {
+    if (status.includes('Pending')) {
+      cleanStatus = 'Pending';
+    } else if (status.includes('Registered') && hasRealEmail) {
+      cleanStatus = 'Registered';
+    }
+  }
+  
   // Parse groups (comma-separated list)
   const groupList = groups && groups !== 'N/A'
-    ? groups.split(',').map(g => g.trim()).filter(g => g.length > 0)
+    ? groups.split(',').map((g: string) => g.trim()).filter((g: string) => g.length > 0)
     : [];
   
   return {
