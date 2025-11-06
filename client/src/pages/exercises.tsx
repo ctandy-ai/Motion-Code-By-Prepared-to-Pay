@@ -155,7 +155,7 @@ export default function Exercises() {
   });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Video Player Dialog */}
       <Dialog open={!!videoExercise} onOpenChange={(open) => !open && setVideoExercise(null)}>
         <DialogContent className="max-w-4xl">
@@ -206,6 +206,41 @@ export default function Exercises() {
           </div>
           <div className="chip">Coach Portal</div>
         </div>
+        
+        <div className="flex gap-3 flex-wrap">
+          <div className="relative flex-1 min-w-[280px]">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Input
+              type="search"
+              placeholder="Search exercises..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+              data-testid="input-search-exercises"
+            />
+          </div>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]" data-testid="select-category-filter">
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <button className="btn btn-pri" data-testid="button-add-exercise">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Exercise
+              </button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
+
+        {/* Edit Dialog */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -385,37 +420,9 @@ export default function Exercises() {
           </DialogContent>
         </Dialog>
 
-        <div className="flex gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[280px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              type="search"
-              placeholder="Search exercises..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-              data-testid="input-search-exercises"
-            />
-          </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[180px]" data-testid="select-category-filter">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <button className="btn btn-pri" data-testid="button-add-exercise">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Exercise
-              </button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        {/* Add Dialog Content */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-heading text-2xl">Add New Exercise</DialogTitle>
             </DialogHeader>
@@ -592,7 +599,6 @@ export default function Exercises() {
             </Form>
           </DialogContent>
         </Dialog>
-        </div>
       </div>
 
       {isLoading ? (
