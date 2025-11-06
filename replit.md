@@ -4,9 +4,10 @@
 **StrideCode Pro** is a comprehensive strength and conditioning platform for coaches and athletes. Tagline: "Design Programs · Track Progress" (coach-focused). Designed to manage exercise libraries, create training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface. Part of the Stride Health Group family, this platform aims to surpass existing solutions by offering a highly visual, gamified, and modern user experience with AI-powered coaching. The business vision is to provide a leading-edge tool for performance optimization in strength and conditioning.
 
 ## User Preferences
-- **Design Philosophy**: Clean, professional, athletic aesthetic
+- **Design Philosophy**: Clean, professional, athletic aesthetic with dark glassmorphism theme
 - **Target Users**: Strength coaches, personal trainers, athletes
 - **Priority**: Visual excellence and intuitive UX
+- **Branding**: Stride Health Group logo integrated with cyan/white branding on dark backgrounds
 
 ## System Architecture
 The platform is built with a modern web stack, prioritizing a seamless and engaging user experience.
@@ -27,6 +28,8 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Gamification**: Strategic use of XP, levels, streaks, and achievements with visual components like XP bars, achievement badges, and streak counters to motivate users.
 - **Accessibility**: Full `prefers-reduced-motion` support and performance optimizations.
 - **Layout**: Ultra-minimal, responsive design inspired by high-end sports analytics platforms, ensuring usability across desktop, tablet, and mobile.
+- **Sidebar**: Collapsible Shadcn sidebar (16rem default width, 4rem icon-only) with off-canvas sliding behavior. Features Stride branding and dark glassmorphism styling.
+- **Spacing System**: Consistent spacing throughout - `space-y-8` for page sections, `gap-6` for card grids, standard Shadcn padding for card internals.
 
 ### Technical Implementations & Feature Specifications
 - **Program Management**: Coaches can create, manage, and assign training programs. Key features include:
