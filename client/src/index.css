@@ -353,6 +353,12 @@
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
     background-size: 200% 100%;
   }
+  
+  /* Override Sidebar component's inner wrapper background */
+  [data-slot="sidebar-inner"] {
+    background: transparent !important;
+    border: none !important;
+  }
 
   /* Magnetic hover effect - from Awwwards winners */
   .magnetic-hover {
