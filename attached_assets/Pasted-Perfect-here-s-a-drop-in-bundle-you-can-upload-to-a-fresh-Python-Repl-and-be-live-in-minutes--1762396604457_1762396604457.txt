@@ -1,0 +1,87 @@
+Perfect — here’s a **drop-in bundle** you can upload to a fresh Python Repl and be live in minutes.
+
+### 1) Download the bundle
+
+* **StrideCode Replit bundle (.zip)**: [Download](sandbox:/mnt/data/stridecode_replit_bundle.zip)
+
+Contents:
+
+* `app.py` – FastAPI server that serves the UI and JSON APIs
+* `static/pro.html` – Coach Console (v3 UI you liked)
+* `static/client.html` – Athlete mobile app (StrideCode Go)
+* `data/stridecode_12m_athlete_program.csv` – 52-week belt-aligned program spine
+* `data/exercises.json` – seed exercise library (expand anytime)
+* `data/map_templates.json` – belt+phase → default blocks mapper
+* `README_STRIDECODE_REPLIT.md` – exact run steps
+
+### 2) Run it on Replit (exact steps)
+
+1. Create a **Python** Repl.
+2. Upload the entire zip and **extract** it, preserving the folders.
+3. In Shell:
+
+   ```bash
+   pip install fastapi uvicorn
+   ```
+4. Set Run command:
+
+   ```bash
+   uvicorn app:app --host 0.0.0.0 --port 8000
+   ```
+5. Open the webview:
+
+   * Coach console: `/`
+   * Athlete app: `/client`
+   * APIs: `/api/program/12m`, `/api/library`, `/api/templates`
+
+### 3) Make the UIs hit your data (minimal edits)
+
+* In `static/pro.html` and `static/client.html`, replace any mocked arrays with:
+
+  ```js
+  const lib = await fetch('/api/library').then(r=>r.json());
+  const weeks = await fetch('/api/program/12m').then(r=>r.json());
+  const templates = await fetch('/api/templates').then(r=>r.json());
+  ```
+* IDs in `exercises.json` already align with planner chips; `map_templates.json` gives you default blocks per belt/phase.
+
+---
+
+## If Replit AI is “ignoring” design requests or breaking functionality
+
+Here’s how to stop it from mangling files and keep progress moving:
+
+1. **Paste whole files, not snippets**
+   The agent struggles with partial diffs. Replace the entire `pro.html` or `client.html` file in one go when you make changes.
+
+2. **Pause AI for bulk edits**
+   Toggle the AI helper off while you paste and run, then re-enable for smaller edits or Q&A.
+
+3. **Lock formatting**
+   Single-file HTML with inline Tailwind + JS is deliberate: fewer moving parts, fewer AI “fixes.” If you later split files, add a `.editorconfig` and stick to one formatter so AI is less tempted to reflow.
+
+4. **Keep a /backup or GitHub mirror**
+   Copy known-good versions into `/backup` or push to GitHub. If the AI breaks something, copy back instantly.
+
+5. **Small commits; test after each change**
+   Change one section → run → commit. The agent behaves better on tiny diffs.
+
+6. **Don’t let AI touch the Run command**
+   Keep:
+
+   ```bash
+   uvicorn app:app --host 0.0.0.0 --port 8000
+   ```
+
+   Pin this in the Run pane.
+
+---
+
+## What’s next (optional, I can ship immediately)
+
+* **PWA** (installable app, offline cache, push): add `service-worker.js` + `manifest.webmanifest`.
+* **POST endpoints**: `/api/logs/readiness`, `/api/logs/set`, `/api/messages` with simple JSON store.
+* **Video micro-previews**: replace exercise placeholders with 3–5s muted loops.
+* **Belt gates**: thresholds for TH symmetry, RSI, Flying-20 tied to promotion logic.
+
+If you want me to wire the HTML to the live endpoints and push a **v3.1** with fetch() already integrated, say the word and I’ll hand you an updated bundle.
