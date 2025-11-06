@@ -169,7 +169,7 @@ export default function ProgramBuilder() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <Button
@@ -389,13 +389,13 @@ export default function ProgramBuilder() {
       </div>
 
       {loadingExercises ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="h-[200px] rounded-lg bg-muted animate-pulse" />
           ))}
         </div>
       ) : Object.keys(weekDays).length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 7 }, (_, i) => i + 1).map((dayNum) => {
             const dayExercises = weekDays[dayNum] || [];
             if (dayExercises.length === 0) return null;

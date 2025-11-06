@@ -175,7 +175,7 @@ export default function AthleteDetail() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <Button
@@ -301,7 +301,7 @@ export default function AthleteDetail() {
         </Dialog>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         <Card className="bglass shadow-glass border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Active Programs</CardTitle>
@@ -337,13 +337,13 @@ export default function AthleteDetail() {
       <div>
         <h2 className="text-lg font-semibold mb-4">Assigned Programs</h2>
         {loadingPrograms ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {[1, 2].map((i) => (
               <div key={i} className="h-[180px] rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
         ) : athletePrograms && athletePrograms.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2">
             {athletePrograms.map((ap) => (
               <Card key={ap.id} className="bglass shadow-glass border-0" data-testid={`assignment-card-${ap.id}`}>
                 <CardHeader className="pb-3">

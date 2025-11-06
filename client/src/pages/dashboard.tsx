@@ -40,7 +40,7 @@ export default function Dashboard() {
   const isLoading = loadingAthletes || loadingExercises || loadingPrograms || loadingStats;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-100">
@@ -56,7 +56,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Athletes"
           value={isLoading ? "-" : athletes?.length || 0}
@@ -84,8 +84,8 @@ export default function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-4">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-6">
           <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold text-slate-100">Activity Overview</CardTitle>
@@ -122,7 +122,7 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold text-slate-100">Current Streak</CardTitle>

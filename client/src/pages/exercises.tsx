@@ -155,7 +155,7 @@ export default function Exercises() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Video Player Dialog */}
       <Dialog open={!!videoExercise} onOpenChange={(open) => !open && setVideoExercise(null)}>
         <DialogContent className="max-w-4xl">
