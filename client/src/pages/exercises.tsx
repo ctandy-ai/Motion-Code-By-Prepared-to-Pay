@@ -201,7 +201,7 @@ export default function Exercises() {
           <div>
             <h2 className="font-semibold text-lg text-slate-100">Exercise Library</h2>
             <p className="text-sm text-slate-400 mt-1">
-              {filteredExercises.length} exercise{filteredExercises.length === 1 ? '' : 's'} in your library
+              {filteredExercises?.length || 0} exercise{(filteredExercises?.length || 0) === 1 ? '' : 's'} in your library
             </p>
           </div>
           <div className="chip">Coach Portal</div>

@@ -14,7 +14,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: ExerciseCardProps) {
   return (
     <Card 
-      className="overflow-hidden magnetic-hover transition-all duration-300 group border-2 border-xp/20 hover:border-xp/40"
+      className="overflow-hidden bglass shadow-glass border-0 magnetic-hover transition-all duration-300 group"
       data-testid={`exercise-card-${exercise.id}`}
     >
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
@@ -49,18 +49,18 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
           </h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs text-slate-100">
             {exercise.category}
           </Badge>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs text-slate-200">
             {exercise.muscleGroup}
           </Badge>
           <Badge 
             variant="outline" 
             className={`text-xs ${
-              exercise.difficulty === "Beginner" ? "border-green-500 text-green-700" :
-              exercise.difficulty === "Intermediate" ? "border-yellow-500 text-yellow-700" :
-              "border-red-500 text-red-700"
+              exercise.difficulty === "Beginner" ? "border-emerald-500/50 text-emerald-400" :
+              exercise.difficulty === "Intermediate" ? "border-amber-500/50 text-amber-400" :
+              "border-rose-500/50 text-rose-400"
             }`}
           >
             {exercise.difficulty}
@@ -78,12 +78,12 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
       </CardContent>
 
       {(onEdit || onDelete) && (
-        <CardFooter className="gap-2 border-t pt-3">
+        <CardFooter className="gap-2 border-t border-slate-700/30 pt-3">
           {onEdit && (
             <Button
               variant="outline"
               size="sm"
-              className="flex-1"
+              className="flex-1 text-slate-200"
               onClick={() => onEdit(exercise)}
               data-testid={`button-edit-${exercise.id}`}
             >
@@ -95,6 +95,7 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
             <Button
               variant="outline"
               size="sm"
+              className="text-slate-200"
               onClick={() => onDelete(exercise.id)}
               data-testid={`button-delete-${exercise.id}`}
             >
