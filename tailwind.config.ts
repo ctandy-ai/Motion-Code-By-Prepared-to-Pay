@@ -11,27 +11,27 @@ export default {
         sm: ".1875rem", /* 3px */
       },
       colors: {
-        // Ink colors (professional dark palette from prototypes)
+        // Pro_v3 Ink colors - using HSL from CSS variables
         ink: {
-          0: "#0b0f1a",
-          1: "#0e1422",
-          2: "#12192a",
-          3: "#162035",
-          4: "#1b2944",
-          5: "#213252",
+          0: "hsl(var(--ink-0) / <alpha-value>)",
+          1: "hsl(var(--ink-1) / <alpha-value>)",
+          2: "hsl(var(--ink-2) / <alpha-value>)",
+          3: "hsl(var(--ink-3) / <alpha-value>)",
+          4: "hsl(var(--ink-4) / <alpha-value>)",
+          5: "hsl(var(--ink-5) / <alpha-value>)",
         },
-        // Brand colors (indigo/violet scale from prototypes)
+        // Pro_v3 Brand colors - using HSL from CSS variables
         brand: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81",
+          50: "hsl(var(--brand-50) / <alpha-value>)",
+          100: "hsl(var(--brand-100) / <alpha-value>)",
+          200: "hsl(var(--brand-200) / <alpha-value>)",
+          300: "hsl(var(--brand-300) / <alpha-value>)",
+          400: "hsl(var(--brand-400) / <alpha-value>)",
+          500: "hsl(var(--brand-500) / <alpha-value>)",
+          600: "hsl(var(--brand-600) / <alpha-value>)",
+          700: "hsl(var(--brand-700) / <alpha-value>)",
+          800: "hsl(var(--brand-800) / <alpha-value>)",
+          900: "hsl(var(--brand-900) / <alpha-value>)",
         },
         // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
