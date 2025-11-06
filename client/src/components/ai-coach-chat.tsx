@@ -1,11 +1,8 @@
 import { useState } from "react";
-import { Bot, Send, Sparkles, X, Minimize2, Maximize2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Bot, Send, X, Minimize2, Maximize2, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
 import { StrideLogo } from "@/components/stride-logo";
 
@@ -63,54 +60,49 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
 
   if (!isOpen) {
     return (
-      <Button
+      <button
         onClick={() => setIsOpen(true)}
-        size="icon"
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-primary to-accent hover:scale-110 transition-transform z-50"
+        className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-glow bg-brand-600 hover:bg-brand-500 hover:scale-110 transition-all z-50 flex items-center justify-center"
         data-testid="button-open-ai-chat"
       >
-        <Bot className="h-6 w-6" />
-      </Button>
+        <Bot className="h-8 w-8 text-white" />
+      </button>
     );
   }
 
   return (
-    <Card 
-      className={`fixed bottom-6 right-6 w-96 shadow-2xl transition-all duration-300 z-50 ${
+    <div 
+      className={`fixed bottom-6 right-6 w-96 bglass shadow-glass rounded-2xl transition-all duration-300 z-50 flex flex-col ${
         isMinimized ? 'h-16' : 'h-[600px]'
       }`}
       data-testid="card-ai-chat"
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/10 to-accent/10">
+      <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md p-1.5">
+          <div className="h-8 w-8 rounded-lg bg-brand-600 flex items-center justify-center shadow-md p-1.5">
             <StrideLogo className="h-full w-full text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">StrideCode AI Coach</h3>
-            <Badge variant="secondary" className="text-xs">Powered by GPT-4.1</Badge>
+            <h3 className="font-semibold text-sm text-slate-100">StrideCode AI Coach</h3>
+            <div className="chip text-[10px] px-2 py-0.5">Powered by GPT-4.1</div>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="h-8 w-8"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors"
             data-testid="button-minimize-chat"
           >
             {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
+          </button>
+          <button
             onClick={() => setIsOpen(false)}
-            className="h-8 w-8"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors"
             data-testid="button-close-chat"
           >
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
       </div>
 
@@ -125,23 +117,23 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
                 data-testid={`message-${message.role}-${index}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                     message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
+                      ? 'bg-brand-600 text-white'
+                      : 'ringify bg-white/5'
                   }`}
                 >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  <p className={`text-sm whitespace-pre-wrap ${message.role === 'assistant' ? 'text-slate-200' : ''}`}>{message.content}</p>
                 </div>
               </div>
             ))}
             {chatMutation.isPending && (
               <div className="flex justify-start">
-                <div className="bg-muted rounded-lg p-3">
+                <div className="ringify bg-white/5 rounded-2xl px-4 py-2">
                   <div className="flex gap-1">
-                    <div className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce" />
-                    <div className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="h-2 w-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" />
+                    <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="h-2 w-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                   </div>
                 </div>
               </div>
@@ -149,7 +141,7 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-white/10 shrink-0">
             <div className="flex gap-2">
               <Input
                 value={input}
@@ -160,22 +152,22 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
                 data-testid="input-chat-message"
                 className="flex-1"
               />
-              <Button
+              <button
                 onClick={handleSend}
                 disabled={!input.trim() || chatMutation.isPending}
-                size="icon"
+                className="btn btn-pri h-9 w-9 flex items-center justify-center disabled:opacity-50"
                 data-testid="button-send-message"
               >
                 <Send className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
-            <div className="flex items-start gap-2 mt-2 text-xs text-muted-foreground">
+            <div className="flex items-start gap-2 mt-2 text-xs text-slate-500">
               <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
               <p>For medical concerns, consult a healthcare professional</p>
             </div>
           </div>
         </>
       )}
-    </Card>
+    </div>
   );
 }
