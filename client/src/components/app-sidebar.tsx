@@ -61,15 +61,15 @@ export function AppSidebar() {
   const [location] = useLocation();
 
   return (
-    <Sidebar data-testid="app-sidebar" className="bg-[#0a0c14] shadow-glass border border-white/10 m-5 rounded-2xl">
+    <Sidebar data-testid="app-sidebar" className="bglass shadow-glass border-0 m-5 rounded-2xl">
       <SidebarHeader className="p-4 border-b border-white/10">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center font-extrabold text-white p-2">
-            <StrideLogo className="h-full w-full" />
+            <StrideLogo className="h-full w-full text-white" />
           </div>
           <div>
-            <h2 className="font-heading text-base font-bold text-slate-100">
-              STRIDE <span className="text-brand-300">CODE PRO</span>
+            <h2 className="font-bold -mb-0.5 text-slate-100">
+              StrideCode <span className="text-brand-300">Pro</span>
             </h2>
             <p className="text-[11px] text-slate-400">Design Programs · Track Progress</p>
           </div>
@@ -77,22 +77,22 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent className="p-4">
-        <nav className="space-y-1">
+        <nav className="mt-4 space-y-1">
           {menuItems.map((item) => {
             const isActive = location === item.url;
             return (
               <Link 
                 key={item.url}
                 href={item.url}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-xl font-medium transition-colors ${
                   isActive 
                     ? 'bg-white/10 text-slate-100' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    : 'text-slate-200 hover:bg-white/5'
                 }`}
                 data-testid={`nav-${item.title.toLowerCase()}`}
               >
                 <item.icon className="h-4 w-4" />
-                <span className="text-sm font-medium">{item.title}</span>
+                <span className="text-sm">{item.title}</span>
               </Link>
             );
           })}
@@ -100,13 +100,16 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="p-4 border-t border-white/10">
-        <div className="flex items-center gap-3 rounded-xl bg-white/5 p-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white font-semibold text-sm">
-            C
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-100 truncate">Coach User</p>
-            <p className="text-xs text-slate-400 truncate">coach@elite.com</p>
+        <div className="mt-6 p-3 rounded-xl ringify">
+          <div className="text-xs text-slate-400 mb-2">Current User</div>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-800 flex items-center justify-center font-bold text-white">
+              CU
+            </div>
+            <div>
+              <div className="font-semibold text-slate-100">Coach User</div>
+              <div className="text-[11px] text-slate-400">Elite · Strength</div>
+            </div>
           </div>
         </div>
       </SidebarFooter>
