@@ -41,7 +41,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-foreground">
             Dashboard
@@ -86,21 +86,21 @@ export default function Dashboard() {
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-4">
-          <Card className="border shadow-sm">
+          <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold">Activity Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
+                <div className="flex items-center justify-between p-3 rounded-xl ringify">
                   <span className="text-sm font-medium text-muted-foreground">Total Workouts</span>
                   <span className="text-xl font-semibold text-foreground">{dashboardStats?.totalWorkouts || 0}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
+                <div className="flex items-center justify-between p-3 rounded-xl ringify">
                   <span className="text-sm font-medium text-muted-foreground">Total Sets</span>
                   <span className="text-xl font-semibold text-foreground">{dashboardStats?.totalSets || 0}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-md bg-muted/30 border">
+                <div className="flex items-center justify-between p-3 rounded-xl ringify">
                   <span className="text-sm font-medium text-muted-foreground">Personal Records</span>
                   <span className="text-xl font-semibold text-success">{dashboardStats?.totalPRs || 0}</span>
                 </div>
@@ -108,7 +108,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border shadow-sm">
+          <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold">Performance Level</CardTitle>
               <div className="text-xs text-muted-foreground">Level {dashboardStats?.level || 1}</div>
@@ -123,7 +123,7 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-4">
-          <Card className="border shadow-sm">
+          <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold">Current Streak</CardTitle>
             </CardHeader>
@@ -137,7 +137,7 @@ export default function Dashboard() {
           </Card>
 
           {dashboardStats && dashboardStats.topAthletes.length > 0 && (
-            <Card className="border shadow-sm">
+            <Card className="bglass shadow-glass border-0">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold">Top Performers</CardTitle>
               </CardHeader>
@@ -146,10 +146,10 @@ export default function Dashboard() {
                   {dashboardStats.topAthletes.map((athlete, index) => (
                     <div 
                       key={athlete.id} 
-                      className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-3 p-2 rounded-xl ringify hover-elevate transition-colors"
                       data-testid={`top-athlete-${athlete.id}`}
                     >
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-600 text-xs font-medium text-white">
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">

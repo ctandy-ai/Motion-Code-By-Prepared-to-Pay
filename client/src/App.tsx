@@ -48,30 +48,28 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SidebarProvider style={style as React.CSSProperties}>
-          <div className="flex h-screen w-full">
+          <div className="flex h-screen w-full bg-ink-1 text-slate-200">
             <AppSidebar />
             <div className="flex flex-col flex-1 overflow-hidden">
-              <header className="flex h-20 shrink-0 items-center justify-between gap-4 border-b bg-card px-8 shadow-sm">
-                <div className="flex items-center gap-4">
+              <header className="bglass rounded-2xl shadow-glass px-5 py-4 flex items-center justify-between mx-5 mt-5">
+                <div className="flex items-center gap-3">
                   <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9" />
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg p-2">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center shadow-lg p-2">
                       <StrideLogo className="h-full w-full text-white" />
                     </div>
                     <div>
-                      <h1 className="font-heading text-lg font-bold text-foreground">
-                        StrideCode <span className="text-primary">Pro</span>
+                      <h1 className="font-heading text-base font-bold text-slate-100">
+                        StrideCode <span className="text-brand-300">Pro</span>
                       </h1>
-                      <p className="text-xs text-muted-foreground">Design Programs · Track Progress</p>
+                      <p className="text-[11px] text-slate-400">Design Programs · Track Progress</p>
                     </div>
                   </div>
                 </div>
                 <ThemeToggle />
               </header>
-              <main className="flex-1 overflow-y-auto bg-background">
-                <div className="container mx-auto p-8 max-w-7xl">
-                  <Router />
-                </div>
+              <main className="flex-1 overflow-y-auto p-5">
+                <Router />
               </main>
             </div>
           </div>

@@ -61,17 +61,17 @@ export function AppSidebar() {
   const [location] = useLocation();
 
   return (
-    <Sidebar data-testid="app-sidebar">
-      <SidebarHeader className="p-6">
+    <Sidebar data-testid="app-sidebar" className="bglass shadow-glass border-0 m-5 rounded-2xl">
+      <SidebarHeader className="p-4 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg p-2">
-            <StrideLogo className="h-full w-full text-white" />
+          <div className="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center font-extrabold text-white p-2">
+            <StrideLogo className="h-full w-full" />
           </div>
           <div>
-            <h2 className="font-heading text-base font-bold text-foreground">
-              StrideCode <span className="text-primary">Pro</span>
+            <h2 className="font-heading text-base font-bold text-slate-100">
+              StrideCode <span className="text-brand-300">Pro</span>
             </h2>
-            <p className="text-[10px] text-muted-foreground">Design Programs · Track Progress</p>
+            <p className="text-[11px] text-slate-400">Design Programs · Track Progress</p>
           </div>
         </div>
       </SidebarHeader>

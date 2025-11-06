@@ -148,13 +148,13 @@ export default function Athletes() {
 
   const filteredAthletes = athletes?.filter((athlete) =>
     athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    athlete.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    athlete.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     athlete.team?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-heading text-4xl font-bold text-foreground">Athletes</h1>
           <p className="text-muted-foreground mt-2">
@@ -259,7 +259,8 @@ export default function Athletes() {
                         <Input 
                           type="email"
                           placeholder="athlete@example.com" 
-                          {...field} 
+                          {...field}
+                          value={field.value || ""}
                           data-testid="input-athlete-email"
                         />
                       </FormControl>
@@ -278,7 +279,8 @@ export default function Athletes() {
                         <FormControl>
                           <Input 
                             placeholder="e.g. Varsity Football" 
-                            {...field} 
+                            {...field}
+                            value={field.value || ""}
                             data-testid="input-athlete-team"
                           />
                         </FormControl>
@@ -296,7 +298,8 @@ export default function Athletes() {
                         <FormControl>
                           <Input 
                             placeholder="e.g. Quarterback" 
-                            {...field} 
+                            {...field}
+                            value={field.value || ""}
                             data-testid="input-athlete-position"
                           />
                         </FormControl>
@@ -344,13 +347,13 @@ export default function Athletes() {
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-[240px] rounded-lg bg-muted animate-pulse" />
+            <div key={i} className="h-[240px] rounded-2xl bglass shadow-glass animate-shimmer" />
           ))}
         </div>
       ) : filteredAthletes && filteredAthletes.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredAthletes.map((athlete) => (
-            <Card key={athlete.id} className="hover-elevate transition-all duration-200" data-testid={`athlete-card-${athlete.id}`}>
+            <Card key={athlete.id} className="bglass shadow-glass border-0 hover-elevate transition-all duration-200" data-testid={`athlete-card-${athlete.id}`}>
               <CardHeader className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold">

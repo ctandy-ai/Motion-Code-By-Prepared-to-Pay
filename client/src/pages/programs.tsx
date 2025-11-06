@@ -81,7 +81,7 @@ export default function Programs() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-heading text-4xl font-bold text-foreground">Training Programs</h1>
           <p className="text-muted-foreground mt-2">
@@ -189,13 +189,13 @@ export default function Programs() {
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-[240px] rounded-lg bg-muted animate-pulse" />
+            <div key={i} className="h-[240px] rounded-2xl bglass shadow-glass animate-shimmer" />
           ))}
         </div>
       ) : programs && programs.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {programs.map((program) => (
-            <Card key={program.id} className="hover-elevate transition-all duration-200" data-testid={`program-card-${program.id}`}>
+            <Card key={program.id} className="bglass shadow-glass border-0 hover-elevate transition-all duration-200" data-testid={`program-card-${program.id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
