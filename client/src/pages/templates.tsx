@@ -107,8 +107,8 @@ export default function Templates() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-heading text-4xl font-bold text-foreground">Program Templates</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="font-heading text-4xl font-bold text-slate-100">Program Templates</h1>
+        <p className="text-slate-400 mt-2">
           Pre-built training programs ready to customize for your athletes
         </p>
       </div>
@@ -140,9 +140,9 @@ export default function Templates() {
       {filteredTemplates.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+            <FileText className="h-16 w-16 text-slate-400 mb-4" />
             <h3 className="font-semibold text-lg mb-2">No Templates Found</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-slate-400">
               {searchTerm
                 ? "Try adjusting your search terms"
                 : "Create your first program template to get started"}
@@ -165,7 +165,7 @@ export default function Templates() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground line-clamp-3">
+                <p className="text-sm text-slate-400 line-clamp-3">
                   {template.description || "No description available"}
                 </p>
 
@@ -244,14 +244,14 @@ export default function Templates() {
               {selectedTemplate && (
                 <div className="rounded-lg border p-4 bg-muted/50 space-y-2">
                   <h4 className="font-semibold text-sm">Template Details:</h4>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-400">
                     Duration: {selectedTemplate.duration} weeks
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-slate-400">
                     Category: {selectedTemplate.category}
                   </p>
                   {selectedTemplate.description && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-slate-400">
                       {selectedTemplate.description}
                     </p>
                   )}

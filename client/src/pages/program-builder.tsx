@@ -181,10 +181,10 @@ export default function ProgramBuilder() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
+            <h1 className="text-2xl font-semibold text-slate-100">
               {program.name}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-slate-400 mt-1">
               Build your {program.duration}-week training program
             </p>
           </div>
@@ -372,7 +372,7 @@ export default function ProgramBuilder() {
       </div>
 
       <div className="flex items-center gap-2 border-b pb-4">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+        <Calendar className="h-4 w-4 text-slate-400" />
         <div className="flex gap-2 flex-wrap">
           {Array.from({ length: program.duration }, (_, i) => i + 1).map((week) => (
             <Button
@@ -425,7 +425,7 @@ export default function ProgramBuilder() {
                           <p className="text-sm font-medium truncate">
                             {getExerciseName(pe.exerciseId)}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-slate-400">
                             {pe.sets} × {pe.reps} reps
                             {pe.restSeconds && ` • ${pe.restSeconds}s rest`}
                           </p>
@@ -449,10 +449,10 @@ export default function ProgramBuilder() {
         </div>
       ) : (
         <div className="text-center py-16 border-2 border-dashed rounded-lg">
-          <h3 className="text-base font-semibold text-foreground mb-2">
+          <h3 className="text-base font-semibold text-slate-100 mb-2">
             No exercises for Week {selectedWeek}
           </h3>
-          <p className="text-sm text-muted-foreground mb-6">
+          <p className="text-sm text-slate-400 mb-6">
             Add exercises to build your training program
           </p>
           <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-first-exercise">

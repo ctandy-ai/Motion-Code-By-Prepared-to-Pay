@@ -168,7 +168,7 @@ export default function Workout() {
             <Dumbbell className="h-8 w-8 text-primary" />
             Today's Workout
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-slate-400 mt-2">
             Log your sets, reps, and weights to track your progress
           </p>
         </div>
@@ -211,9 +211,9 @@ export default function Workout() {
         {!selectedAthleteId ? (
           <Card>
             <CardContent className="p-12 text-center">
-              <User className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <User className="h-16 w-16 mx-auto text-slate-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2">Select an athlete to begin</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-400">
                 Choose an athlete from the dropdown above to view their workout
               </p>
             </CardContent>
@@ -227,9 +227,9 @@ export default function Workout() {
         {selectedAthleteId && !isLoading && todayWorkout.length === 0 && (
           <Card>
             <CardContent className="p-12 text-center">
-              <Clock className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <Clock className="h-16 w-16 mx-auto text-slate-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2">No workout scheduled for today</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-400">
                 Rest day or check program assignments
               </p>
             </CardContent>
@@ -260,12 +260,12 @@ export default function Workout() {
                         </CardDescription>
                       </div>
                       <div className="text-right">
-                        <div className="text-sm text-muted-foreground">Prescribed</div>
+                        <div className="text-sm text-slate-400">Prescribed</div>
                         <div className="text-lg font-semibold">
                           {item.programExercise.sets} × {item.programExercise.reps}
                         </div>
                         {item.programExercise.restSeconds && (
-                          <div className="text-xs text-muted-foreground mt-1">
+                          <div className="text-xs text-slate-400 mt-1">
                             Rest: {item.programExercise.restSeconds}s
                           </div>
                         )}
@@ -298,7 +298,7 @@ export default function Workout() {
                           className="flex items-center gap-3"
                           data-testid={`set-row-${exerciseId}-${index}`}
                         >
-                          <div className="w-12 text-sm font-medium text-muted-foreground">
+                          <div className="w-12 text-sm font-medium text-slate-400">
                             Set {index + 1}
                           </div>
                           <div className="flex-1 flex items-center gap-3">
@@ -386,7 +386,7 @@ export default function Workout() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-400">
                 {recentLogs.length} workouts logged
               </p>
             </CardContent>

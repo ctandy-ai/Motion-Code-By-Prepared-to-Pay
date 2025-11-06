@@ -4,7 +4,7 @@ import { Exercise, InsertExercise } from "@shared/schema";
 import { ExerciseCard } from "@/components/exercise-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Dumbbell } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -157,8 +157,8 @@ export default function Exercises() {
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-heading text-4xl font-bold text-foreground">Exercise Library</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="font-heading text-4xl font-bold text-slate-100">Exercise Library</h1>
+          <p className="text-slate-400 mt-2">
             Manage your complete exercise database with videos and instructions.
           </p>
         </div>
@@ -309,7 +309,8 @@ export default function Exercises() {
                       <FormControl>
                         <Input 
                           placeholder="https://..." 
-                          {...field} 
+                          {...field}
+                          value={field.value || ""}
                           data-testid="input-edit-video-url"
                         />
                       </FormControl>
@@ -493,7 +494,8 @@ export default function Exercises() {
                       <FormControl>
                         <Input 
                           placeholder="https://..." 
-                          {...field} 
+                          {...field}
+                          value={field.value || ""}
                           data-testid="input-video-url"
                         />
                       </FormControl>
@@ -527,7 +529,7 @@ export default function Exercises() {
 
       <div className="flex items-center gap-4 flex-wrap">
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             placeholder="Search exercises..."
             value={searchQuery}
@@ -568,11 +570,11 @@ export default function Exercises() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <Dumbbell className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
+          <Dumbbell className="mx-auto h-16 w-16 text-slate-400 mb-4" />
+          <h3 className="font-heading text-xl font-semibold text-slate-100 mb-2">
             No exercises found
           </h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-slate-400 mb-6">
             {searchQuery || selectedCategory !== "all" 
               ? "Try adjusting your search or filters" 
               : "Get started by adding your first exercise"}

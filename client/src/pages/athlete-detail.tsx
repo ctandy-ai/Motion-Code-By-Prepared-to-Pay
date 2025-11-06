@@ -187,10 +187,10 @@ export default function AthleteDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
+            <h1 className="text-2xl font-semibold text-slate-100">
               {athlete.name}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-slate-400 mt-1">
               {athlete.team && athlete.position
                 ? `${athlete.team} • ${athlete.position}`
                 : athlete.team || athlete.position || "No team assigned"}
@@ -244,7 +244,7 @@ export default function AthleteDetail() {
                       <FormControl>
                         <input
                           type="date"
-                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           value={field.value}
                           onChange={(e) => field.onChange(e.target.value)}
                           data-testid="input-start-date"
@@ -304,7 +304,7 @@ export default function AthleteDetail() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Programs</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Active Programs</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -314,7 +314,7 @@ export default function AthleteDetail() {
         </Card>
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Programs</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Completed Programs</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -324,7 +324,7 @@ export default function AthleteDetail() {
         </Card>
         <Card className="border shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Programs</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-400">Total Programs</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -357,11 +357,11 @@ export default function AthleteDetail() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
                     <Calendar className="h-4 w-4" />
                     <span>Started {new Date(ap.startDate).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
                     <Trophy className="h-4 w-4" />
                     <span>{getProgramDuration(ap.programId)} weeks</span>
                   </div>
@@ -403,10 +403,10 @@ export default function AthleteDetail() {
           </div>
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h3 className="text-base font-semibold text-foreground mb-2">
+            <h3 className="text-base font-semibold text-slate-100 mb-2">
               No programs assigned
             </h3>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-slate-400 mb-6">
               Assign a training program to get started
             </p>
             <Button onClick={() => setIsDialogOpen(true)} data-testid="button-assign-first-program">

@@ -157,8 +157,8 @@ export default function Calendar() {
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-heading text-4xl font-bold text-foreground">Training Calendar</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="font-heading text-4xl font-bold text-slate-100">Training Calendar</h1>
+          <p className="text-slate-400 mt-2">
             Schedule and track workouts across your entire program.
           </p>
         </div>
@@ -208,7 +208,7 @@ export default function Calendar() {
             {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
               <div
                 key={day}
-                className="text-center text-sm font-semibold text-muted-foreground py-2"
+                className="text-center text-sm font-semibold text-slate-400 py-2"
               >
                 {day}
               </div>
@@ -240,7 +240,7 @@ export default function Calendar() {
                   <div className="flex flex-col h-full">
                     <span
                       className={`text-sm font-medium ${
-                        isToday ? "text-primary" : "text-foreground"
+                        isToday ? "text-primary" : "text-slate-100"
                       }`}
                     >
                       {day}
@@ -249,13 +249,13 @@ export default function Calendar() {
                       {completedWorkouts.length > 0 && (
                         <div className="flex items-center gap-1">
                           <Check className="h-3 w-3 text-green-600" />
-                          <span className="text-xs text-muted-foreground">{completedWorkouts.length}</span>
+                          <span className="text-xs text-slate-400">{completedWorkouts.length}</span>
                         </div>
                       )}
                       {scheduledCount > 0 && (
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3 text-blue-500" />
-                          <span className="text-xs text-muted-foreground">{scheduledCount}</span>
+                          <span className="text-xs text-slate-400">{scheduledCount}</span>
                         </div>
                       )}
                     </div>
@@ -275,7 +275,7 @@ export default function Calendar() {
           <CardContent>
             <div className="space-y-4">
               {getUpcomingWorkouts().length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
+                <p className="text-sm text-slate-400 text-center py-8">
                   No active programs scheduled
                 </p>
               ) : (
@@ -291,10 +291,10 @@ export default function Calendar() {
                         <CalendarIcon className="h-6 w-6" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">
+                        <p className="text-sm font-semibold text-slate-100 truncate">
                           {athlete?.name || 'Unknown Athlete'}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-slate-400">
                           {program.startDate ? format(parseISO(program.startDate.toString()), 'MMM d, yyyy') : 'No date'}
                         </p>
                       </div>
@@ -314,18 +314,18 @@ export default function Calendar() {
           <CardContent>
             <div className="space-y-4">
               <div>
-                <p className="text-sm text-muted-foreground">Total Completed</p>
-                <p className="text-3xl font-bold text-foreground">{filteredLogs.length}</p>
+                <p className="text-sm text-slate-400">Total Completed</p>
+                <p className="text-3xl font-bold text-slate-100">{filteredLogs.length}</p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Active Programs</p>
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-sm text-slate-400">Active Programs</p>
+                <p className="text-3xl font-bold text-slate-100">
                   {filteredPrograms.filter(ap => ap.status === 'active').length}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-                <p className="text-3xl font-bold text-foreground">
+                <p className="text-sm text-slate-400">This Month</p>
+                <p className="text-3xl font-bold text-slate-100">
                   {filteredLogs.filter(log => {
                     if (!log.completedAt) return false;
                     const logDate = parseISO(log.completedAt.toString());
@@ -365,11 +365,11 @@ export default function Calendar() {
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-semibold">{exercise?.name || 'Unknown Exercise'}</p>
-                                <p className="text-sm text-muted-foreground">{athlete?.name || 'Unknown Athlete'}</p>
+                                <p className="text-sm text-slate-400">{athlete?.name || 'Unknown Athlete'}</p>
                               </div>
                               <div className="text-right">
                                 <Badge variant="secondary">{log.sets} sets</Badge>
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <p className="text-xs text-slate-400 mt-1">
                                   {log.weightPerSet} lbs
                                 </p>
                               </div>
@@ -398,13 +398,13 @@ export default function Calendar() {
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="font-semibold text-base">{item.exercise.name}</p>
-                                  <p className="text-sm text-muted-foreground">{athlete?.name || 'Unknown'}</p>
+                                  <p className="text-sm text-slate-400">{athlete?.name || 'Unknown'}</p>
                                 </div>
                                 <Badge variant="secondary" className="shrink-0">
                                   {item.programExercise.sets}×{item.programExercise.reps}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-3 text-xs text-slate-400">
                                 <span>Week {item.programExercise.weekNumber}</span>
                                 <span>•</span>
                                 <span>Day {item.programExercise.dayNumber}</span>
@@ -416,7 +416,7 @@ export default function Calendar() {
                                 )}
                               </div>
                               {item.programExercise.notes && (
-                                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                                <p className="text-xs text-slate-400 mt-2 pt-2 border-t">
                                   {item.programExercise.notes}
                                 </p>
                               )}
@@ -430,7 +430,7 @@ export default function Calendar() {
               )}
 
               {selectedDayData.completed.length === 0 && selectedDayData.scheduledExercises.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">
+                <p className="text-center text-slate-400 py-8">
                   No workouts scheduled or completed on this day
                 </p>
               )}
