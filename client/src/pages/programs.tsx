@@ -83,8 +83,8 @@ export default function Programs() {
     <div className="space-y-8">
       <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-heading text-4xl font-bold text-foreground">Training Programs</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="font-heading text-4xl font-bold text-slate-100">Training Programs</h1>
+          <p className="text-slate-400 mt-2">
             Create and manage comprehensive training programs for your athletes.
           </p>
         </div>
@@ -199,7 +199,7 @@ export default function Programs() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="font-heading text-xl line-clamp-2">
+                    <CardTitle className="font-heading text-xl text-slate-100 line-clamp-2">
                       {program.name}
                     </CardTitle>
                   </div>
@@ -212,15 +212,15 @@ export default function Programs() {
 
               <CardContent>
                 {program.description ? (
-                  <p className="text-sm text-muted-foreground line-clamp-3">
+                  <p className="text-sm text-slate-400 line-clamp-3">
                     {program.description}
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-foreground italic">
+                  <p className="text-sm text-slate-500 italic">
                     No description provided
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-4">
+                <p className="text-xs text-slate-500 mt-4">
                   Created {new Date(program.createdAt!).toLocaleDateString()}
                 </p>
               </CardContent>
@@ -249,11 +249,11 @@ export default function Programs() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
+          <BookOpen className="mx-auto h-16 w-16 text-slate-500 mb-4" />
+          <h3 className="font-heading text-xl font-semibold text-slate-200 mb-2">
             No programs yet
           </h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-slate-400 mb-6">
             Create your first training program to get started
           </p>
           <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-first-program">

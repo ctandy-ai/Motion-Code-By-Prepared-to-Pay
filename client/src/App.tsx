@@ -48,7 +48,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <SidebarProvider style={style as React.CSSProperties}>
-          <div className="flex h-screen w-full bg-ink-1 text-slate-200">
+          <div className="flex h-screen w-full bg-ink-1">
             <AppSidebar />
             <div className="flex flex-col flex-1 overflow-hidden">
               <header className="bglass rounded-2xl shadow-glass px-5 py-4 flex items-center justify-between mx-5 mt-5">

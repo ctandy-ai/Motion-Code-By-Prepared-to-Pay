@@ -43,16 +43,16 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">
+          <h1 className="text-2xl font-semibold text-slate-100">
             Dashboard
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-slate-400 mt-1">
             Overview of your training platform
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-muted-foreground">Last Updated</p>
-          <p className="text-sm font-medium text-foreground">{new Date().toLocaleDateString()}</p>
+          <p className="text-xs text-slate-400">Last Updated</p>
+          <p className="text-sm font-medium text-slate-200">{new Date().toLocaleDateString()}</p>
         </div>
       </div>
 
@@ -88,21 +88,21 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-4">
           <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">Activity Overview</CardTitle>
+              <CardTitle className="text-base font-semibold text-slate-100">Activity Overview</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-xl ringify">
-                  <span className="text-sm font-medium text-muted-foreground">Total Workouts</span>
-                  <span className="text-xl font-semibold text-foreground">{dashboardStats?.totalWorkouts || 0}</span>
+                  <span className="text-sm font-medium text-slate-400">Total Workouts</span>
+                  <span className="text-xl font-semibold text-slate-100">{dashboardStats?.totalWorkouts || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl ringify">
-                  <span className="text-sm font-medium text-muted-foreground">Total Sets</span>
-                  <span className="text-xl font-semibold text-foreground">{dashboardStats?.totalSets || 0}</span>
+                  <span className="text-sm font-medium text-slate-400">Total Sets</span>
+                  <span className="text-xl font-semibold text-slate-100">{dashboardStats?.totalSets || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-xl ringify">
-                  <span className="text-sm font-medium text-muted-foreground">Personal Records</span>
-                  <span className="text-xl font-semibold text-success">{dashboardStats?.totalPRs || 0}</span>
+                  <span className="text-sm font-medium text-slate-400">Personal Records</span>
+                  <span className="text-xl font-semibold text-emerald-400">{dashboardStats?.totalPRs || 0}</span>
                 </div>
               </div>
             </CardContent>
@@ -110,8 +110,8 @@ export default function Dashboard() {
 
           <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-semibold">Performance Level</CardTitle>
-              <div className="text-xs text-muted-foreground">Level {dashboardStats?.level || 1}</div>
+              <CardTitle className="text-base font-semibold text-slate-100">Performance Level</CardTitle>
+              <div className="text-xs text-slate-400">Level {dashboardStats?.level || 1}</div>
             </CardHeader>
             <CardContent>
               <XPBar 
@@ -125,13 +125,13 @@ export default function Dashboard() {
         <div className="space-y-4">
           <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">Current Streak</CardTitle>
+              <CardTitle className="text-base font-semibold text-slate-100">Current Streak</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center py-4">
-                <div className="text-4xl font-bold text-primary mb-2">{dashboardStats?.currentStreak || 0}</div>
-                <p className="text-sm text-muted-foreground">Days active</p>
-                <p className="text-xs text-muted-foreground mt-3">Best: {dashboardStats?.longestStreak || 0} days</p>
+                <div className="text-4xl font-bold text-brand-400 mb-2">{dashboardStats?.currentStreak || 0}</div>
+                <p className="text-sm text-slate-400">Days active</p>
+                <p className="text-xs text-slate-500 mt-3">Best: {dashboardStats?.longestStreak || 0} days</p>
               </div>
             </CardContent>
           </Card>
@@ -139,7 +139,7 @@ export default function Dashboard() {
           {dashboardStats && dashboardStats.topAthletes.length > 0 && (
             <Card className="bglass shadow-glass border-0">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Top Performers</CardTitle>
+                <CardTitle className="text-base font-semibold text-slate-100">Top Performers</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -153,8 +153,8 @@ export default function Dashboard() {
                         {index + 1}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{athlete.name}</p>
-                        <p className="text-xs text-muted-foreground">{athlete.team} • {athlete.xp.toLocaleString()} XP</p>
+                        <p className="text-sm font-medium text-slate-200 truncate">{athlete.name}</p>
+                        <p className="text-xs text-slate-400">{athlete.team} • {athlete.xp.toLocaleString()} XP</p>
                       </div>
                     </div>
                   ))}

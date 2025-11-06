@@ -156,8 +156,8 @@ export default function Athletes() {
     <div className="space-y-8">
       <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-heading text-4xl font-bold text-foreground">Athletes</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="font-heading text-4xl font-bold text-slate-100">Athletes</h1>
+          <p className="text-slate-400 mt-2">
             Manage your athlete roster and assign training programs.
           </p>
         </div>
