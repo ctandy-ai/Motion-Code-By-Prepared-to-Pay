@@ -76,23 +76,38 @@
   --chart-4: 175 60% 48%;
   --chart-5: 45 75% 52%;
   
-  /* Ocean Depth Professional Palette - Refined for credibility */
-  --primary: 200 80% 45%;           /* Deep Ocean Blue - trust, primary actions */
-  --accent: 175 55% 48%;            /* Professional Teal - achievements (reduced saturation) */
-  --coral: 15 75% 55%;              /* Coral Energy - challenges, CTAs (reduced saturation) */
-  --gold: 45 75% 52%;               /* Professional Gold - premium (reduced saturation) */
-  --success: 150 55% 45%;           /* Deep Teal-Green - completed */
-  --slate: 210 20% 35%;             /* Professional Slate - text emphasis */
+  /* Pro_v3 Ink Palette - Deep professional blacks */
+  --ink-0: 222 25% 5%;    /* #0b0f1a */
+  --ink-1: 222 27% 7%;    /* #0e1422 - main background */
+  --ink-2: 222 30% 10%;   /* #12192a */
+  --ink-3: 222 32% 13%;   /* #162035 */
+  --ink-4: 222 34% 16%;   /* #1b2944 */
+  --ink-5: 222 36% 19%;   /* #213252 */
   
-  /* Legacy mappings for backward compatibility */
-  --xp-purple: 200 75% 48%;         /* Ocean blue - less saturated */
-  --info: 175 55% 48%;              /* Teal - professional tone */
-  --warning: 15 75% 55%;            /* Coral - balanced energy */
+  /* Pro_v3 Brand Colors */
+  --brand-50: 239 80% 95%;
+  --brand-100: 239 85% 90%;
+  --brand-200: 239 90% 82%;
+  --brand-300: 239 95% 72%;
+  --brand-400: 239 85% 65%;
+  --brand-500: 239 75% 56%;   /* #6366f1 */
+  --brand-600: 239 75% 50%;   /* #4f46e5 - primary actions */
+  --brand-700: 239 70% 45%;   /* #4338ca */
+  --brand-800: 239 65% 40%;   /* #3730a3 */
+  --brand-900: 239 60% 35%;   /* #312e81 */
   
-  /* Achievement Tier Colors - More subdued for professionalism */
-  --achievement-gold: 45 70% 52%;
-  --achievement-silver: 210 12% 65%;
-  --achievement-bronze: 25 50% 48%;
+  /* Pro_v3 Accent Colors */
+  --accent-a: 142 71% 45%;  /* #22c55e - emerald */
+  --accent-b: 188 95% 42%;  /* #06b6d4 - cyan */
+  --accent-c: 38 92% 50%;   /* #f59e0b - amber */
+  
+  /* Legacy mappings */
+  --primary: 239 75% 50%;
+  --accent: 188 95% 42%;
+  --coral: 38 92% 50%;
+  --gold: 38 92% 50%;
+  --success: 142 71% 45%;
+  --slate: 210 20% 35%;
 
   --font-sans: Inter, system-ui, -apple-system, sans-serif;
   --font-heading: Rajdhani, Inter, system-ui, sans-serif;
@@ -152,23 +167,23 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 210 25% 8%;
+  --background: 222 27% 7%;    /* ink-1 */
 
-  --foreground: 210 10% 85%;
+  --foreground: 215 20% 82%;   /* slate-200 */
 
-  --border: 210 20% 18%;
+  --border: 220 13% 18%;
 
-  --card: 210 20% 12%;
+  --card: 222 30% 10%;         /* ink-2 */
 
-  --card-foreground: 210 10% 85%;
+  --card-foreground: 215 20% 82%;
 
-  --card-border: 210 20% 16%;
+  --card-border: 220 13% 15%;
 
-  --sidebar: 210 25% 10%;
+  --sidebar: 222 27% 7%;       /* ink-1 */
 
-  --sidebar-foreground: 210 10% 85%;
+  --sidebar-foreground: 215 20% 82%;
 
-  --sidebar-border: 210 20% 18%;
+  --sidebar-border: 220 13% 18%;
 
   --sidebar-primary: 200 95% 40%;
 
@@ -284,16 +299,59 @@
     border: 1px solid rgba(255, 255, 255, 0.05);
   }
 
-  /* Prototype glassmorphism from StrideCode v3 */
+  /* Pro_v3 Glassmorphism - EXACT match */
   .bglass {
     background: linear-gradient(180deg, rgba(34, 37, 63, 0.6), rgba(20, 22, 40, 0.7));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
 
-  /* Subtle ring/border effect */
+  /* Pro_v3 Ring effect - EXACT match */
   .ringify {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  }
+  
+  /* Pro_v3 Glass shadow - EXACT match */
+  .shadow-glass {
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+  
+  /* Pro_v3 Glow shadow - EXACT match */
+  .shadow-glow {
+    box-shadow: 0 14px 40px rgba(99, 102, 241, 0.38);
+  }
+  
+  /* Pro_v3 Chip style - EXACT match */
+  .chip {
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  
+  /* Pro_v3 Button styles - EXACT match */
+  .btn {
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .btn-pri {
+    background: #4f46e5;
+    color: white;
+    box-shadow: 0 10px 24px rgba(99, 102, 241, 0.35);
+  }
+  
+  .btn-sec {
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+  }
+  
+  /* Pro_v3 Skeleton shimmer - EXACT match */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+    background-size: 200% 100%;
   }
 
   /* Magnetic hover effect - from Awwwards winners */
