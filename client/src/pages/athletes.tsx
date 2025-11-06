@@ -189,12 +189,12 @@ export default function Athletes() {
                     <p className="text-sm text-muted-foreground">{importProgress}</p>
                   )}
                 </div>
-                <div className="rounded-lg border p-4 bg-muted/50">
-                  <h4 className="font-semibold text-sm mb-2">CSV Format:</h4>
-                  <p className="text-xs text-muted-foreground">
+                <div className="rounded-lg border-0 p-4 bglass">
+                  <h4 className="font-semibold text-sm mb-2 text-slate-100">CSV Format:</h4>
+                  <p className="text-xs text-slate-400">
                     Expected columns: FIRST, LAST, EMAIL, PHONE, GROUPS, CALENDAR, STATUS
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-slate-400 mt-1">
                     Athletes will be automatically assigned to their groups/teams.
                   </p>
                 </div>

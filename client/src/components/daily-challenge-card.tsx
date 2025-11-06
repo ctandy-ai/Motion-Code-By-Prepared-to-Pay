@@ -23,43 +23,43 @@ export function DailyChallengeCard({
 
   return (
     <div 
-      className={`p-4 rounded-md border bg-muted/20 ${className}`}
+      className={`p-4 rounded-xl bglass shadow-glass border-0 ${className}`}
       data-testid={`challenge-card-${challenge.id}`}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
             <div className={`
-              p-2 rounded-md border
-              ${completed ? 'bg-success/10 border-success/30' : 'bg-warning/10 border-warning/30'}
+              p-2 rounded-md border-0
+              ${completed ? 'bg-emerald-500/10' : 'bg-amber-500/10'}
             `}>
               {completed ? (
-                <CheckCircle2 className="h-4 w-4 text-success" data-testid="icon-completed" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-400" data-testid="icon-completed" />
               ) : (
-                <Target className="h-4 w-4 text-warning" data-testid="icon-target" />
+                <Target className="h-4 w-4 text-amber-400" data-testid="icon-target" />
               )}
             </div>
-            <h3 className="text-base font-semibold" data-testid="text-challenge-title">
+            <h3 className="text-base font-semibold text-slate-100" data-testid="text-challenge-title">
               {challenge.title}
             </h3>
           </div>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-accent/10 border border-accent/20">
-            <Zap className="h-3 w-3 text-accent" />
-            <span className="text-xs font-semibold text-accent" data-testid="text-xp-reward">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-brand-500/10 border-0">
+            <Zap className="h-3 w-3 text-brand-400" />
+            <span className="text-xs font-semibold text-brand-400" data-testid="text-xp-reward">
               +{challenge.xpReward}
             </span>
           </div>
         </div>
         
-        <p className="text-sm text-muted-foreground" data-testid="text-challenge-description">
+        <p className="text-sm text-slate-400" data-testid="text-challenge-description">
           {challenge.description}
         </p>
         
         {!completed && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Progress</span>
-              <span className="font-medium" data-testid="text-progress">
+              <span className="text-slate-400">Progress</span>
+              <span className="font-medium text-slate-200" data-testid="text-progress">
                 {progress} / {challenge.targetValue}
               </span>
             </div>
@@ -68,7 +68,7 @@ export function DailyChallengeCard({
         )}
 
         {completed && (
-          <div className="flex items-center gap-2 text-sm text-success">
+          <div className="flex items-center gap-2 text-sm text-emerald-400">
             <CheckCircle2 className="h-4 w-4" />
             <span className="font-medium">Challenge Completed!</span>
           </div>
