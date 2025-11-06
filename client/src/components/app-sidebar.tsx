@@ -76,43 +76,37 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Navigation
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
-                const isActive = location === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      className={isActive ? "bg-sidebar-accent" : ""}
-                      data-testid={`nav-${item.title.toLowerCase()}`}
-                    >
-                      <Link href={item.url}>
-                        <item.icon className="h-5 w-5" />
-                        <span className="font-medium">{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className="p-4">
+        <nav className="space-y-1">
+          {menuItems.map((item) => {
+            const isActive = location === item.url;
+            return (
+              <Link 
+                key={item.url}
+                href={item.url}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ${
+                  isActive 
+                    ? 'bg-white/10 text-slate-100' 
+                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                }`}
+                data-testid={`nav-${item.title.toLowerCase()}`}
+              >
+                <item.icon className="h-4 w-4" />
+                <span className="text-sm font-medium">{item.title}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </SidebarContent>
 
-      <SidebarFooter className="p-4">
-        <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent p-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold">
+      <SidebarFooter className="p-4 border-t border-white/10">
+        <div className="flex items-center gap-3 rounded-xl bg-white/5 p-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-600 text-white font-semibold text-sm">
             C
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">Coach User</p>
-            <p className="text-xs text-muted-foreground truncate">coach@elite.com</p>
+            <p className="text-sm font-semibold text-slate-100 truncate">Coach User</p>
+            <p className="text-xs text-slate-400 truncate">coach@elite.com</p>
           </div>
         </div>
       </SidebarFooter>
