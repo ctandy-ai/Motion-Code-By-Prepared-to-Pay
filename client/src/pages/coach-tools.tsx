@@ -123,7 +123,8 @@ export default function CoachTools() {
           </div>
           
           <div className="text-sm text-slate-400">
-            Showing {filteredExercises.length} of {exercises.length} exercises
+            Showing {filteredExercises.length > 100 ? "first 100" : filteredExercises.length} of {filteredExercises.length}
+            {filteredExercises.length !== exercises.length && ` (filtered from ${exercises.length} total)`}
           </div>
         </div>
 
