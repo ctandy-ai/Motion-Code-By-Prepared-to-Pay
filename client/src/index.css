@@ -179,11 +179,11 @@
 
   --card-border: 220 13% 15%;
 
-  --sidebar: 222 27% 7%;       /* ink-1 */
+  --sidebar: 0 0% 0% / 0;      /* transparent - use bglass instead */
 
   --sidebar-foreground: 215 20% 82%;
 
-  --sidebar-border: 220 13% 18%;
+  --sidebar-border: 0 0% 0% / 0;
 
   --sidebar-primary: 200 95% 40%;
 

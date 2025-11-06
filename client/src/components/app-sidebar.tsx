@@ -61,8 +61,8 @@ export function AppSidebar() {
   const [location] = useLocation();
 
   return (
-    <Sidebar data-testid="app-sidebar" className="bglass shadow-glass border-0 m-5 rounded-2xl">
-      <SidebarHeader className="p-4 border-b border-white/10">
+    <Sidebar data-testid="app-sidebar" className="!bg-transparent bglass shadow-glass border-0 m-5 rounded-2xl">
+      <SidebarHeader className="p-4 border-b border-white/10 !bg-transparent">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center font-extrabold text-white p-2">
             <StrideLogo className="h-full w-full text-white" />
@@ -76,7 +76,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="p-4">
+      <SidebarContent className="p-4 !bg-transparent">
         <nav className="mt-4 space-y-1">
           {menuItems.map((item) => {
             const isActive = location === item.url;
@@ -99,7 +99,7 @@ export function AppSidebar() {
         </nav>
       </SidebarContent>
 
-      <SidebarFooter className="p-4 border-t border-white/10">
+      <SidebarFooter className="p-4 border-t border-white/10 !bg-transparent">
         <div className="mt-6 p-3 rounded-xl ringify">
           <div className="text-xs text-slate-400 mb-2">Current User</div>
           <div className="flex items-center gap-3">
