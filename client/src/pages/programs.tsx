@@ -190,13 +190,13 @@ export default function Programs() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="h-[240px] rounded-2xl skeleton animate-shimmer" />
           ))}
         </div>
       ) : programs && programs.length > 0 ? (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {programs.map((program) => (
             <div key={program.id} className="bglass shadow-glass rounded-2xl p-4 hover:shadow-glow transition-all duration-200" data-testid={`program-card-${program.id}`}>
               <div className="flex items-start justify-between gap-2 mb-3">
