@@ -785,6 +785,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Exercise Classification
+  app.post("/api/ai/classify-sample", async (req, res) => {
+    try {
+      const { classifyExercise } = await import("./ai-classifier");
+      const exercises = req.body.exercises as any[];
+      
+      if (!exercises || !Array.isArray(exercises)) {
+        return res.status(400).json({ error: "Exercises array is required" });
+      }
+
+      const results = [];
+      for (const exercise of exercises) {
+        try {
+          const classification = await classifyExercise(exercise);
+          results.push({
+            original: exercise,
+            aiClassification: classification
+          });
+          
+          // Small delay to avoid rate limits
+          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (error) {
+          console.error(`Failed to classify ${exercise.name}:`, error);
+          results.push({
+            original: exercise,
+            error: "Classification failed"
+          });
+        }
+      }
+
+      res.json({ results });
+    } catch (error: any) {
+      console.error("AI classification error:", error);
+      res.status(500).json({ error: "Failed to classify exercises" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

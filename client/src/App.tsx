@@ -16,6 +16,7 @@ import Workout from "@/pages/workout";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
 import CoachTools from "@/pages/coach-tools";
+import AIClassifierTest from "@/pages/ai-classifier-test";
 import NotFound from "@/pages/not-found";
 import { AICoachChat } from "@/components/ai-coach-chat";
 
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/calendar" component={Calendar} />
       <Route path="/progress" component={Progress} />
       <Route path="/coach-tools" component={CoachTools} />
+      <Route path="/ai-classifier" component={AIClassifierTest} />
       <Route component={NotFound} />
     </Switch>
   );
