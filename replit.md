@@ -20,8 +20,9 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Forms**: React Hook Form with Zod validation
 
 ### UI/UX Decisions & Design System
+- **Dark Theme**: Professional dark mode enabled by default via "dark" class on HTML element. Uses ink palette (ink-0 through ink-5) with ink-1 as the primary background color for a deep, sophisticated aesthetic.
 - **Color Palette**: "Ocean Depth" theme, featuring deep ocean blue, professional teal, coral energy, and professional gold. This provides a professional yet energetic feel, moving away from generic corporate aesthetics.
-- **Typography**: Rajdhani (headings), Orbitron (stats), Inter (body) for a blend of professionalism and modern edge.
+- **Typography**: Rajdhani (headings), Orbitron (stats), Inter (body) for a blend of professionalism and modern edge. Text colors use slate palette for optimal readability on dark backgrounds (text-slate-100 for headings, text-slate-200 for body, text-slate-400 for secondary).
 - **Interactive Elements**: Incorporates award-winning design patterns such as glassmorphism, magnetic interactions, breathing animations, reveal effects, gradient text, ripple feedback, and glow effects to create a dynamic and engaging interface.
 - **Gamification**: Strategic use of XP, levels, streaks, and achievements with visual components like XP bars, achievement badges, and streak counters to motivate users.
 - **Accessibility**: Full `prefers-reduced-motion` support and performance optimizations.
