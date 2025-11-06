@@ -63,15 +63,17 @@ export function AppSidebar() {
   return (
     <Sidebar data-testid="app-sidebar" className="!bg-transparent bglass shadow-glass border-0 m-5 rounded-2xl">
       <SidebarHeader className="p-4 border-b border-white/10 !bg-transparent">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-brand-600 flex items-center justify-center font-extrabold text-white p-2">
-            <StrideLogo className="h-full w-full text-white" />
-          </div>
-          <div>
-            <h2 className="font-bold -mb-0.5 text-slate-100">
+        <div className="flex items-center gap-2">
+          <img 
+            src="/attached_assets/SHG (2)_1762403864838.jpg" 
+            alt="Stride Logo" 
+            className="h-7 w-auto object-contain"
+          />
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold -mb-0.5 text-slate-100 text-sm">
               StrideCode <span className="text-brand-300">Pro</span>
             </h2>
-            <p className="text-[11px] text-slate-400">Design Programs · Track Progress</p>
+            <p className="text-[10px] text-slate-400">Design · Track</p>
           </div>
         </div>
       </SidebarHeader>

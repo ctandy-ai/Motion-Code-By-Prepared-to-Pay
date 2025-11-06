@@ -40,7 +40,7 @@ function Router() {
 
 export default function App() {
   const style = {
-    "--sidebar-width": "20rem",
+    "--sidebar-width": "16rem",
     "--sidebar-width-icon": "4rem",
   };
 
@@ -51,13 +51,15 @@ export default function App() {
           <div className="flex h-screen w-full bg-ink-1">
             <AppSidebar />
             <div className="flex flex-col flex-1 overflow-hidden">
-              <header className="bglass rounded-2xl shadow-glass px-5 py-4 flex items-center justify-between mx-5 mt-5">
+              <header className="bglass rounded-2xl shadow-glass px-5 py-3 flex items-center justify-between mx-5 mt-5">
                 <div className="flex items-center gap-3">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9" />
+                  <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9 hover-elevate" />
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-600 to-brand-400 flex items-center justify-center shadow-lg p-2">
-                      <StrideLogo className="h-full w-full text-white" />
-                    </div>
+                    <img 
+                      src="/attached_assets/SHG (2)_1762403864838.jpg" 
+                      alt="Stride Logo" 
+                      className="h-8 w-auto object-contain"
+                    />
                     <div>
                       <h1 className="font-heading text-base font-bold text-slate-100">
                         StrideCode <span className="text-brand-300">Pro</span>
