@@ -50,8 +50,8 @@ export default function App() {
         <SidebarProvider style={style as React.CSSProperties}>
           <div className="flex h-screen w-full bg-ink-1">
             <AppSidebar />
-            <div className="flex flex-col flex-1 overflow-hidden">
-              <header className="bglass rounded-2xl shadow-glass px-5 py-3 flex items-center justify-between mx-5 mt-5">
+            <div className="flex flex-col flex-1 overflow-hidden pl-5">
+              <header className="bglass rounded-2xl shadow-glass px-5 py-3 flex items-center justify-between mr-5 mt-5">
                 <div className="flex items-center gap-3">
                   <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9 hover-elevate" />
                   <div className="flex items-center gap-3">
@@ -70,7 +70,7 @@ export default function App() {
                 </div>
                 <ThemeToggle />
               </header>
-              <main className="flex-1 overflow-y-auto p-5">
+              <main className="flex-1 overflow-y-auto p-5 pr-5">
                 <Router />
               </main>
             </div>
