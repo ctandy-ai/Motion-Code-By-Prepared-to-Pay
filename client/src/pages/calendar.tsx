@@ -177,10 +177,10 @@ export default function Calendar() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="bglass shadow-glass border-0">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="font-heading text-2xl">
+            <CardTitle className="font-heading text-2xl text-slate-100">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </CardTitle>
             <div className="flex gap-2">
@@ -268,9 +268,9 @@ export default function Calendar() {
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="bglass shadow-glass border-0">
           <CardHeader>
-            <CardTitle className="font-heading text-xl">Upcoming Workouts</CardTitle>
+            <CardTitle className="font-heading text-xl text-slate-100">Upcoming Workouts</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -307,9 +307,9 @@ export default function Calendar() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bglass shadow-glass border-0">
           <CardHeader>
-            <CardTitle className="font-heading text-xl">Workout Summary</CardTitle>
+            <CardTitle className="font-heading text-xl text-slate-100">Workout Summary</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -360,11 +360,11 @@ export default function Calendar() {
                       const athlete = athletes.find(a => a.id === log.athleteId);
                       const exercise = exercises.find(e => e.id === log.exerciseId);
                       return (
-                        <Card key={log.id}>
+                        <Card key={log.id} className="bglass shadow-glass border-0">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-semibold">{exercise?.name || 'Unknown Exercise'}</p>
+                                <p className="font-semibold text-slate-100">{exercise?.name || 'Unknown Exercise'}</p>
                                 <p className="text-sm text-slate-400">{athlete?.name || 'Unknown Athlete'}</p>
                               </div>
                               <div className="text-right">
@@ -392,12 +392,12 @@ export default function Calendar() {
                     {selectedDayData.scheduledExercises.map((item, idx) => {
                       const athlete = athletes.find(a => a.id === item.athleteProgram.athleteId);
                       return (
-                        <Card key={`${item.athleteProgram.id}-${item.programExercise.id}-${idx}`}>
+                        <Card key={`${item.athleteProgram.id}-${item.programExercise.id}-${idx}`} className="bglass shadow-glass border-0">
                           <CardContent className="p-4">
                             <div className="space-y-2">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-base">{item.exercise.name}</p>
+                                  <p className="font-semibold text-base text-slate-100">{item.exercise.name}</p>
                                   <p className="text-sm text-slate-400">{athlete?.name || 'Unknown'}</p>
                                 </div>
                                 <Badge variant="secondary" className="shrink-0">
