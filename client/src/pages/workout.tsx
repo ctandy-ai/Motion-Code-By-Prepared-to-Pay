@@ -173,9 +173,9 @@ export default function Workout() {
           </p>
         </div>
 
-        <Card>
+        <Card className="bglass shadow-glass border-0">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-slate-100">
               <User className="h-5 w-5" />
               Select Athlete
             </CardTitle>
@@ -209,10 +209,10 @@ export default function Workout() {
         </Card>
 
         {!selectedAthleteId ? (
-          <Card>
+          <Card className="bglass shadow-glass border-0">
             <CardContent className="p-12 text-center">
               <User className="h-16 w-16 mx-auto text-slate-400 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Select an athlete to begin</h3>
+              <h3 className="text-lg font-semibold mb-2 text-slate-100">Select an athlete to begin</h3>
               <p className="text-sm text-slate-400">
                 Choose an athlete from the dropdown above to view their workout
               </p>
@@ -225,10 +225,10 @@ export default function Workout() {
         ) : null}
 
         {selectedAthleteId && !isLoading && todayWorkout.length === 0 && (
-          <Card>
+          <Card className="bglass shadow-glass border-0">
             <CardContent className="p-12 text-center">
               <Clock className="h-16 w-16 mx-auto text-slate-400 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No workout scheduled for today</h3>
+              <h3 className="text-lg font-semibold mb-2 text-slate-100">No workout scheduled for today</h3>
               <p className="text-sm text-slate-400">
                 Rest day or check program assignments
               </p>
@@ -246,14 +246,14 @@ export default function Workout() {
               const sets = workoutSets[exerciseId] || [];
 
               return (
-                <Card key={exerciseId} data-testid={`card-exercise-${exerciseId}`}>
+                <Card key={exerciseId} data-testid={`card-exercise-${exerciseId}`} className="bglass shadow-glass border-0">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
-                        <CardTitle className="text-2xl" data-testid={`text-exercise-name-${exerciseId}`}>
+                        <CardTitle className="text-2xl text-slate-100" data-testid={`text-exercise-name-${exerciseId}`}>
                           {item.exercise.name}
                         </CardTitle>
-                        <CardDescription className="mt-2 flex items-center gap-2 flex-wrap">
+                        <CardDescription className="mt-2 flex items-center gap-2 flex-wrap text-slate-400">
                           <Badge variant="outline">{item.exercise.category}</Badge>
                           <Badge variant="outline">{item.exercise.muscleGroup}</Badge>
                           <Badge variant="outline">{item.program.name}</Badge>
@@ -261,7 +261,7 @@ export default function Workout() {
                       </div>
                       <div className="text-right">
                         <div className="text-sm text-slate-400">Prescribed</div>
-                        <div className="text-lg font-semibold">
+                        <div className="text-lg font-semibold text-slate-100">
                           {item.programExercise.sets} × {item.programExercise.reps}
                         </div>
                         {item.programExercise.restSeconds && (
@@ -272,15 +272,15 @@ export default function Workout() {
                       </div>
                     </div>
                     {item.programExercise.notes && (
-                      <div className="mt-3 p-3 bg-muted rounded-md text-sm">
-                        <strong>Coach Notes:</strong> {item.programExercise.notes}
+                      <div className="mt-3 p-3 bg-slate-800/30 rounded-md text-sm text-slate-200">
+                        <strong className="text-slate-100">Coach Notes:</strong> {item.programExercise.notes}
                       </div>
                     )}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="text-sm font-semibold">Log Your Sets</Label>
+                        <Label className="text-sm font-semibold text-slate-100">Log Your Sets</Label>
                         <Button
                           size="sm"
                           variant="outline"
@@ -344,7 +344,7 @@ export default function Workout() {
                     </div>
 
                     <div>
-                      <Label htmlFor={`notes-${exerciseId}`} className="text-sm">
+                      <Label htmlFor={`notes-${exerciseId}`} className="text-sm text-slate-100">
                         Notes (Optional)
                       </Label>
                       <Textarea
@@ -378,9 +378,9 @@ export default function Workout() {
         )}
 
         {recentLogs.length > 0 && (
-          <Card>
+          <Card className="bglass shadow-glass border-0">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-slate-100">
                 <TrendingUp className="h-5 w-5" />
                 Recent Workouts
               </CardTitle>

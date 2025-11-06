@@ -138,10 +138,10 @@ export default function Templates() {
       </div>
 
       {filteredTemplates.length === 0 ? (
-        <Card>
+        <Card className="bglass shadow-glass border-0">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <FileText className="h-16 w-16 text-slate-400 mb-4" />
-            <h3 className="font-semibold text-lg mb-2">No Templates Found</h3>
+            <h3 className="font-semibold text-lg mb-2 text-slate-100">No Templates Found</h3>
             <p className="text-sm text-slate-400">
               {searchTerm
                 ? "Try adjusting your search terms"
@@ -152,16 +152,16 @@ export default function Templates() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTemplates.map((template) => (
-            <Card key={template.id} className="hover-elevate" data-testid={`template-card-${template.id}`}>
+            <Card key={template.id} className="bglass shadow-glass border-0 hover-elevate" data-testid={`template-card-${template.id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-xl truncate">{template.name}</CardTitle>
-                    <CardDescription className="mt-1">
+                    <CardTitle className="text-xl truncate text-slate-100">{template.name}</CardTitle>
+                    <CardDescription className="mt-1 text-slate-400">
                       {template.duration} weeks • {template.category}
                     </CardDescription>
                   </div>
-                  <Badge variant="secondary">{template.isPublic ? "Public" : "Private"}</Badge>
+                  <Badge variant="secondary" className="text-slate-100">{template.isPublic ? "Public" : "Private"}</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -172,12 +172,12 @@ export default function Templates() {
                 {template.tags && template.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {template.tags.slice(0, 3).map((tag, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
+                      <Badge key={idx} variant="outline" className="text-xs text-slate-200">
                         {tag}
                       </Badge>
                     ))}
                     {template.tags.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs text-slate-200">
                         +{template.tags.length - 3} more
                       </Badge>
                     )}
