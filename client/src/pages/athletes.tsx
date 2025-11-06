@@ -334,12 +334,12 @@ export default function Athletes() {
       </div>
 
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         <Input
           placeholder="Search athletes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 bg-white/5 border-white/10 text-slate-100 placeholder:text-slate-500"
           data-testid="input-search-athletes"
         />
       </div>
@@ -356,14 +356,14 @@ export default function Athletes() {
             <Card key={athlete.id} className="bglass shadow-glass border-0 hover-elevate transition-all duration-200" data-testid={`athlete-card-${athlete.id}`}>
               <CardHeader className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-white text-xl font-bold">
                     {athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-heading text-lg font-semibold text-foreground truncate">
+                    <h3 className="font-heading text-lg font-semibold text-slate-100 truncate">
                       {athlete.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
+                    <p className="text-sm text-slate-400 flex items-center gap-1 truncate">
                       <Mail className="h-3 w-3" />
                       {athlete.email}
                     </p>
@@ -380,7 +380,7 @@ export default function Athletes() {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-slate-500">
                   Joined {new Date(athlete.dateJoined!).toLocaleDateString()}
                 </p>
               </CardContent>
@@ -409,11 +409,11 @@ export default function Athletes() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <UsersIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
+          <UsersIcon className="mx-auto h-16 w-16 text-slate-500 mb-4" />
+          <h3 className="font-heading text-xl font-semibold text-slate-200 mb-2">
             No athletes found
           </h3>
-          <p className="text-muted-foreground mb-6">
+          <p className="text-slate-400 mb-6">
             {searchQuery 
               ? "Try adjusting your search" 
               : "Get started by adding your first athlete"}
