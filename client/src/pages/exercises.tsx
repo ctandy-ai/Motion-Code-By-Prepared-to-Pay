@@ -44,6 +44,7 @@ export default function Exercises() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const { toast } = useToast();
@@ -155,6 +156,46 @@ export default function Exercises() {
 
   return (
     <div className="space-y-8">
+      {/* Video Player Dialog */}
+      <Dialog open={!!videoExercise} onOpenChange={(open) => !open && setVideoExercise(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-2xl">{videoExercise?.name}</DialogTitle>
+          </DialogHeader>
+          {videoExercise?.videoUrl && (
+            <div className="aspect-video w-full">
+              <iframe
+                src={videoExercise.videoUrl}
+                className="w-full h-full rounded-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                data-testid="video-player"
+              />
+            </div>
+          )}
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-slate-100 mb-2">Instructions</h3>
+              <p className="text-sm text-slate-400">{videoExercise?.instructions}</p>
+            </div>
+            <div className="flex gap-4 text-sm">
+              <div>
+                <span className="text-slate-400">Category: </span>
+                <span className="text-slate-200">{videoExercise?.category}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">Muscle Group: </span>
+                <span className="text-slate-200">{videoExercise?.muscleGroup}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">Equipment: </span>
+                <span className="text-slate-200">{videoExercise?.equipment}</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-heading text-4xl font-bold text-slate-100">Exercise Library</h1>
@@ -565,6 +606,7 @@ export default function Exercises() {
               exercise={exercise}
               onEdit={handleEdit}
               onDelete={(id) => deleteMutation.mutate(id)}
+              onViewVideo={(ex) => setVideoExercise(ex)}
             />
           ))}
         </div>

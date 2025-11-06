@@ -44,7 +44,7 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
       
       <CardHeader className="space-y-2 pb-3">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-heading text-lg font-semibold text-foreground line-clamp-1">
+          <h3 className="font-heading text-lg font-semibold text-slate-100 line-clamp-1">
             {exercise.name}
           </h3>
         </div>
@@ -69,10 +69,10 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
       </CardHeader>
 
       <CardContent className="pb-3">
-        <p className="text-sm text-muted-foreground line-clamp-2">
+        <p className="text-sm text-slate-400 line-clamp-2">
           {exercise.instructions}
         </p>
-        <p className="text-xs text-muted-foreground mt-2">
+        <p className="text-xs text-slate-400 mt-2">
           Equipment: {exercise.equipment}
         </p>
       </CardContent>
