@@ -401,11 +401,11 @@ export default function ProgramBuilder() {
             if (dayExercises.length === 0) return null;
             
             return (
-              <Card key={dayNum} className="border shadow-sm" data-testid={`day-card-${dayNum}`}>
+              <Card key={dayNum} className="bglass shadow-glass border-0" data-testid={`day-card-${dayNum}`}>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold flex items-center justify-between">
+                  <CardTitle className="text-base font-semibold flex items-center justify-between text-slate-100">
                     <span>Day {dayNum}</span>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="text-xs text-slate-100">
                       {dayExercises.length} {dayExercises.length === 1 ? "exercise" : "exercises"}
                     </Badge>
                   </CardTitle>
@@ -415,14 +415,14 @@ export default function ProgramBuilder() {
                     {dayExercises.map((pe, index) => (
                       <div
                         key={pe.id}
-                        className="flex items-start gap-2 p-2 rounded-md border bg-card hover:bg-muted/50 transition-colors"
+                        className="flex items-start gap-2 p-2 rounded-md border-0 bg-slate-800/30 hover-elevate transition-colors"
                         data-testid={`program-exercise-${pe.id}`}
                       >
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-700/50 text-xs font-medium text-slate-200">
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
+                          <p className="text-sm font-medium truncate text-slate-100">
                             {getExerciseName(pe.exerciseId)}
                           </p>
                           <p className="text-xs text-slate-400">

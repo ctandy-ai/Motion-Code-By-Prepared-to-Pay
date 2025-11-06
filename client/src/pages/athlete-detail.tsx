@@ -302,32 +302,32 @@ export default function AthleteDetail() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border shadow-sm">
+        <Card className="bglass shadow-glass border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Active Programs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-slate-100">
               {athletePrograms?.filter((ap) => ap.status === "active").length || 0}
             </div>
           </CardContent>
         </Card>
-        <Card className="border shadow-sm">
+        <Card className="bglass shadow-glass border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Completed Programs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-slate-100">
               {athletePrograms?.filter((ap) => ap.status === "completed").length || 0}
             </div>
           </CardContent>
         </Card>
-        <Card className="border shadow-sm">
+        <Card className="bglass shadow-glass border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Total Programs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-slate-100">
               {athletePrograms?.length || 0}
             </div>
           </CardContent>
@@ -345,10 +345,10 @@ export default function AthleteDetail() {
         ) : athletePrograms && athletePrograms.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
             {athletePrograms.map((ap) => (
-              <Card key={ap.id} className="border shadow-sm" data-testid={`assignment-card-${ap.id}`}>
+              <Card key={ap.id} className="bglass shadow-glass border-0" data-testid={`assignment-card-${ap.id}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base font-semibold">
+                    <CardTitle className="text-base font-semibold text-slate-100">
                       {getProgramName(ap.programId)}
                     </CardTitle>
                     <Badge variant={getStatusColor(ap.status)} className="shrink-0">
