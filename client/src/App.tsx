@@ -5,8 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { StrideLogo } from "@/components/stride-logo";
 import Dashboard from "@/pages/dashboard";
 import Exercises from "@/pages/exercises";
 import Programs from "@/pages/programs";
@@ -17,6 +15,7 @@ import AthleteDetail from "@/pages/athlete-detail";
 import Workout from "@/pages/workout";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
+import CoachTools from "@/pages/coach-tools";
 import NotFound from "@/pages/not-found";
 import { AICoachChat } from "@/components/ai-coach-chat";
 
@@ -33,6 +32,7 @@ function Router() {
       <Route path="/athletes/:athleteId" component={AthleteDetail} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/progress" component={Progress} />
+      <Route path="/coach-tools" component={CoachTools} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -51,24 +51,8 @@ export default function App() {
           <div className="flex h-screen w-full bg-ink-1">
             <AppSidebar />
             <div className="flex flex-col flex-1 overflow-hidden pl-5">
-              <header className="bglass rounded-2xl shadow-glass px-5 py-3 flex items-center justify-between mr-5 mt-5">
-                <div className="flex items-center gap-3">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9 hover-elevate" />
-                  <div className="flex items-center gap-3">
-                    <img 
-                      src="/attached_assets/SHG (2)_1762403864838.jpg" 
-                      alt="Stride Logo" 
-                      className="h-8 w-auto object-contain"
-                    />
-                    <div>
-                      <h1 className="font-heading text-base font-bold text-slate-100">
-                        StrideCode <span className="text-brand-300">Pro</span>
-                      </h1>
-                      <p className="text-[11px] text-slate-400">Design Programs · Track Progress</p>
-                    </div>
-                  </div>
-                </div>
-                <ThemeToggle />
+              <header className="bglass rounded-2xl shadow-glass px-4 py-3 mr-5 mt-5">
+                <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9 hover-elevate" />
               </header>
               <main className="flex-1 overflow-y-auto p-5 pr-5">
                 <Router />

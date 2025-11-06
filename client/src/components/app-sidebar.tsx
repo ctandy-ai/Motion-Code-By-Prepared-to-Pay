@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -54,6 +54,11 @@ const menuItems = [
     title: "Progress",
     url: "/progress",
     icon: TrendingUp,
+  },
+  {
+    title: "Coach Tools",
+    url: "/coach-tools",
+    icon: Wrench,
   },
 ];
 
