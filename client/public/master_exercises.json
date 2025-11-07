@@ -825,7 +825,7 @@
     "notes": ""
   },
   {
-    "id": "A_MARCH",
+    "id": "A_MARCH_55",
     "name": "A-March",
     "tracking": "",
     "tags": "",
@@ -855,7 +855,7 @@
     "notes": ""
   },
   {
-    "id": "A_RUN",
+    "id": "A_RUN_57",
     "name": "A-Run",
     "tracking": "",
     "tags": "",
@@ -870,7 +870,7 @@
     "notes": ""
   },
   {
-    "id": "A_SKIP",
+    "id": "A_SKIP_58",
     "name": "A-Skip",
     "tracking": "",
     "tags": "",
@@ -900,7 +900,7 @@
     "notes": ""
   },
   {
-    "id": "A_SWITCH",
+    "id": "A_SWITCH_60",
     "name": "A-Switch",
     "tracking": "",
     "tags": "",
@@ -1935,7 +1935,7 @@
     "notes": ""
   },
   {
-    "id": "BAND_PULL_APART",
+    "id": "BAND_PULL_APART_129",
     "name": "Band Pull-Apart",
     "tracking": "",
     "tags": "Isolation-Shoulders",
@@ -3975,7 +3975,7 @@
     "notes": ""
   },
   {
-    "id": "BARBELL_STEP_UP",
+    "id": "BARBELL_STEP_UP_265",
     "name": "Barbell Step-up",
     "tracking": "Highest Weight",
     "tags": "Lower Body Push Unilateral",
@@ -5790,7 +5790,7 @@
     "notes": ""
   },
   {
-    "id": "CLOSE_GRIP_BENCH_PRESS",
+    "id": "CLOSE_GRIP_BENCH_PRESS_386",
     "name": "Close- Grip Bench Press",
     "tracking": "3RM",
     "tags": "",
