@@ -15,6 +15,8 @@ import {
   type InsertProgramTemplate,
   type TemplateExercise,
   type InsertTemplateExercise,
+  type TemplateWeekMetadata,
+  type InsertTemplateWeekMetadata,
   type AthleteProgram,
   type InsertAthleteProgram,
   type WorkoutLog,
@@ -30,6 +32,7 @@ import {
   programExercises,
   programTemplates,
   templateExercises,
+  templateWeekMetadata,
   athletePrograms,
   workoutLogs,
   personalRecords,
@@ -83,6 +86,10 @@ export interface IStorage {
   getTemplateExercises(templateId: string): Promise<TemplateExercise[]>;
   createTemplateExercise(templateExercise: InsertTemplateExercise): Promise<TemplateExercise>;
   deleteTemplateExercise(id: string): Promise<boolean>;
+
+  getTemplateWeekMetadata(templateId: string): Promise<TemplateWeekMetadata[]>;
+  createTemplateWeekMetadata(metadata: InsertTemplateWeekMetadata): Promise<TemplateWeekMetadata>;
+  bulkCreateTemplateWeekMetadata(metadataList: InsertTemplateWeekMetadata[]): Promise<TemplateWeekMetadata[]>;
 
   instantiateProgramFromTemplate(templateId: string, programName: string): Promise<Program>;
 
@@ -301,6 +308,20 @@ export class DatabaseStorage implements IStorage {
   async deleteTemplateExercise(id: string): Promise<boolean> {
     const result = await db.delete(templateExercises).where(eq(templateExercises.id, id)).returning();
     return result.length > 0;
+  }
+
+  async getTemplateWeekMetadata(templateId: string): Promise<TemplateWeekMetadata[]> {
+    return await db.select().from(templateWeekMetadata).where(eq(templateWeekMetadata.templateId, templateId));
+  }
+
+  async createTemplateWeekMetadata(metadata: InsertTemplateWeekMetadata): Promise<TemplateWeekMetadata> {
+    const [newMetadata] = await db.insert(templateWeekMetadata).values(metadata).returning();
+    return newMetadata;
+  }
+
+  async bulkCreateTemplateWeekMetadata(metadataList: InsertTemplateWeekMetadata[]): Promise<TemplateWeekMetadata[]> {
+    if (metadataList.length === 0) return [];
+    return await db.insert(templateWeekMetadata).values(metadataList).returning();
   }
 
   async instantiateProgramFromTemplate(templateId: string, programName: string): Promise<Program> {

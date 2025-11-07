@@ -497,6 +497,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Template Week Metadata routes
+  app.get("/api/program-templates/:id/weeks", async (req, res) => {
+    try {
+      const weekData = await storage.getTemplateWeekMetadata(req.params.id);
+      res.json(weekData);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch week metadata" });
+    }
+  });
+
+  app.post("/api/import-periodization", async (req, res) => {
+    try {
+      const { csvContent, templateName, templateDescription } = req.body;
+
+      if (!csvContent || !templateName) {
+        return res.status(400).json({ error: "CSV content and template name are required" });
+      }
+
+      // Check if template with this name already exists
+      const existingTemplates = await storage.getProgramTemplates();
+      if (existingTemplates.some(t => t.name === templateName)) {
+        return res.status(409).json({ error: "Template with this name already exists" });
+      }
+
+      // Parse the CSV
+      const { parsePeriodizationCSV } = await import("./periodization-parser");
+      const weekMetadata = parsePeriodizationCSV(csvContent);
+
+      // Create the template
+      const template = await storage.createProgramTemplate({
+        name: templateName,
+        description: templateDescription || `${weekMetadata.length}-week periodized training program`,
+        category: "Periodization",
+        duration: weekMetadata.length,
+        tags: ["periodization", "annual-plan", "belt-progression"],
+        isPublic: 1,
+      });
+
+      // Bulk insert week metadata
+      const metadataWithTemplateId = weekMetadata.map(week => ({
+        ...week,
+        templateId: template.id,
+      }));
+      
+      const createdMetadata = await storage.bulkCreateTemplateWeekMetadata(metadataWithTemplateId);
+
+      res.status(201).json({
+        template,
+        weekCount: createdMetadata.length,
+        message: `Successfully imported ${createdMetadata.length}-week periodization plan`,
+      });
+    } catch (error) {
+      console.error("Failed to import periodization:", error);
+      res.status(500).json({ error: "Failed to import periodization plan" });
+    }
+  });
+
   // Program Exercise routes
   app.get("/api/program-exercises", async (req, res) => {
     try {

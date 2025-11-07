@@ -114,6 +114,25 @@ export const insertTemplateExerciseSchema = createInsertSchema(templateExercises
 export type InsertTemplateExercise = z.infer<typeof insertTemplateExerciseSchema>;
 export type TemplateExercise = typeof templateExercises.$inferSelect;
 
+export const templateWeekMetadata = pgTable("template_week_metadata", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull(),
+  weekNumber: integer("week_number").notNull(),
+  phase: text("phase"),
+  beltTarget: text("belt_target"),
+  focus: text("focus"),
+  runningQualities: text("running_qualities"),
+  mbsPrimary: text("mbs_primary"),
+  strengthTheme: text("strength_theme"),
+  plyoContactsCap: integer("plyo_contacts_cap"),
+  testingGateway: text("testing_gateway"),
+  notes: text("notes"),
+});
+
+export const insertTemplateWeekMetadataSchema = createInsertSchema(templateWeekMetadata).omit({ id: true });
+export type InsertTemplateWeekMetadata = z.infer<typeof insertTemplateWeekMetadataSchema>;
+export type TemplateWeekMetadata = typeof templateWeekMetadata.$inferSelect;
+
 export const programExercises = pgTable("program_exercises", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   programId: varchar("program_id").notNull(),
