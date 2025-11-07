@@ -525,18 +525,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { parsePeriodizationCSV } = await import("./periodization-parser");
       const weekMetadata = parsePeriodizationCSV(csvContent);
 
+      // Validate parsed data
+      if (weekMetadata.length === 0) {
+        return res.status(400).json({ error: "No valid weekly data found in CSV" });
+      }
+
+      // Validate using Zod schema (without templateId which is added later)
+      const { insertTemplateWeekMetadataSchema } = await import("../shared/schema");
+      const validationSchema = insertTemplateWeekMetadataSchema.omit({ templateId: true });
+      
+      const validatedMetadata = weekMetadata.map((week, idx) => {
+        try {
+          return validationSchema.parse(week);
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : String(error);
+          throw new Error(`Invalid data at week ${week.weekNumber || idx + 1}: ${errorMsg}`);
+        }
+      });
+
       // Create the template
       const template = await storage.createProgramTemplate({
         name: templateName,
-        description: templateDescription || `${weekMetadata.length}-week periodized training program`,
+        description: templateDescription || `${validatedMetadata.length}-week periodized training program`,
         category: "Periodization",
-        duration: weekMetadata.length,
+        duration: validatedMetadata.length,
         tags: ["periodization", "annual-plan", "belt-progression"],
         isPublic: 1,
       });
 
-      // Bulk insert week metadata
-      const metadataWithTemplateId = weekMetadata.map(week => ({
+      // Bulk insert week metadata with templateId
+      const metadataWithTemplateId = validatedMetadata.map(week => ({
         ...week,
         templateId: template.id,
       }));
@@ -550,7 +568,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Failed to import periodization:", error);
-      res.status(500).json({ error: "Failed to import periodization plan" });
+      const errorMessage = error instanceof Error ? error.message : "Failed to import periodization plan";
+      res.status(500).json({ error: errorMessage });
     }
   });
 

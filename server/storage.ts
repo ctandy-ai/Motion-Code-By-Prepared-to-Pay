@@ -321,7 +321,11 @@ export class DatabaseStorage implements IStorage {
 
   async bulkCreateTemplateWeekMetadata(metadataList: InsertTemplateWeekMetadata[]): Promise<TemplateWeekMetadata[]> {
     if (metadataList.length === 0) return [];
-    return await db.insert(templateWeekMetadata).values(metadataList).returning();
+    
+    return await db.transaction(async (tx) => {
+      const result = await tx.insert(templateWeekMetadata).values(metadataList).returning();
+      return result;
+    });
   }
 
   async instantiateProgramFromTemplate(templateId: string, programName: string): Promise<Program> {

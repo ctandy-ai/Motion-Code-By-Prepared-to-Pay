@@ -11,8 +11,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Trash2, FileText, Sparkles } from "lucide-react";
-import type { ProgramTemplate } from "@shared/schema";
+import { Copy, Trash2, FileText, Sparkles, Calendar } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { ProgramTemplate, TemplateWeekMetadata } from "@shared/schema";
 
 const instantiateSchema = z.object({
   programName: z.string().min(1, "Program name is required"),
@@ -23,10 +25,17 @@ export default function Templates() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedTemplate, setSelectedTemplate] = useState<ProgramTemplate | null>(null);
   const [isInstantiateOpen, setIsInstantiateOpen] = useState(false);
+  const [isWeeklyBreakdownOpen, setIsWeeklyBreakdownOpen] = useState(false);
+  const [viewingTemplateId, setViewingTemplateId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const { data: templates = [] } = useQuery<ProgramTemplate[]>({
     queryKey: ['/api/program-templates'],
+  });
+
+  const { data: weeklyMetadata = [], isLoading: isLoadingWeekly } = useQuery<TemplateWeekMetadata[]>({
+    queryKey: ['/api/program-templates', viewingTemplateId, 'weeks'],
+    enabled: !!viewingTemplateId && isWeeklyBreakdownOpen,
   });
 
   const instantiateForm = useForm<z.infer<typeof instantiateSchema>>({
@@ -93,6 +102,12 @@ export default function Templates() {
     setSelectedTemplate(template);
     instantiateForm.setValue("programName", template.name);
     setIsInstantiateOpen(true);
+  };
+
+  const handleViewWeeklyBreakdown = (template: ProgramTemplate) => {
+    setSelectedTemplate(template);
+    setViewingTemplateId(template.id);
+    setIsWeeklyBreakdownOpen(true);
   };
 
   const onInstantiateSubmit = (data: z.infer<typeof instantiateSchema>) => {
@@ -184,24 +199,37 @@ export default function Templates() {
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    onClick={() => handleInstantiate(template)}
-                    className="flex-1"
-                    data-testid={`button-instantiate-${template.id}`}
-                  >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Use Template
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => deleteMutation.mutate(template.id)}
-                    disabled={deleteMutation.isPending}
-                    data-testid={`button-delete-${template.id}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                <div className="space-y-2 pt-2">
+                  {template.category === "Periodization" && (
+                    <Button
+                      onClick={() => handleViewWeeklyBreakdown(template)}
+                      variant="outline"
+                      className="w-full"
+                      data-testid={`button-view-weeks-${template.id}`}
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      View Weekly Breakdown
+                    </Button>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => handleInstantiate(template)}
+                      className="flex-1"
+                      data-testid={`button-instantiate-${template.id}`}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Use Template
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => deleteMutation.mutate(template.id)}
+                      disabled={deleteMutation.isPending}
+                      data-testid={`button-delete-${template.id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -277,6 +305,75 @@ export default function Templates() {
               </div>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isWeeklyBreakdownOpen} onOpenChange={setIsWeeklyBreakdownOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              {selectedTemplate?.name} - Weekly Breakdown
+            </DialogTitle>
+            <DialogDescription>
+              {selectedTemplate?.duration}-week periodized training plan with belt progression and testing gateways
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[calc(90vh-12rem)]">
+            {isLoadingWeekly ? (
+              <div className="flex justify-center py-8">
+                <p className="text-slate-400">Loading weekly data...</p>
+              </div>
+            ) : weeklyMetadata.length === 0 ? (
+              <div className="flex justify-center py-8">
+                <p className="text-slate-400">No weekly data available</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">Week</TableHead>
+                    <TableHead>Phase</TableHead>
+                    <TableHead>Belt Target</TableHead>
+                    <TableHead>Focus</TableHead>
+                    <TableHead>Strength Theme</TableHead>
+                    <TableHead>Running</TableHead>
+                    <TableHead>MBS</TableHead>
+                    <TableHead>Plyo Cap</TableHead>
+                    <TableHead>Testing Gateway</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {weeklyMetadata.map((week) => (
+                    <TableRow key={week.weekNumber} data-testid={`week-row-${week.weekNumber}`}>
+                      <TableCell className="font-medium">{week.weekNumber}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">{week.phase}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="text-xs">{week.beltTarget || 'N/A'}</Badge>
+                      </TableCell>
+                      <TableCell className="text-sm">{week.focus || 'N/A'}</TableCell>
+                      <TableCell className="text-sm">{week.strengthTheme || 'N/A'}</TableCell>
+                      <TableCell className="text-sm">{week.runningQualities || 'N/A'}</TableCell>
+                      <TableCell className="text-sm">{week.mbsPrimary || 'N/A'}</TableCell>
+                      <TableCell className="text-sm">{week.plyoContactsCap || 'N/A'}</TableCell>
+                      <TableCell>
+                        {week.testingGateway ? (
+                          <Badge className="text-xs bg-primary/20 text-primary border-primary/40">
+                            {week.testingGateway}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-slate-500">—</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

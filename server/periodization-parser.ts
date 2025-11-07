@@ -26,16 +26,40 @@ export function parsePeriodizationCSV(csvContent: string): Omit<InsertTemplateWe
     throw new Error("Failed to parse periodization CSV");
   }
 
-  return parseResult.data.map((row) => ({
-    weekNumber: parseInt(row.Week, 10),
-    phase: row.Phase || null,
-    beltTarget: row.Belt_Target || null,
-    focus: row.Focus || null,
-    runningQualities: row.Running_Qualities || null,
-    mbsPrimary: row.MBS_Primary || null,
-    strengthTheme: row.Strength_Theme || null,
-    plyoContactsCap: row.Plyo_Contacts_Cap ? parseInt(row.Plyo_Contacts_Cap, 10) : null,
-    testingGateway: row.Testing_Gateway || null,
-    notes: row.Notes || null,
-  }));
+  const weekMetadata: Omit<InsertTemplateWeekMetadata, 'templateId'>[] = [];
+  const invalidWeeks: string[] = [];
+  
+  for (const row of parseResult.data) {
+    const weekNumber = parseInt(row.Week, 10);
+    
+    if (isNaN(weekNumber) || weekNumber < 1 || weekNumber > 52) {
+      invalidWeeks.push(row.Week || 'unknown');
+      continue;
+    }
+
+    let plyoContactsCap: number | null = null;
+    if (row.Plyo_Contacts_Cap) {
+      const parsed = parseInt(row.Plyo_Contacts_Cap, 10);
+      plyoContactsCap = isNaN(parsed) ? null : parsed;
+    }
+
+    weekMetadata.push({
+      weekNumber,
+      phase: row.Phase || null,
+      beltTarget: row.Belt_Target || null,
+      focus: row.Focus || null,
+      runningQualities: row.Running_Qualities || null,
+      mbsPrimary: row.MBS_Primary || null,
+      strengthTheme: row.Strength_Theme || null,
+      plyoContactsCap,
+      testingGateway: row.Testing_Gateway || null,
+      notes: row.Notes || null,
+    });
+  }
+
+  if (invalidWeeks.length > 0) {
+    throw new Error(`Invalid week numbers found: ${invalidWeeks.join(', ')}. Week numbers must be 1-52.`);
+  }
+
+  return weekMetadata;
 }
