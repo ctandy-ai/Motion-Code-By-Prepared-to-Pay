@@ -28,7 +28,8 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Gamification**: Strategic use of XP, levels, streaks, and achievements with visual components like XP bars, achievement badges, and streak counters to motivate users.
 - **Accessibility**: Full `prefers-reduced-motion` support and performance optimizations.
 - **Layout**: Ultra-minimal, responsive design inspired by high-end sports analytics platforms, ensuring usability across desktop, tablet, and mobile.
-- **Sidebar**: Collapsible Shadcn sidebar (16rem default width, 4rem icon-only) with off-canvas sliding behavior. Features Stride branding and dark glassmorphism styling.
+- **Sidebar**: Collapsible Shadcn sidebar (16rem default width, 4rem icon-only) with off-canvas sliding behavior. Features Stride branding and dark glassmorphism styling. Includes hierarchical navigation with "Coach Tools" as collapsible parent section.
+- **Navigation Structure**: TeamBuildr-inspired hierarchy with Coach Tools section containing: Master Database (1,769 TeamBuildr exercises), Exercise Library (custom exercises), and AI Classifier tool.
 - **Spacing System**: Consistent spacing throughout - `space-y-8` for page sections, `gap-6` for card grids, standard Shadcn padding for card internals.
 
 ### Technical Implementations & Feature Specifications
@@ -37,7 +38,10 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
     - **Program Builder**: Adding/removing exercises, configuring sets/reps, and organizing by week/day.
 - **Athlete Management**: Comprehensive profiles, team and position tracking, and program assignment with status management.
     - **CSV Import**: TeamBuildr CSV import with PapaParse for multiline field handling, email placeholders for pending athletes, and duplicate prevention.
-- **Exercise Library**: Full CRUD operations for exercises with categories, muscle groups, difficulty levels, and search/filter functionalities.
+- **Exercise System** (Coach Tools):
+    - **Master Exercise Database**: 1,769 exercises from TeamBuildr export, read-only JSON reference with advanced filtering (tracking type, belt level, search by name/tags/attributes). Displays first 100 results for performance.
+    - **Exercise Library**: Full CRUD operations for custom exercises with categories, muscle groups, difficulty levels, and search/filter functionalities.
+    - **AI Exercise Classifier** (NEW): GPT-4.1-powered classification system that analyzes exercises for belt level appropriateness, intensity recommendations, movement complexity, technique requirements, and injury risk factors.
 - **Workout Logging**: Intuitive interface for athletes to log workouts, tracking sets, reps, and weights. Features auto-detection of Personal Records (PRs).
 - **Progress Tracking & Analytics**:
     - **Real Data Dashboard**: Displays platform-wide and per-athlete statistics (workouts, sets, PRs, XP, levels, streaks, top performers).

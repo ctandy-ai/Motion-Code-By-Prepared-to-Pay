@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,11 +10,16 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
 import { StrideLogo } from "@/components/stride-logo";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useState } from "react";
 
-const menuItems = [
+const mainMenuItems = [
   {
     title: "Dashboard",
     url: "/",
@@ -24,11 +29,6 @@ const menuItems = [
     title: "Workout",
     url: "/workout",
     icon: ClipboardCheck,
-  },
-  {
-    title: "Exercises",
-    url: "/exercises",
-    icon: Dumbbell,
   },
   {
     title: "Programs",
@@ -55,15 +55,34 @@ const menuItems = [
     url: "/progress",
     icon: TrendingUp,
   },
+];
+
+const coachToolsItems = [
   {
-    title: "Coach Tools",
+    title: "Master Database",
     url: "/coach-tools",
-    icon: Wrench,
+    icon: Database,
+    description: "1,769 TeamBuildr exercises",
+  },
+  {
+    title: "Exercise Library",
+    url: "/exercises",
+    icon: Library,
+    description: "Your custom exercises",
+  },
+  {
+    title: "AI Classifier",
+    url: "/ai-classifier",
+    icon: Wand2,
+    description: "Test AI classifications",
   },
 ];
 
 export function AppSidebar() {
   const [location] = useLocation();
+  const [coachToolsOpen, setCoachToolsOpen] = useState(true);
+
+  const isCoachToolsActive = coachToolsItems.some(item => location === item.url);
 
   return (
     <Sidebar data-testid="app-sidebar" className="!bg-transparent bglass shadow-glass border-0 m-5 rounded-2xl">
@@ -85,7 +104,8 @@ export function AppSidebar() {
       
       <SidebarContent className="p-4 !bg-transparent">
         <nav className="mt-4 space-y-1">
-          {menuItems.map((item) => {
+          {/* Main Menu Items */}
+          {mainMenuItems.map((item) => {
             const isActive = location === item.url;
             return (
               <Link 
@@ -103,6 +123,59 @@ export function AppSidebar() {
               </Link>
             );
           })}
+
+          {/* Coach Tools Collapsible Section */}
+          <Collapsible 
+            open={coachToolsOpen} 
+            onOpenChange={setCoachToolsOpen}
+            className="group/collapsible"
+          >
+            <CollapsibleTrigger asChild>
+              <button
+                className={`flex w-full items-center justify-between gap-3 px-3 py-2 rounded-xl font-medium transition-colors ${
+                  isCoachToolsActive
+                    ? 'bg-white/10 text-slate-100'
+                    : 'text-slate-200 hover:bg-white/5'
+                }`}
+                data-testid="nav-coach-tools"
+              >
+                <div className="flex items-center gap-3">
+                  <Wrench className="h-4 w-4" />
+                  <span className="text-sm">Coach Tools</span>
+                </div>
+                <ChevronRight
+                  className={`h-4 w-4 transition-transform ${
+                    coachToolsOpen ? 'rotate-90' : ''
+                  }`}
+                />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-1 space-y-0.5">
+              {coachToolsItems.map((item) => {
+                const isActive = location === item.url;
+                return (
+                  <Link
+                    key={item.url}
+                    href={item.url}
+                    className={`flex items-start gap-3 pl-10 pr-3 py-2 rounded-xl transition-colors ${
+                      isActive
+                        ? 'bg-cyan-500/10 text-cyan-400'
+                        : 'text-slate-300 hover:bg-white/5'
+                    }`}
+                    data-testid={`nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <item.icon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium">{item.title}</div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        {item.description}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </CollapsibleContent>
+          </Collapsible>
         </nav>
       </SidebarContent>
 
