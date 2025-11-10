@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ProBadge } from "@/components/pro-badge";
 import { useState } from "react";
 import p2pLogo from "@assets/download_1762768481735.png";
 
@@ -107,9 +106,8 @@ export function AppSidebar() {
           </div>
           <div className="flex items-center gap-1.5 pl-1">
             <h2 className="font-bold text-slate-100 text-sm bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text">
-              MotionCode Pro
+              MotionCode
             </h2>
-            <ProBadge className="text-[9px]" />
           </div>
         </div>
       </SidebarHeader>
@@ -178,10 +176,7 @@ export function AppSidebar() {
                   >
                     <item.icon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-medium">{item.title}</span>
-                        {item.isPro && <ProBadge className="text-[8px]" />}
-                      </div>
+                      <span className="text-xs font-medium">{item.title}</span>
                       <div className="text-[10px] text-slate-400 mt-0.5">
                         {item.description}
                       </div>

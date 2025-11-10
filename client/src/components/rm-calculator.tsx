@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calculator, TrendingUp } from "lucide-react";
-import { ProBadge } from "@/components/pro-badge";
 
 const FORMULAS = {
   epley: { name: "Epley", formula: (weight: number, reps: number) => weight * (1 + reps / 30) },
@@ -57,7 +56,6 @@ export function RMCalculator() {
             <div className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-brand-400" />
               <CardTitle className="text-lg font-semibold text-slate-100">1RM Calculator</CardTitle>
-              <ProBadge className="text-[8px]" />
             </div>
             <CardDescription className="mt-1">
               Calculate your estimated one-rep max using multiple formulas
