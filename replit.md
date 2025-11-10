@@ -1,13 +1,13 @@
-# StrideCode Pro - Elite Strength & Conditioning Platform
+# MotionCode Pro - Elite Strength & Conditioning Platform
 
 ## Overview
-**StrideCode Pro** is a comprehensive strength and conditioning platform for coaches and athletes. Tagline: "Design Programs · Track Progress" (coach-focused). Designed to manage exercise libraries, create training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface. Part of the Stride Health Group family, this platform aims to surpass existing solutions by offering a highly visual, gamified, and modern user experience with AI-powered coaching. The business vision is to provide a leading-edge tool for performance optimization in strength and conditioning.
+**MotionCode Pro** is the premium B2B strength and conditioning extension of the MotionCode platform, designed for elite performance organizations. Tagline: "Design Programs · Track Progress" (coach-focused). Built to rival and exceed Lumin Strength, MotionCode Pro empowers strength coaches to manage exercise libraries, create sophisticated training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface. Part of the **Prepared to Play** ecosystem, this platform delivers a highly visual, gamified, and AI-powered coaching experience. The business vision is to become the dominant B2B S&C platform by combining 52-week periodization, belt progression mastery, and engagement-grade athlete experiences.
 
 ## User Preferences
-- **Design Philosophy**: Clean, professional, athletic aesthetic with dark glassmorphism theme
-- **Target Users**: Strength coaches, personal trainers, athletes
-- **Priority**: Visual excellence and intuitive UX
-- **Branding**: Stride Health Group logo integrated with cyan/white branding on dark backgrounds
+- **Design Philosophy**: Premium dark glassmorphism theme with professional gold accents for Pro tier
+- **Target Users**: B2B organizations, strength coaches, performance directors, elite athletes
+- **Priority**: Visual excellence, coaching efficiency, athlete engagement
+- **Branding**: Powered by Prepared to Play with MotionCode Pro premium tier identity
 
 ## System Architecture
 The platform is built with a modern web stack, prioritizing a seamless and engaging user experience.
@@ -28,7 +28,7 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Gamification**: Strategic use of XP, levels, streaks, and achievements with visual components like XP bars, achievement badges, and streak counters to motivate users.
 - **Accessibility**: Full `prefers-reduced-motion` support and performance optimizations.
 - **Layout**: Ultra-minimal, responsive design inspired by high-end sports analytics platforms, ensuring usability across desktop, tablet, and mobile.
-- **Sidebar**: Collapsible Shadcn sidebar (16rem default width, 4rem icon-only) with off-canvas sliding behavior. Features Stride branding and dark glassmorphism styling. Includes hierarchical navigation with "Coach Tools" as collapsible parent section.
+- **Sidebar**: Collapsible Shadcn sidebar (16rem default width, 4rem icon-only) with off-canvas sliding behavior. Features MotionCode Pro branding with professional gold accents and dark glassmorphism styling. Includes hierarchical navigation with "Coach Tools" as collapsible parent section.
 - **Navigation Structure**: TeamBuildr-inspired hierarchy with Coach Tools section containing: Master Database (1,769 TeamBuildr exercises), Exercise Library (custom exercises), and AI Classifier tool.
 - **Spacing System**: Consistent spacing throughout - `space-y-8` for page sections, `gap-6` for card grids, standard Shadcn padding for card internals.
 

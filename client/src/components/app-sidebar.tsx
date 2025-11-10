@@ -15,7 +15,6 @@ import {
   SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
-import { StrideLogo } from "@/components/stride-logo";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
 import strideLogo from "@assets/SHG (2)_1762403864838.jpg";
@@ -91,14 +90,14 @@ export function AppSidebar() {
         <div className="flex items-center gap-2">
           <img 
             src={strideLogo} 
-            alt="Stride Health Group Logo" 
+            alt="Prepared to Play Logo" 
             className="h-7 w-auto object-contain"
           />
           <div className="min-w-0 flex-1">
             <h2 className="font-bold -mb-0.5 text-slate-100 text-sm">
-              StrideCode <span className="text-brand-300">Pro</span>
+              MotionCode <span className="text-brand-300">Pro</span>
             </h2>
-            <p className="text-[10px] text-slate-400">Design · Track</p>
+            <p className="text-[10px] text-slate-400">Powered by Prepared to Play</p>
           </div>
         </div>
       </SidebarHeader>

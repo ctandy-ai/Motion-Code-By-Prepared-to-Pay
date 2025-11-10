@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation } from "@tanstack/react-query";
-import { StrideLogo } from "@/components/stride-logo";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -80,11 +79,11 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-brand-600 flex items-center justify-center shadow-md p-1.5">
-            <StrideLogo className="h-full w-full text-white" />
+          <div className="h-8 w-8 rounded-lg bg-brand-600 flex items-center justify-center shadow-md">
+            <Bot className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm text-slate-100">StrideCode AI Coach</h3>
+            <h3 className="font-semibold text-sm text-slate-100">MotionCode AI Coach</h3>
             <div className="chip text-[10px] px-2 py-0.5">Powered by GPT-4.1</div>
           </div>
         </div>
