@@ -9,6 +9,12 @@ import {
   insertAthleteProgramSchema,
   insertWorkoutLogSchema,
   insertPersonalRecordSchema,
+  insertProgramPhaseSchema,
+  insertProgramWeekSchema,
+  insertTrainingBlockSchema,
+  insertBlockExerciseSchema,
+  insertBlockTemplateSchema,
+  insertTemplateBlockExerciseSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -895,6 +901,273 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("AI classification error:", error);
       res.status(500).json({ error: "Failed to classify exercises" });
+    }
+  });
+
+  // Program Phases
+  app.get("/api/programs/:programId/phases", async (req, res) => {
+    try {
+      const phases = await storage.getProgramPhases(req.params.programId);
+      res.json(phases);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch phases" });
+    }
+  });
+
+  app.post("/api/programs/:programId/phases", async (req, res) => {
+    try {
+      const validated = insertProgramPhaseSchema.parse({ ...req.body, programId: req.params.programId });
+      const phase = await storage.createProgramPhase(validated);
+      res.status(201).json(phase);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid phase data" });
+    }
+  });
+
+  app.patch("/api/phases/:id", async (req, res) => {
+    try {
+      const validated = insertProgramPhaseSchema.partial().parse(req.body);
+      const phase = await storage.updateProgramPhase(req.params.id, validated);
+      if (!phase) return res.status(404).json({ error: "Phase not found" });
+      res.json(phase);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update phase" });
+    }
+  });
+
+  app.delete("/api/phases/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteProgramPhase(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Phase not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete phase" });
+    }
+  });
+
+  // Program Weeks
+  app.get("/api/programs/:programId/weeks", async (req, res) => {
+    try {
+      const weeks = await storage.getProgramWeeks(req.params.programId);
+      res.json(weeks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch weeks" });
+    }
+  });
+
+  app.get("/api/programs/:programId/weeks/:weekNumber", async (req, res) => {
+    try {
+      const result = await storage.getWeekWithBlocks(req.params.programId, parseInt(req.params.weekNumber));
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch week" });
+    }
+  });
+
+  app.post("/api/programs/:programId/weeks", async (req, res) => {
+    try {
+      const validated = insertProgramWeekSchema.parse({ ...req.body, programId: req.params.programId });
+      const week = await storage.createProgramWeek(validated);
+      res.status(201).json(week);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid week data" });
+    }
+  });
+
+  app.patch("/api/weeks/:id", async (req, res) => {
+    try {
+      const validated = insertProgramWeekSchema.partial().parse(req.body);
+      const week = await storage.updateProgramWeek(req.params.id, validated);
+      if (!week) return res.status(404).json({ error: "Week not found" });
+      res.json(week);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update week" });
+    }
+  });
+
+  // Training Blocks
+  app.get("/api/programs/:programId/blocks", async (req, res) => {
+    try {
+      const weekNumber = req.query.week ? parseInt(req.query.week as string) : undefined;
+      const dayNumber = req.query.day ? parseInt(req.query.day as string) : undefined;
+      const blocks = await storage.getTrainingBlocks(req.params.programId, weekNumber, dayNumber);
+      res.json(blocks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch blocks" });
+    }
+  });
+
+  app.get("/api/blocks/:id", async (req, res) => {
+    try {
+      const block = await storage.getTrainingBlock(req.params.id);
+      if (!block) return res.status(404).json({ error: "Block not found" });
+      res.json(block);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch block" });
+    }
+  });
+
+  app.post("/api/programs/:programId/blocks", async (req, res) => {
+    try {
+      const validated = insertTrainingBlockSchema.parse({ ...req.body, programId: req.params.programId });
+      const block = await storage.createTrainingBlock(validated);
+      res.status(201).json(block);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid block data" });
+    }
+  });
+
+  app.post("/api/programs/:programId/blocks/bulk", async (req, res) => {
+    try {
+      const blocks = req.body.blocks.map((b: any) => insertTrainingBlockSchema.parse({ ...b, programId: req.params.programId }));
+      const created = await storage.bulkInsertTrainingBlocks(blocks);
+      res.status(201).json(created);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid blocks data" });
+    }
+  });
+
+  app.patch("/api/blocks/:id", async (req, res) => {
+    try {
+      const validated = insertTrainingBlockSchema.partial().parse(req.body);
+      const block = await storage.updateTrainingBlock(req.params.id, validated);
+      if (!block) return res.status(404).json({ error: "Block not found" });
+      res.json(block);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update block" });
+    }
+  });
+
+  app.delete("/api/blocks/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteTrainingBlock(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Block not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete block" });
+    }
+  });
+
+  // Block Exercises
+  app.get("/api/blocks/:blockId/exercises", async (req, res) => {
+    try {
+      const exercises = await storage.getBlockExercises(req.params.blockId);
+      res.json(exercises);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch block exercises" });
+    }
+  });
+
+  app.post("/api/blocks/:blockId/exercises", async (req, res) => {
+    try {
+      const validated = insertBlockExerciseSchema.parse({ ...req.body, blockId: req.params.blockId });
+      const exercise = await storage.createBlockExercise(validated);
+      res.status(201).json(exercise);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid exercise data" });
+    }
+  });
+
+  app.delete("/api/block-exercises/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteBlockExercise(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Exercise not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete exercise" });
+    }
+  });
+
+  // Block Templates
+  app.get("/api/block-templates", async (req, res) => {
+    try {
+      const templates = await storage.getBlockTemplates();
+      res.json(templates);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch templates" });
+    }
+  });
+
+  app.get("/api/block-templates/:id", async (req, res) => {
+    try {
+      const template = await storage.getBlockTemplate(req.params.id);
+      if (!template) return res.status(404).json({ error: "Template not found" });
+      
+      const exercises = await storage.getTemplateBlockExercises(req.params.id);
+      res.json({ ...template, exercises });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch template" });
+    }
+  });
+
+  app.post("/api/block-templates", async (req, res) => {
+    try {
+      const validated = insertBlockTemplateSchema.parse(req.body);
+      const template = await storage.createBlockTemplate(validated);
+      res.status(201).json(template);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid template data" });
+    }
+  });
+
+  app.delete("/api/block-templates/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteBlockTemplate(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Template not found" });
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete template" });
+    }
+  });
+
+  // Command Operations
+  app.post("/api/programs/:programId/structure", async (req, res) => {
+    try {
+      const structure = await storage.getProgramStructure(req.params.programId);
+      res.json(structure);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch program structure" });
+    }
+  });
+
+  app.post("/api/blocks/:id/move", async (req, res) => {
+    try {
+      const { weekNumber, dayNumber, orderIndex } = req.body;
+      const block = await storage.moveBlock(req.params.id, weekNumber, dayNumber, orderIndex);
+      if (!block) return res.status(404).json({ error: "Block not found" });
+      res.json(block);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to move block" });
+    }
+  });
+
+  app.post("/api/programs/:programId/blocks/reorder", async (req, res) => {
+    try {
+      const { weekNumber, dayNumber, blockIds } = req.body;
+      await storage.reorderBlocks(req.params.programId, weekNumber, dayNumber, blockIds);
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ error: "Failed to reorder blocks" });
+    }
+  });
+
+  app.post("/api/programs/:programId/duplicate-week", async (req, res) => {
+    try {
+      const { sourceWeek, targetWeek } = req.body;
+      const blocks = await storage.duplicateWeekBlocks(req.params.programId, sourceWeek, targetWeek);
+      res.status(201).json(blocks);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to duplicate week" });
+    }
+  });
+
+  app.post("/api/programs/:programId/instantiate-template", async (req, res) => {
+    try {
+      const { templateId, weekNumber, dayNumber, orderIndex } = req.body;
+      const block = await storage.instantiateBlockFromTemplate(templateId, req.params.programId, weekNumber, dayNumber, orderIndex);
+      res.status(201).json(block);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to instantiate template" });
     }
   });
 

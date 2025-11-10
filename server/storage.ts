@@ -17,6 +17,18 @@ import {
   type InsertTemplateExercise,
   type TemplateWeekMetadata,
   type InsertTemplateWeekMetadata,
+  type ProgramPhase,
+  type InsertProgramPhase,
+  type ProgramWeek,
+  type InsertProgramWeek,
+  type TrainingBlock,
+  type InsertTrainingBlock,
+  type BlockExercise,
+  type InsertBlockExercise,
+  type BlockTemplate,
+  type InsertBlockTemplate,
+  type TemplateBlockExercise,
+  type InsertTemplateBlockExercise,
   type AthleteProgram,
   type InsertAthleteProgram,
   type WorkoutLog,
@@ -33,6 +45,12 @@ import {
   programTemplates,
   templateExercises,
   templateWeekMetadata,
+  programPhases,
+  programWeeks,
+  trainingBlocks,
+  blockExercises,
+  blockTemplates,
+  templateBlockExercises,
   athletePrograms,
   workoutLogs,
   personalRecords,
@@ -102,6 +120,44 @@ export interface IStorage {
 
   getPersonalRecords(athleteId?: string): Promise<PersonalRecord[]>;
   createPersonalRecord(record: InsertPersonalRecord): Promise<PersonalRecord>;
+
+  getProgramPhases(programId: string): Promise<ProgramPhase[]>;
+  createProgramPhase(phase: InsertProgramPhase): Promise<ProgramPhase>;
+  updateProgramPhase(id: string, phase: Partial<InsertProgramPhase>): Promise<ProgramPhase | undefined>;
+  deleteProgramPhase(id: string): Promise<boolean>;
+
+  getProgramWeeks(programId: string): Promise<ProgramWeek[]>;
+  getProgramWeek(id: string): Promise<ProgramWeek | undefined>;
+  createProgramWeek(week: InsertProgramWeek): Promise<ProgramWeek>;
+  updateProgramWeek(id: string, week: Partial<InsertProgramWeek>): Promise<ProgramWeek | undefined>;
+
+  getTrainingBlocks(programId: string, weekNumber?: number, dayNumber?: number): Promise<TrainingBlock[]>;
+  getTrainingBlock(id: string): Promise<TrainingBlock | undefined>;
+  createTrainingBlock(block: InsertTrainingBlock): Promise<TrainingBlock>;
+  updateTrainingBlock(id: string, block: Partial<InsertTrainingBlock>): Promise<TrainingBlock | undefined>;
+  deleteTrainingBlock(id: string): Promise<boolean>;
+  bulkInsertTrainingBlocks(blocks: InsertTrainingBlock[]): Promise<TrainingBlock[]>;
+  
+  getBlockExercises(blockId: string): Promise<BlockExercise[]>;
+  createBlockExercise(exercise: InsertBlockExercise): Promise<BlockExercise>;
+  deleteBlockExercise(id: string): Promise<boolean>;
+  bulkInsertBlockExercises(exercises: InsertBlockExercise[]): Promise<BlockExercise[]>;
+
+  getBlockTemplates(): Promise<BlockTemplate[]>;
+  getBlockTemplate(id: string): Promise<BlockTemplate | undefined>;
+  createBlockTemplate(template: InsertBlockTemplate): Promise<BlockTemplate>;
+  deleteBlockTemplate(id: string): Promise<boolean>;
+
+  getTemplateBlockExercises(templateId: string): Promise<TemplateBlockExercise[]>;
+  createTemplateBlockExercise(exercise: InsertTemplateBlockExercise): Promise<TemplateBlockExercise>;
+
+  getWeekWithBlocks(programId: string, weekNumber: number): Promise<{ week: ProgramWeek | undefined, blocks: (TrainingBlock & { exercises: BlockExercise[] })[] }>;
+  getProgramStructure(programId: string): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[], blocks: (TrainingBlock & { exercises: BlockExercise[] })[] }>;
+  createPhaseWithWeeks(phase: InsertProgramPhase, weekNumbers: number[]): Promise<ProgramPhase>;
+  instantiateBlockFromTemplate(templateId: string, programId: string, weekNumber: number, dayNumber: number, orderIndex: number): Promise<TrainingBlock>;
+  duplicateWeekBlocks(programId: string, sourceWeek: number, targetWeek: number): Promise<TrainingBlock[]>;
+  moveBlock(blockId: string, newWeekNumber: number, newDayNumber: number, newOrderIndex: number): Promise<TrainingBlock | undefined>;
+  reorderBlocks(programId: string, weekNumber: number, dayNumber: number, blockIds: string[]): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -399,6 +455,285 @@ export class DatabaseStorage implements IStorage {
   async createPersonalRecord(record: InsertPersonalRecord): Promise<PersonalRecord> {
     const [newRecord] = await db.insert(personalRecords).values(record).returning();
     return newRecord;
+  }
+
+  async getProgramPhases(programId: string): Promise<ProgramPhase[]> {
+    return await db.select().from(programPhases).where(eq(programPhases.programId, programId));
+  }
+
+  async createProgramPhase(phase: InsertProgramPhase): Promise<ProgramPhase> {
+    const [newPhase] = await db.insert(programPhases).values(phase).returning();
+    return newPhase;
+  }
+
+  async updateProgramPhase(id: string, phase: Partial<InsertProgramPhase>): Promise<ProgramPhase | undefined> {
+    const [updated] = await db.update(programPhases).set(phase).where(eq(programPhases.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteProgramPhase(id: string): Promise<boolean> {
+    const result = await db.delete(programPhases).where(eq(programPhases.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getProgramWeeks(programId: string): Promise<ProgramWeek[]> {
+    return await db.select().from(programWeeks).where(eq(programWeeks.programId, programId));
+  }
+
+  async getProgramWeek(id: string): Promise<ProgramWeek | undefined> {
+    const [week] = await db.select().from(programWeeks).where(eq(programWeeks.id, id));
+    return week || undefined;
+  }
+
+  async createProgramWeek(week: InsertProgramWeek): Promise<ProgramWeek> {
+    const [newWeek] = await db.insert(programWeeks).values(week).returning();
+    return newWeek;
+  }
+
+  async updateProgramWeek(id: string, week: Partial<InsertProgramWeek>): Promise<ProgramWeek | undefined> {
+    const [updated] = await db.update(programWeeks).set(week).where(eq(programWeeks.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async getTrainingBlocks(programId: string, weekNumber?: number, dayNumber?: number): Promise<TrainingBlock[]> {
+    let query = db.select().from(trainingBlocks).where(eq(trainingBlocks.programId, programId));
+    
+    if (weekNumber !== undefined && dayNumber !== undefined) {
+      return await query.where(and(eq(trainingBlocks.weekNumber, weekNumber), eq(trainingBlocks.dayNumber, dayNumber)));
+    } else if (weekNumber !== undefined) {
+      return await query.where(eq(trainingBlocks.weekNumber, weekNumber));
+    }
+    
+    return await query;
+  }
+
+  async getTrainingBlock(id: string): Promise<TrainingBlock | undefined> {
+    const [block] = await db.select().from(trainingBlocks).where(eq(trainingBlocks.id, id));
+    return block || undefined;
+  }
+
+  async createTrainingBlock(block: InsertTrainingBlock): Promise<TrainingBlock> {
+    const [newBlock] = await db.insert(trainingBlocks).values(block).returning();
+    return newBlock;
+  }
+
+  async updateTrainingBlock(id: string, block: Partial<InsertTrainingBlock>): Promise<TrainingBlock | undefined> {
+    const [updated] = await db.update(trainingBlocks).set(block).where(eq(trainingBlocks.id, id)).returning();
+    return updated || undefined;
+  }
+
+  async deleteTrainingBlock(id: string): Promise<boolean> {
+    const result = await db.delete(trainingBlocks).where(eq(trainingBlocks.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async bulkInsertTrainingBlocks(blocks: InsertTrainingBlock[]): Promise<TrainingBlock[]> {
+    if (blocks.length === 0) return [];
+    return await db.insert(trainingBlocks).values(blocks).returning();
+  }
+
+  async getBlockExercises(blockId: string): Promise<BlockExercise[]> {
+    return await db.select().from(blockExercises).where(eq(blockExercises.blockId, blockId));
+  }
+
+  async createBlockExercise(exercise: InsertBlockExercise): Promise<BlockExercise> {
+    const [newExercise] = await db.insert(blockExercises).values(exercise).returning();
+    return newExercise;
+  }
+
+  async deleteBlockExercise(id: string): Promise<boolean> {
+    const result = await db.delete(blockExercises).where(eq(blockExercises.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async bulkInsertBlockExercises(exercises: InsertBlockExercise[]): Promise<BlockExercise[]> {
+    if (exercises.length === 0) return [];
+    return await db.insert(blockExercises).values(exercises).returning();
+  }
+
+  async getBlockTemplates(): Promise<BlockTemplate[]> {
+    return await db.select().from(blockTemplates);
+  }
+
+  async getBlockTemplate(id: string): Promise<BlockTemplate | undefined> {
+    const [template] = await db.select().from(blockTemplates).where(eq(blockTemplates.id, id));
+    return template || undefined;
+  }
+
+  async createBlockTemplate(template: InsertBlockTemplate): Promise<BlockTemplate> {
+    const [newTemplate] = await db.insert(blockTemplates).values(template).returning();
+    return newTemplate;
+  }
+
+  async deleteBlockTemplate(id: string): Promise<boolean> {
+    const result = await db.delete(blockTemplates).where(eq(blockTemplates.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async getTemplateBlockExercises(templateId: string): Promise<TemplateBlockExercise[]> {
+    return await db.select().from(templateBlockExercises).where(eq(templateBlockExercises.templateId, templateId));
+  }
+
+  async createTemplateBlockExercise(exercise: InsertTemplateBlockExercise): Promise<TemplateBlockExercise> {
+    const [newExercise] = await db.insert(templateBlockExercises).values(exercise).returning();
+    return newExercise;
+  }
+
+  async getWeekWithBlocks(programId: string, weekNumber: number): Promise<{ week: ProgramWeek | undefined, blocks: (TrainingBlock & { exercises: BlockExercise[] })[] }> {
+    const [week] = await db.select().from(programWeeks).where(
+      and(eq(programWeeks.programId, programId), eq(programWeeks.weekNumber, weekNumber))
+    );
+    
+    const blocks = await db.select().from(trainingBlocks).where(
+      and(eq(trainingBlocks.programId, programId), eq(trainingBlocks.weekNumber, weekNumber))
+    );
+    
+    const blocksWithExercises = await Promise.all(
+      blocks.map(async (block) => {
+        const exercises = await db.select().from(blockExercises).where(eq(blockExercises.blockId, block.id));
+        return { ...block, exercises };
+      })
+    );
+    
+    return { week: week || undefined, blocks: blocksWithExercises };
+  }
+
+  async getProgramStructure(programId: string): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[], blocks: (TrainingBlock & { exercises: BlockExercise[] })[] }> {
+    const [phases, weeks, blocks] = await Promise.all([
+      this.getProgramPhases(programId),
+      this.getProgramWeeks(programId),
+      this.getTrainingBlocks(programId)
+    ]);
+    
+    const blocksWithExercises = await Promise.all(
+      blocks.map(async (block) => {
+        const exercises = await db.select().from(blockExercises).where(eq(blockExercises.blockId, block.id));
+        return { ...block, exercises };
+      })
+    );
+    
+    return { phases, weeks, blocks: blocksWithExercises };
+  }
+
+  async createPhaseWithWeeks(phase: InsertProgramPhase, weekNumbers: number[]): Promise<ProgramPhase> {
+    return await db.transaction(async (tx) => {
+      const [newPhase] = await tx.insert(programPhases).values(phase).returning();
+      
+      const weekValues = weekNumbers.map(weekNum => ({
+        programId: phase.programId,
+        phaseId: newPhase.id,
+        weekNumber: weekNum
+      }));
+      
+      if (weekValues.length > 0) {
+        await tx.insert(programWeeks).values(weekValues);
+      }
+      
+      return newPhase;
+    });
+  }
+
+  async instantiateBlockFromTemplate(templateId: string, programId: string, weekNumber: number, dayNumber: number, orderIndex: number): Promise<TrainingBlock> {
+    return await db.transaction(async (tx) => {
+      const [template] = await tx.select().from(blockTemplates).where(eq(blockTemplates.id, templateId));
+      if (!template) throw new Error("Template not found");
+      
+      const [newBlock] = await tx.insert(trainingBlocks).values({
+        programId,
+        weekNumber,
+        dayNumber,
+        title: template.name,
+        belt: template.belt,
+        focus: template.focus,
+        scheme: template.scheme,
+        orderIndex,
+        aiGenerated: 0
+      }).returning();
+      
+      const templateExs = await tx.select().from(templateBlockExercises).where(eq(templateBlockExercises.templateId, templateId));
+      
+      if (templateExs.length > 0) {
+        const blockExValues = templateExs.map(te => ({
+          blockId: newBlock.id,
+          exerciseId: te.exerciseId,
+          scheme: te.scheme,
+          notes: te.notes,
+          orderIndex: te.orderIndex
+        }));
+        await tx.insert(blockExercises).values(blockExValues);
+      }
+      
+      return newBlock;
+    });
+  }
+
+  async duplicateWeekBlocks(programId: string, sourceWeek: number, targetWeek: number): Promise<TrainingBlock[]> {
+    return await db.transaction(async (tx) => {
+      const sourceBlocks = await tx.select().from(trainingBlocks).where(
+        and(eq(trainingBlocks.programId, programId), eq(trainingBlocks.weekNumber, sourceWeek))
+      );
+      
+      if (sourceBlocks.length === 0) return [];
+      
+      const newBlocks: TrainingBlock[] = [];
+      
+      for (const block of sourceBlocks) {
+        const [newBlock] = await tx.insert(trainingBlocks).values({
+          programId: block.programId,
+          weekNumber: targetWeek,
+          dayNumber: block.dayNumber,
+          title: block.title,
+          belt: block.belt,
+          focus: block.focus,
+          notes: block.notes,
+          scheme: block.scheme,
+          orderIndex: block.orderIndex,
+          aiGenerated: 0
+        }).returning();
+        
+        const sourceExercises = await tx.select().from(blockExercises).where(eq(blockExercises.blockId, block.id));
+        
+        if (sourceExercises.length > 0) {
+          const newExValues = sourceExercises.map(ex => ({
+            blockId: newBlock.id,
+            exerciseId: ex.exerciseId,
+            scheme: ex.scheme,
+            notes: ex.notes,
+            orderIndex: ex.orderIndex
+          }));
+          await tx.insert(blockExercises).values(newExValues);
+        }
+        
+        newBlocks.push(newBlock);
+      }
+      
+      return newBlocks;
+    });
+  }
+
+  async moveBlock(blockId: string, newWeekNumber: number, newDayNumber: number, newOrderIndex: number): Promise<TrainingBlock | undefined> {
+    const [updated] = await db.update(trainingBlocks).set({
+      weekNumber: newWeekNumber,
+      dayNumber: newDayNumber,
+      orderIndex: newOrderIndex
+    }).where(eq(trainingBlocks.id, blockId)).returning();
+    
+    return updated || undefined;
+  }
+
+  async reorderBlocks(programId: string, weekNumber: number, dayNumber: number, blockIds: string[]): Promise<void> {
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < blockIds.length; i++) {
+        await tx.update(trainingBlocks).set({ orderIndex: i }).where(
+          and(
+            eq(trainingBlocks.id, blockIds[i]),
+            eq(trainingBlocks.programId, programId),
+            eq(trainingBlocks.weekNumber, weekNumber),
+            eq(trainingBlocks.dayNumber, dayNumber)
+          )
+        );
+      }
+    });
   }
 }
 
