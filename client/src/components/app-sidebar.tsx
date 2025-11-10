@@ -18,6 +18,7 @@ import { Link, useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ProBadge } from "@/components/pro-badge";
 import { useState } from "react";
+import p2pLogo from "@assets/download_1762768481735.png";
 
 const mainMenuItems = [
   {
@@ -96,25 +97,19 @@ export function AppSidebar() {
   return (
     <Sidebar data-testid="app-sidebar" className="!bg-transparent bglass shadow-glass border-0 m-5 rounded-2xl">
       <SidebarHeader className="p-4 border-b border-white/10 !bg-transparent">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-base">MC</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <h2 className="font-bold text-slate-100 text-base bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text">
-                  MotionCode Pro
-                </h2>
-                <ProBadge className="text-[9px]" />
-              </div>
-            </div>
+            <img 
+              src={p2pLogo} 
+              alt="Prepared to Play" 
+              className="h-9 w-auto object-contain"
+            />
           </div>
-          <div className="flex items-center gap-1.5 ml-10 -mt-0.5">
-            <div className="h-0.5 w-4 bg-gradient-to-r from-pro-gold to-transparent rounded-full"></div>
-            <p className="text-[10px] font-medium bg-gradient-to-r from-pro-gold to-amber-400 bg-clip-text text-transparent">
-              Powered by Prepared to Play
-            </p>
+          <div className="flex items-center gap-1.5 pl-1">
+            <h2 className="font-bold text-slate-100 text-sm bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text">
+              MotionCode Pro
+            </h2>
+            <ProBadge className="text-[9px]" />
           </div>
         </div>
       </SidebarHeader>
