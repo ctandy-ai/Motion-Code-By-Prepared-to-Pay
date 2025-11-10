@@ -18,6 +18,7 @@ import { Link, useLocation } from "wouter";
 import { StrideLogo } from "@/components/stride-logo";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState } from "react";
+import strideLogo from "@assets/SHG (2)_1762403864838.jpg";
 
 const mainMenuItems = [
   {
@@ -89,8 +90,8 @@ export function AppSidebar() {
       <SidebarHeader className="p-4 border-b border-white/10 !bg-transparent">
         <div className="flex items-center gap-2">
           <img 
-            src="/attached_assets/SHG (2)_1762403864838.jpg" 
-            alt="Stride Logo" 
+            src={strideLogo} 
+            alt="Stride Health Group Logo" 
             className="h-7 w-auto object-contain"
           />
           <div className="min-w-0 flex-1">
