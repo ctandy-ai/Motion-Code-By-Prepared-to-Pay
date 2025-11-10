@@ -1,0 +1,34 @@
+Lumin Strength is a comprehensive strength and conditioning (S&C) software solution designed for athletic teams and S&C coaches to streamline workflow and consolidate data into a single platform. Below is a detailed, granular explanation of its key functional features: 
+1. Programming Interface & Workflow Efficiency
+Lumin Strength's core design philosophy is to minimize clicks and manual data entry, providing an intuitive interface for coaches. 
+Drag-and-Drop & Click-and-Drag Functionality: Coaches can build and adjust programs quickly by dragging and dropping exercises, moving supersets, and adjusting program phases or blocks on a calendar scale with single clicks. This allows for rapid prototyping and periodization.
+Periodized & Free-Form Planning: The platform supports both structured periodization (organizing sessions into phases/blocks with specific dates) and free-form planning (where athletes complete sessions within a given week without fixed days).
+Bulk Program Updates: Coaches can make mass updates to multiple actions, targets, sets, or exercises across a program or specific date ranges simultaneously, which is highly efficient for large teams.
+Template Usage: Users can save and apply templates for specific sessions, exercise groups (supersets, circuits), or rep schemes, further accelerating the programming process.
+Session Titles/Grouping: Coaches can break up sessions with custom titles (e.g., "Warm-Up," "Strength," "Plyometrics") for better organization and clarity for athletes.
+Session Printouts: The ability to print sessions supports offline use or weight-room display for team training modes. 
+2. Exercise Library & Media Management
+The software includes an extensive, customizable exercise library with rich media support. 
+AI Autofill: When a coach adds a new exercise to the library, the AI automatically populates critical details, including primary/secondary muscle groups, equipment, tags, instructions, and notes. Coaches can then review and tweak these details.
+Embedded In-App Videos: Coaches can link to YouTube or Vimeo videos, which are then embedded and viewable directly within the athlete's mobile app. This provides clear visual guidance without requiring the athlete to leave the app.
+Reps on Each Side Toggle: The interface has a specific option to toggle reps for "each side," removing the need for coaches to add extra notes for unilateral movements.
+Search & Filter: The library can be searched and filtered by tags, exercise type (e.g., strength, plyometric, mobility), muscle groups, and equipment for efficient program design. 
+3. Athlete Experience & Data Capture
+The athlete mobile app is designed for simplicity and clear communication, encouraging high engagement.
+Intuitive Interface: The app displays planned sessions with an estimated duration. Athletes can navigate exercises, view upcoming movements, and see set-by-set breakdowns.
+Data Entry & Feedback: Athletes enter completed weights and reps, which change color upon completion. They can also add exercise-specific or session-wide notes and message coaches directly.
+Session Modifications (Skip/Swap): Athletes can skip an exercise or swap it with a mechanically similar, coach-approved alternative from a suggested list.
+RM Calculator: An in-app 1-Rep Max calculator helps athletes determine appropriate lifting weights based on their performance. 
+4. Analysis, Reporting & Alerts
+Coaches gain valuable insights through comprehensive reporting and an alert system. 
+Athlete Session Analysis Dashboard: Coaches have one dashboard to view all athletes' progress. They can filter by team, program, or date and see key metrics like session completion status (completed, in progress, not started).
+Alerts & Flagging: The system flags sessions with skipped exercises, swaps, or athlete comments, allowing coaches to quickly identify and follow up with high-priority athletes.
+Longitudinal Data Analysis: Coaches can click on an exercise to view an athlete's historical data, tracking load, volume, or other metrics over time via interactive charts.
+Physical Testing Module: A dedicated module for tracking physical testing results allows coaches to monitor performance trends and inform programming decisions.
+Leaderboards: The platform can display leaderboards, fostering a competitive environment among athletes for certain metrics.
+Session Attendance Reports: Detailed reports track attendance and total volume assigned vs. completed. 
+5. Integration with Lumin Sports Ecosystem
+A key differentiator is Lumin Strength's seamless integration within the broader Lumin Sports software suite, which manages all aspects of athletic performance.
+All-in-One Platform: S&C data can be connected with athletic performance data (like GPS tracking), team operations, and the Lumin EMR & Athlete Health Module (for injury/illness tracking, treatment notes, and rehab progress), providing a holistic view of the athlete.
+Force Integrations: The platform supports integrations with force plates and other external devices for advanced data collection. 
+This combination of efficient programming tools, data-rich reporting, and a unified platform makes Lumin Strength a powerful, time-saving solution for professional S&C coaches. 
