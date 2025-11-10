@@ -225,21 +225,31 @@ export default function Programs() {
                 </p>
               </div>
 
-              <div className="flex gap-2 border-t border-white/10 pt-4 mt-4">
+              <div className="space-y-2 border-t border-white/10 pt-4 mt-4">
                 <button
-                  className="btn btn-sec flex-1 text-xs" 
-                  onClick={() => setLocation(`/programs/${program.id}/builder`)}
-                  data-testid={`button-edit-${program.id}`}
+                  className="btn btn-pri w-full text-xs" 
+                  onClick={() => setLocation(`/programs/${program.id}/planner`)}
+                  data-testid={`button-planner-${program.id}`}
                 >
-                  Build Program
+                  <Calendar className="h-3.5 w-3.5 mr-1.5 inline" />
+                  Open Planner
                 </button>
-                <button
-                  className="btn btn-sec text-xs"
-                  onClick={() => deleteMutation.mutate(program.id)}
-                  data-testid={`button-delete-${program.id}`}
-                >
-                  Delete
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    className="btn btn-sec flex-1 text-xs" 
+                    onClick={() => setLocation(`/programs/${program.id}/builder`)}
+                    data-testid={`button-edit-${program.id}`}
+                  >
+                    Legacy Builder
+                  </button>
+                  <button
+                    className="btn btn-sec text-xs"
+                    onClick={() => deleteMutation.mutate(program.id)}
+                    data-testid={`button-delete-${program.id}`}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
