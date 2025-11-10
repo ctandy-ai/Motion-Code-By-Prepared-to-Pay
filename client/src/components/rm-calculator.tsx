@@ -23,7 +23,7 @@ export function RMCalculator() {
   const weightNum = parseFloat(weight) || 0;
   const repsNum = parseInt(reps) || 0;
 
-  const isValid = weightNum > 0 && repsNum > 0 && repsNum <= 12;
+  const isValid = weightNum > 0 && repsNum > 0;
 
   const calculate1RM = () => {
     if (!isValid) return null;
