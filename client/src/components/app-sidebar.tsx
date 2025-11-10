@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2 } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -77,6 +77,13 @@ const coachToolsItems = [
     url: "/ai-classifier",
     icon: Wand2,
     description: "Test AI classifications",
+    isPro: true,
+  },
+  {
+    title: "RM Calculator",
+    url: "/rm-calculator",
+    icon: Calculator,
+    description: "Calculate 1RM & percentages",
     isPro: true,
   },
 ];
