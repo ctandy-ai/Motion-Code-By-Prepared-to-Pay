@@ -74,13 +74,14 @@ function DroppableDay({
           {dayName}
         </h3>
         <Button
-          size="icon"
+          size="sm"
           variant="ghost"
           data-testid={`button-add-block-day-${dayNumber}`}
           onClick={onCreateBlock}
-          className="h-6 w-6"
+          className="h-7 gap-1.5 text-xs"
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Add Block</span>
         </Button>
       </div>
 
@@ -95,9 +96,14 @@ function DroppableDay({
           className="min-h-[200px] space-y-2 p-2 rounded-lg border border-dashed border-ink-3 bg-ink-1/20"
         >
           {blocks.length === 0 ? (
-            <div className="flex items-center justify-center h-24 text-xs text-slate-500">
-              No blocks
-            </div>
+            <button
+              onClick={onCreateBlock}
+              data-testid={`button-add-block-empty-${dayNumber}`}
+              className="flex flex-col items-center justify-center w-full h-24 text-xs text-slate-500 hover:text-slate-400 hover:bg-ink-2/30 rounded-md transition-colors cursor-pointer"
+            >
+              <Plus className="h-5 w-5 mb-1" />
+              <span>Click to add training block</span>
+            </button>
           ) : (
             blocks.map((block) => (
               <SortableBlock

@@ -1133,10 +1133,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/blocks/:id/move", async (req, res) => {
     try {
       const { weekNumber, dayNumber, orderIndex } = req.body;
+      console.log(`[MOVE] Block ${req.params.id}: week=${weekNumber}, day=${dayNumber}, order=${orderIndex}`);
       const block = await storage.moveBlock(req.params.id, weekNumber, dayNumber, orderIndex);
-      if (!block) return res.status(404).json({ error: "Block not found" });
+      if (!block) {
+        console.log("[MOVE] Block not found in database");
+        return res.status(404).json({ error: "Block not found" });
+      }
+      console.log(`[MOVE] Success - block now at week=${block.weekNumber}, day=${block.dayNumber}`);
       res.json(block);
     } catch (error) {
+      console.error("[MOVE] Error:", error);
       res.status(400).json({ error: "Failed to move block" });
     }
   });
