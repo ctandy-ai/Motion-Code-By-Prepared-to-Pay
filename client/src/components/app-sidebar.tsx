@@ -105,8 +105,10 @@ export function AppSidebar() {
             />
           </div>
           <div className="flex items-center gap-1.5 pl-1">
-            <h2 className="font-bold text-slate-100 text-sm bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text">
-              MotionCode
+            <h2 className="font-bold text-sm">
+              <span className="bg-gradient-to-r from-slate-100 to-slate-300 bg-clip-text text-transparent">MotionCode</span>
+              {" "}
+              <span className="bg-gradient-to-r from-pro-gold to-amber-400 bg-clip-text text-transparent">Pro</span>
             </h2>
           </div>
         </div>
