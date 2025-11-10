@@ -88,6 +88,11 @@ export default {
         gold: "hsl(var(--achievement-gold) / <alpha-value>)",
         silver: "hsl(var(--achievement-silver) / <alpha-value>)",
         bronze: "hsl(var(--achievement-bronze) / <alpha-value>)",
+        "pro-gold": {
+          DEFAULT: "hsl(var(--pro-gold) / <alpha-value>)",
+          light: "hsl(var(--pro-gold-light) / <alpha-value>)",
+          dark: "hsl(var(--pro-gold-dark) / <alpha-value>)",
+        },
         sidebar: {
           ring: "hsl(var(--sidebar-ring) / <alpha-value>)",
           DEFAULT: "hsl(var(--sidebar) / <alpha-value>)",

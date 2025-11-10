@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Link, useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ProBadge } from "@/components/pro-badge";
 import { useState } from "react";
 import strideLogo from "@assets/SHG (2)_1762403864838.jpg";
 
@@ -63,6 +64,7 @@ const coachToolsItems = [
     url: "/coach-tools",
     icon: Database,
     description: "1,769 TeamBuildr exercises",
+    isPro: true,
   },
   {
     title: "Exercise Library",
@@ -75,6 +77,7 @@ const coachToolsItems = [
     url: "/ai-classifier",
     icon: Wand2,
     description: "Test AI classifications",
+    isPro: true,
   },
 ];
 
@@ -94,9 +97,12 @@ export function AppSidebar() {
             className="h-7 w-auto object-contain"
           />
           <div className="min-w-0 flex-1">
-            <h2 className="font-bold -mb-0.5 text-slate-100 text-sm">
-              MotionCode <span className="text-brand-300">Pro</span>
-            </h2>
+            <div className="flex items-center gap-1.5 -mb-0.5">
+              <h2 className="font-bold text-slate-100 text-sm">
+                MotionCode Pro
+              </h2>
+              <ProBadge className="text-[9px]" />
+            </div>
             <p className="text-[10px] text-slate-400">Powered by Prepared to Play</p>
           </div>
         </div>
@@ -166,7 +172,10 @@ export function AppSidebar() {
                   >
                     <item.icon className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium">{item.title}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-medium">{item.title}</span>
+                        {item.isPro && <ProBadge className="text-[8px]" />}
+                      </div>
                       <div className="text-[10px] text-slate-400 mt-0.5">
                         {item.description}
                       </div>

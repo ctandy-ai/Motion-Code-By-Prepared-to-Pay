@@ -101,11 +101,16 @@
   --accent-b: 188 95% 42%;  /* #06b6d4 - cyan */
   --accent-c: 38 92% 50%;   /* #f59e0b - amber */
   
+  /* Premium Pro Gold (#D4AF37) */
+  --pro-gold: 46 65% 52%;
+  --pro-gold-light: 46 70% 60%;
+  --pro-gold-dark: 46 70% 42%;
+  
   /* Legacy mappings */
-  --primary: 239 75% 50%;
+  --primary: 200 80% 45%;  /* Matching brand cyan/blue */
   --accent: 188 95% 42%;
   --coral: 38 92% 50%;
-  --gold: 38 92% 50%;
+  --gold: 46 65% 52%;  /* Updated to pro gold */
   --success: 142 71% 45%;
   --slate: 210 20% 35%;
 

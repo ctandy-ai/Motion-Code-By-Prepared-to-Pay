@@ -24,12 +24,13 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
 
   const chatMutation = useMutation({
     mutationFn: async (userMessage: string) => {
-      return apiRequest('/api/ai/chat', {
-        method: 'POST',
-        body: JSON.stringify({ messages: [...messages, { role: 'user', content: userMessage }], athleteId }),
+      const res = await apiRequest('POST', '/api/ai/chat', { 
+        messages: [...messages, { role: 'user', content: userMessage }], 
+        athleteId 
       });
+      return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
     },
     onError: () => {
