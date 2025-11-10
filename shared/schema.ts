@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, real, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, real, unique, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -149,6 +149,110 @@ export const programExercises = pgTable("program_exercises", {
 export const insertProgramExerciseSchema = createInsertSchema(programExercises).omit({ id: true });
 export type InsertProgramExercise = z.infer<typeof insertProgramExerciseSchema>;
 export type ProgramExercise = typeof programExercises.$inferSelect;
+
+export const programPhases = pgTable("program_phases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => programs.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  startWeek: integer("start_week").notNull(),
+  endWeek: integer("end_week").notNull(),
+  phaseType: text("phase_type").notNull(),
+  goals: text("goals"),
+  orderIndex: integer("order_index").notNull(),
+}, (table) => ({
+  programIdIdx: index("program_phases_program_id_idx").on(table.programId),
+}));
+
+export const insertProgramPhaseSchema = createInsertSchema(programPhases).omit({ id: true });
+export type InsertProgramPhase = z.infer<typeof insertProgramPhaseSchema>;
+export type ProgramPhase = typeof programPhases.$inferSelect;
+
+export const programWeeks = pgTable("program_weeks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => programs.id, { onDelete: 'cascade' }),
+  phaseId: varchar("phase_id").references(() => programPhases.id, { onDelete: 'set null' }),
+  weekNumber: integer("week_number").notNull(),
+  beltTarget: text("belt_target"),
+  focus: text("focus").array(),
+  volumeTarget: integer("volume_target"),
+  intensityZone: text("intensity_zone"),
+  notes: text("notes"),
+}, (table) => ({
+  programWeekIdx: index("program_weeks_program_week_idx").on(table.programId, table.weekNumber),
+}));
+
+export const insertProgramWeekSchema = createInsertSchema(programWeeks).omit({ id: true });
+export type InsertProgramWeek = z.infer<typeof insertProgramWeekSchema>;
+export type ProgramWeek = typeof programWeeks.$inferSelect;
+
+export const trainingBlocks = pgTable("training_blocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  programId: varchar("program_id").notNull().references(() => programs.id, { onDelete: 'cascade' }),
+  programWeekId: varchar("program_week_id").references(() => programWeeks.id, { onDelete: 'cascade' }),
+  weekNumber: integer("week_number").notNull(),
+  dayNumber: integer("day_number").notNull(),
+  title: text("title").notNull(),
+  belt: text("belt").notNull(),
+  focus: text("focus").array().notNull().default(sql`ARRAY[]::text[]`),
+  notes: text("notes"),
+  scheme: text("scheme"),
+  orderIndex: integer("order_index").notNull(),
+  aiGenerated: integer("ai_generated").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  programWeekDayIdx: index("training_blocks_program_week_day_idx").on(table.programId, table.weekNumber, table.dayNumber),
+  orderIdx: index("training_blocks_order_idx").on(table.programId, table.weekNumber, table.dayNumber, table.orderIndex),
+}));
+
+export const insertTrainingBlockSchema = createInsertSchema(trainingBlocks).omit({ id: true, createdAt: true });
+export type InsertTrainingBlock = z.infer<typeof insertTrainingBlockSchema>;
+export type TrainingBlock = typeof trainingBlocks.$inferSelect;
+
+export const blockExercises = pgTable("block_exercises", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  blockId: varchar("block_id").notNull().references(() => trainingBlocks.id, { onDelete: 'cascade' }),
+  exerciseId: varchar("exercise_id").notNull().references(() => exercises.id, { onDelete: 'cascade' }),
+  scheme: text("scheme"),
+  notes: text("notes"),
+  orderIndex: integer("order_index").notNull(),
+}, (table) => ({
+  blockIdIdx: index("block_exercises_block_id_idx").on(table.blockId),
+}));
+
+export const insertBlockExerciseSchema = createInsertSchema(blockExercises).omit({ id: true });
+export type InsertBlockExercise = z.infer<typeof insertBlockExerciseSchema>;
+export type BlockExercise = typeof blockExercises.$inferSelect;
+
+export const blockTemplates = pgTable("block_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  description: text("description"),
+  belt: text("belt").notNull(),
+  focus: text("focus").array().notNull().default(sql`ARRAY[]::text[]`),
+  scheme: text("scheme"),
+  isPublic: integer("is_public").notNull().default(0),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertBlockTemplateSchema = createInsertSchema(blockTemplates).omit({ id: true, createdAt: true });
+export type InsertBlockTemplate = z.infer<typeof insertBlockTemplateSchema>;
+export type BlockTemplate = typeof blockTemplates.$inferSelect;
+
+export const templateBlockExercises = pgTable("template_block_exercises", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull().references(() => blockTemplates.id, { onDelete: 'cascade' }),
+  exerciseId: varchar("exercise_id").notNull().references(() => exercises.id, { onDelete: 'cascade' }),
+  scheme: text("scheme"),
+  notes: text("notes"),
+  orderIndex: integer("order_index").notNull(),
+}, (table) => ({
+  templateIdIdx: index("template_block_exercises_template_id_idx").on(table.templateId),
+}));
+
+export const insertTemplateBlockExerciseSchema = createInsertSchema(templateBlockExercises).omit({ id: true });
+export type InsertTemplateBlockExercise = z.infer<typeof insertTemplateBlockExerciseSchema>;
+export type TemplateBlockExercise = typeof templateBlockExercises.$inferSelect;
 
 export const athletePrograms = pgTable("athlete_programs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
