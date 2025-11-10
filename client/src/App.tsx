@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import Exercises from "@/pages/exercises";
 import Programs from "@/pages/programs";
 import ProgramBuilder from "@/pages/program-builder";
+import PlannerPage from "@/pages/planner-page";
 import Templates from "@/pages/templates";
 import Athletes from "@/pages/athletes";
 import AthleteDetail from "@/pages/athlete-detail";
@@ -29,6 +30,7 @@ function Router() {
       <Route path="/exercises" component={Exercises} />
       <Route path="/programs" component={Programs} />
       <Route path="/programs/:programId/builder" component={ProgramBuilder} />
+      <Route path="/programs/:programId/planner" component={PlannerPage} />
       <Route path="/templates" component={Templates} />
       <Route path="/athletes" component={Athletes} />
       <Route path="/athletes/:athleteId" component={AthleteDetail} />

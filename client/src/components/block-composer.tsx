@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -51,6 +51,31 @@ export function BlockComposer({ open, onOpenChange, onSave, initialData }: Block
   const [notes, setNotes] = useState(initialData?.notes || "");
   const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>(initialData?.exercises || []);
   const [exerciseSearch, setExerciseSearch] = useState("");
+
+  // Sync state with initialData when it changes (for edit mode)
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title || "");
+      setBelt(initialData.belt || "White");
+      setFocus(initialData.focus || []);
+      setScheme(initialData.scheme || "");
+      setNotes(initialData.notes || "");
+      setSelectedExercises(initialData.exercises || []);
+    }
+  }, [initialData]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setTitle("");
+      setBelt("White");
+      setFocus([]);
+      setScheme("");
+      setNotes("");
+      setSelectedExercises([]);
+      setExerciseSearch("");
+    }
+  }, [open]);
 
   const { data: exercises = [] } = useQuery<Exercise[]>({
     queryKey: ["/api/exercises"],
