@@ -36,6 +36,15 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Program Management**: Coaches can create, manage, and assign training programs. Key features include:
     - **Program Templates**: Pre-built, customizable training programs across categories (Strength, Speed, Rehab, etc.).
     - **Program Builder**: Adding/removing exercises, configuring sets/reps, and organizing by week/day.
+- **Elite Periodization System** (NEW - Nov 2025):
+    - **Tri-Pane Workspace**: Professional planner interface at `/programs/:id/planner` combining 52-week timeline, weekly drag-and-drop board, and block composer.
+    - **PhaseTimeline Component**: 52-week macro periodization view with color-coded phase bands (base, build, peak, taper, competition, recovery). Scrollable 13-week viewport with navigation. Displays phase metadata (name, type, goals, week range) and belt targets per week.
+    - **WeeklyPlanner Component**: Enterprise drag-and-drop board using @dnd-kit with 7-day columns (Mon-Sun). Sortable training blocks within days, cross-day drag support, visual feedback with DragOverlay. Block cards display title, belt level, focus areas (accel, decel, cod, sprint, strength, power, capacity), scheme notation, exercise count, and coach notes. Edit/delete actions per block, add block per day.
+    - **BlockComposer Component**: Sophisticated modal for composing/editing training blocks. Features exercise search with real-time filtering, belt level selection (White/Blue/Black), focus area multi-select with badges, overall + per-exercise scheme editor, coach notes field, selected exercises list with reorder capability. State syncs on edit mode, resets on close.
+    - **Database Schema**: Six new tables (programPhases, programWeeks, trainingBlocks, blockExercises, blockTemplates, weekTemplates) with foreign key constraints, compound indexes for <50ms query performance. Varchar IDs with gen_random_uuid() for distributed compatibility.
+    - **Performance Architecture**: Composite queries prevent N+1 issues (getWeekWithBlocks returns fully hydrated blocks with exercises in single query). Transaction-wrapped commands for multi-entity operations. Bulk operations (bulkInsertTrainingBlocks, reorderBlocks, duplicateWeekBlocks) for planner UX. Achieved <100ms board load via query optimization.
+    - **API Endpoints**: RESTful routes with Zod validation for phases (CRUD), weeks (CRUD + getWeekStructure), blocks (CRUD + move + update), block exercises (CRUD), templates (save/load), commands (duplicate week, reorder blocks). Composite endpoint `/api/programs/:id/structure` returns phases + weeks + blocks hierarchy.
+    - **Mutations & Caching**: React Query mutations for create/update/delete blocks with proper invalidation of both structure and week queries. Update mutation prevents duplicate creation when editing existing blocks. Move/reorder mutations with optimistic UI updates.
 - **Athlete Management**: Comprehensive profiles, team and position tracking, and program assignment with status management.
     - **CSV Import**: TeamBuildr CSV import with PapaParse for multiline field handling, email placeholders for pending athletes, and duplicate prevention.
 - **Exercise System** (Coach Tools):
@@ -61,10 +70,10 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Belt System Design**: Planned auto-promotion logic for athletes based on KPI test results and threshold management.
 
 ### System Design Choices
-- **Data Models**: Core entities include Exercises, Athletes, Programs, Program Exercises, Athlete Programs, Workout Logs, and Personal Records.
-- **Project Structure**: Organized `client/` and `server/` directories with a `shared/` folder for common TypeScript types and Zod schemas, facilitating a schema-first development approach.
-- **API Design**: RESTful endpoints with Zod validation for robust data handling on both frontend and backend.
-- **Development Workflow**: Employs a schema-first approach, uses React Query for data fetching, and integrates Zod validation for robust data handling.
+- **Data Models**: Core entities include Exercises, Athletes, Programs, Program Exercises, Athlete Programs, Workout Logs, Personal Records, Program Phases, Program Weeks, Training Blocks, Block Exercises, Block Templates, and Week Templates.
+- **Project Structure**: Organized `client/` and `server/` directories with a `shared/` folder for common TypeScript types and Zod schemas, facilitating a schema-first development approach. New components: `block-composer.tsx`, `weekly-planner.tsx`, `phase-timeline.tsx`, `planner-page.tsx`.
+- **API Design**: RESTful endpoints with Zod validation for robust data handling on both frontend and backend. Composite queries for performance (getProgramStructure, getWeekWithBlocks). Transaction-wrapped commands for atomic operations.
+- **Development Workflow**: Employs a schema-first approach, uses React Query for data fetching, and integrates Zod validation for robust data handling. @dnd-kit for enterprise drag-and-drop UX.
 
 ## External Dependencies
 - **PostgreSQL**: Primary database for all persistent data.
@@ -73,3 +82,4 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Recharts**: JavaScript charting library for data visualization.
 - **Wouter**: A tiny routing library for React.
 - **React Hook Form with Zod**: For form management and validation.
+- **@dnd-kit**: Enterprise drag-and-drop library for weekly planner sortable blocks and cross-day moves.

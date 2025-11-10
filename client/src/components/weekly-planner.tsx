@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -41,6 +42,77 @@ const DAYS = [
   { number: 6, name: "Saturday" },
   { number: 7, name: "Sunday" },
 ];
+
+interface DroppableDayProps {
+  dayNumber: number;
+  dayName: string;
+  blocks: (TrainingBlock & { exercises?: any[] })[];
+  onCreateBlock: () => void;
+  onEditBlock: (block: TrainingBlock) => void;
+  onDeleteBlock: (blockId: string) => void;
+}
+
+function DroppableDay({
+  dayNumber,
+  dayName,
+  blocks,
+  onCreateBlock,
+  onEditBlock,
+  onDeleteBlock,
+}: DroppableDayProps) {
+  const dayId = `day-${dayNumber}`;
+  const { setNodeRef } = useDroppable({ id: dayId });
+
+  return (
+    <div
+      key={dayNumber}
+      data-testid={`day-column-${dayNumber}`}
+      className="space-y-3"
+    >
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-200" data-testid={`text-day-${dayNumber}`}>
+          {dayName}
+        </h3>
+        <Button
+          size="icon"
+          variant="ghost"
+          data-testid={`button-add-block-day-${dayNumber}`}
+          onClick={onCreateBlock}
+          className="h-6 w-6"
+        >
+          <Plus className="h-3 w-3" />
+        </Button>
+      </div>
+
+      <SortableContext
+        id={dayId}
+        items={blocks.map((b) => b.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div
+          ref={setNodeRef}
+          data-testid={`droppable-day-${dayNumber}`}
+          className="min-h-[200px] space-y-2 p-2 rounded-lg border border-dashed border-ink-3 bg-ink-1/20"
+        >
+          {blocks.length === 0 ? (
+            <div className="flex items-center justify-center h-24 text-xs text-slate-500">
+              No blocks
+            </div>
+          ) : (
+            blocks.map((block) => (
+              <SortableBlock
+                key={block.id}
+                block={block}
+                onEdit={() => onEditBlock(block)}
+                onDelete={() => onDeleteBlock(block.id)}
+              />
+            ))
+          )}
+        </div>
+      </SortableContext>
+    </div>
+  );
+}
 
 interface SortableBlockProps {
   block: TrainingBlock & { exercises?: any[] };
@@ -215,11 +287,21 @@ export function WeeklyPlanner({
     const activeBlock = blocks.find((b) => b.id === active.id);
     if (!activeBlock) return;
 
-    const overId = over.id as string;
+    // Get the container ID (day column) from sortable context
+    const containerId = (over.data.current?.sortable?.containerId ?? over.id) as string;
+    
+    // Extract day number from container ID (e.g., "day-3" -> 3)
+    const targetDay = containerId.startsWith("day-") 
+      ? parseInt(containerId.split("-")[1]) 
+      : null;
 
-    // Check if dropped on a day container
-    if (overId.startsWith("day-")) {
-      const targetDay = parseInt(overId.split("-")[1]);
+    if (!targetDay) {
+      console.error("Could not determine target day from container:", containerId);
+      return;
+    }
+
+    // If dropped on empty day or different day
+    if (activeBlock.dayNumber !== targetDay) {
       const blocksInTargetDay = blocks.filter((b) => b.dayNumber === targetDay);
       
       moveBlockMutation.mutate({
@@ -229,11 +311,11 @@ export function WeeklyPlanner({
         orderIndex: blocksInTargetDay.length,
       });
     } else {
-      // Dropped on another block - reorder within same day
+      // Reorder within same day
+      const overId = over.id as string;
       const overBlock = blocks.find((b) => b.id === overId);
-      if (!overBlock) return;
-
-      if (activeBlock.dayNumber === overBlock.dayNumber) {
+      
+      if (overBlock && activeBlock.id !== overBlock.id) {
         const dayBlocks = blocks
           .filter((b) => b.dayNumber === activeBlock.dayNumber)
           .sort((a, b) => a.orderIndex - b.orderIndex);
@@ -241,7 +323,7 @@ export function WeeklyPlanner({
         const oldIndex = dayBlocks.findIndex((b) => b.id === activeBlock.id);
         const newIndex = dayBlocks.findIndex((b) => b.id === overBlock.id);
 
-        if (oldIndex !== newIndex) {
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
           const reorderedIds = [...dayBlocks];
           const [moved] = reorderedIds.splice(oldIndex, 1);
           reorderedIds.splice(newIndex, 0, moved);
@@ -252,14 +334,6 @@ export function WeeklyPlanner({
             blockIds: reorderedIds.map((b) => b.id),
           });
         }
-      } else {
-        // Move to different day
-        moveBlockMutation.mutate({
-          blockId: activeBlock.id,
-          weekNumber,
-          dayNumber: overBlock.dayNumber,
-          orderIndex: overBlock.orderIndex,
-        });
       }
     }
   };
@@ -282,55 +356,17 @@ export function WeeklyPlanner({
       <div className="grid grid-cols-7 gap-4" data-testid="weekly-planner-grid">
         {DAYS.map((day) => {
           const dayBlocks = getBlocksForDay(day.number);
-          const dayId = `day-${day.number}`;
 
           return (
-            <div
+            <DroppableDay
               key={day.number}
-              data-testid={`day-column-${day.number}`}
-              className="space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-slate-200" data-testid={`text-day-${day.number}`}>
-                  {day.name}
-                </h3>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  data-testid={`button-add-block-day-${day.number}`}
-                  onClick={() => onCreateBlock(day.number)}
-                  className="h-6 w-6"
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
-
-              <SortableContext
-                id={dayId}
-                items={dayBlocks.map((b) => b.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div
-                  data-testid={`droppable-day-${day.number}`}
-                  className="min-h-[200px] space-y-2 p-2 rounded-lg border border-dashed border-ink-3 bg-ink-1/20"
-                >
-                  {dayBlocks.length === 0 ? (
-                    <div className="flex items-center justify-center h-24 text-xs text-slate-500">
-                      No blocks
-                    </div>
-                  ) : (
-                    dayBlocks.map((block) => (
-                      <SortableBlock
-                        key={block.id}
-                        block={block}
-                        onEdit={() => onEditBlock(block)}
-                        onDelete={() => onDeleteBlock(block.id)}
-                      />
-                    ))
-                  )}
-                </div>
-              </SortableContext>
-            </div>
+              dayNumber={day.number}
+              dayName={day.name}
+              blocks={dayBlocks}
+              onCreateBlock={() => onCreateBlock(day.number)}
+              onEditBlock={onEditBlock}
+              onDeleteBlock={onDeleteBlock}
+            />
           );
         })}
       </div>
