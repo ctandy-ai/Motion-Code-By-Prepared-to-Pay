@@ -134,6 +134,83 @@ export const insertTemplateWeekMetadataSchema = createInsertSchema(templateWeekM
 export type InsertTemplateWeekMetadata = z.infer<typeof insertTemplateWeekMetadataSchema>;
 export type TemplateWeekMetadata = typeof templateWeekMetadata.$inferSelect;
 
+export const templatePhases = pgTable("template_phases", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull().references(() => programTemplates.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  startWeek: integer("start_week").notNull(),
+  endWeek: integer("end_week").notNull(),
+  phaseType: text("phase_type").notNull(),
+  goals: text("goals"),
+  orderIndex: integer("order_index").notNull(),
+}, (table) => ({
+  templateIdIdx: index("template_phases_template_id_idx").on(table.templateId),
+}));
+
+export const insertTemplatePhaseSchema = createInsertSchema(templatePhases).omit({ id: true });
+export type InsertTemplatePhase = z.infer<typeof insertTemplatePhaseSchema>;
+export type TemplatePhase = typeof templatePhases.$inferSelect;
+
+export const templateWeeks = pgTable("template_weeks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull().references(() => programTemplates.id, { onDelete: 'cascade' }),
+  phaseId: varchar("phase_id").references(() => templatePhases.id, { onDelete: 'set null' }),
+  weekNumber: integer("week_number").notNull(),
+  beltTarget: text("belt_target"),
+  focus: text("focus").array(),
+  volumeTarget: integer("volume_target"),
+  intensityZone: text("intensity_zone"),
+  notes: text("notes"),
+  runningQualities: text("running_qualities"),
+  mbsPrimary: text("mbs_primary"),
+  strengthTheme: text("strength_theme"),
+  plyoContactsCap: integer("plyo_contacts_cap"),
+  testingGateway: text("testing_gateway"),
+}, (table) => ({
+  templateWeekIdx: index("template_weeks_template_week_idx").on(table.templateId, table.weekNumber),
+}));
+
+export const insertTemplateWeekSchema = createInsertSchema(templateWeeks).omit({ id: true });
+export type InsertTemplateWeek = z.infer<typeof insertTemplateWeekSchema>;
+export type TemplateWeek = typeof templateWeeks.$inferSelect;
+
+export const templateTrainingBlocks = pgTable("template_training_blocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  templateId: varchar("template_id").notNull().references(() => programTemplates.id, { onDelete: 'cascade' }),
+  templateWeekId: varchar("template_week_id").references(() => templateWeeks.id, { onDelete: 'cascade' }),
+  weekNumber: integer("week_number").notNull(),
+  dayNumber: integer("day_number").notNull(),
+  title: text("title").notNull(),
+  belt: text("belt").notNull(),
+  focus: text("focus").array().notNull().default(sql`ARRAY[]::text[]`),
+  notes: text("notes"),
+  scheme: text("scheme"),
+  orderIndex: integer("order_index").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  templateWeekDayIdx: index("template_training_blocks_week_day_idx").on(table.templateId, table.weekNumber, table.dayNumber),
+  orderIdx: index("template_training_blocks_order_idx").on(table.templateId, table.weekNumber, table.dayNumber, table.orderIndex),
+}));
+
+export const insertTemplateTrainingBlockSchema = createInsertSchema(templateTrainingBlocks).omit({ id: true, createdAt: true });
+export type InsertTemplateTrainingBlock = z.infer<typeof insertTemplateTrainingBlockSchema>;
+export type TemplateTrainingBlock = typeof templateTrainingBlocks.$inferSelect;
+
+export const templateTrainingBlockExercises = pgTable("template_training_block_exercises", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  blockId: varchar("block_id").notNull().references(() => templateTrainingBlocks.id, { onDelete: 'cascade' }),
+  exerciseId: varchar("exercise_id").notNull().references(() => exercises.id, { onDelete: 'cascade' }),
+  scheme: text("scheme"),
+  notes: text("notes"),
+  orderIndex: integer("order_index").notNull(),
+}, (table) => ({
+  blockIdIdx: index("template_training_block_exercises_block_id_idx").on(table.blockId),
+}));
+
+export const insertTemplateTrainingBlockExerciseSchema = createInsertSchema(templateTrainingBlockExercises).omit({ id: true });
+export type InsertTemplateTrainingBlockExercise = z.infer<typeof insertTemplateTrainingBlockExerciseSchema>;
+export type TemplateTrainingBlockExercise = typeof templateTrainingBlockExercises.$inferSelect;
+
 export const programExercises = pgTable("program_exercises", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   programId: varchar("program_id").notNull(),
