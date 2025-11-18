@@ -158,6 +158,9 @@ export interface IStorage {
   duplicateWeekBlocks(programId: string, sourceWeek: number, targetWeek: number): Promise<TrainingBlock[]>;
   moveBlock(blockId: string, newWeekNumber: number, newDayNumber: number, newOrderIndex: number): Promise<TrainingBlock | undefined>;
   reorderBlocks(programId: string, weekNumber: number, dayNumber: number, blockIds: string[]): Promise<void>;
+  importProgramFromCSV(programId: string, csvData: any): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[] }>;
+  duplicatePhase(phaseId: string, targetProgramId?: string): Promise<ProgramPhase>;
+  duplicateWeeks(programId: string, startWeek: number, endWeek: number, insertAtWeek: number, shiftSubsequent: boolean): Promise<ProgramWeek[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -496,15 +499,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrainingBlocks(programId: string, weekNumber?: number, dayNumber?: number): Promise<TrainingBlock[]> {
-    let query = db.select().from(trainingBlocks).where(eq(trainingBlocks.programId, programId));
-    
     if (weekNumber !== undefined && dayNumber !== undefined) {
-      return await query.where(and(eq(trainingBlocks.weekNumber, weekNumber), eq(trainingBlocks.dayNumber, dayNumber)));
+      return await db.select().from(trainingBlocks).where(
+        and(
+          eq(trainingBlocks.programId, programId),
+          eq(trainingBlocks.weekNumber, weekNumber),
+          eq(trainingBlocks.dayNumber, dayNumber)
+        )
+      );
     } else if (weekNumber !== undefined) {
-      return await query.where(eq(trainingBlocks.weekNumber, weekNumber));
+      return await db.select().from(trainingBlocks).where(
+        and(
+          eq(trainingBlocks.programId, programId),
+          eq(trainingBlocks.weekNumber, weekNumber)
+        )
+      );
     }
     
-    return await query;
+    return await db.select().from(trainingBlocks).where(eq(trainingBlocks.programId, programId));
   }
 
   async getTrainingBlock(id: string): Promise<TrainingBlock | undefined> {
@@ -733,6 +745,202 @@ export class DatabaseStorage implements IStorage {
           )
         );
       }
+    });
+  }
+
+  async importProgramFromCSV(programId: string, csvData: any): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[] }> {
+    return await db.transaction(async (tx) => {
+      const createdPhases: ProgramPhase[] = [];
+      const createdWeeks: ProgramWeek[] = [];
+
+      for (const phase of csvData.phases) {
+        const [newPhase] = await tx.insert(programPhases).values({
+          programId,
+          name: phase.name,
+          phaseType: phase.type,
+          startWeek: phase.startWeek,
+          endWeek: phase.endWeek,
+          goals: phase.goals,
+          orderIndex: 0,
+        }).returning();
+        createdPhases.push(newPhase);
+
+        for (const week of phase.weeks) {
+          const [newWeek] = await tx.insert(programWeeks).values({
+            programId,
+            phaseId: newPhase.id,
+            weekNumber: week.weekNumber,
+            beltTarget: week.beltTarget,
+            focus: week.focus,
+            runningQualities: week.runningQualities,
+            mbsPrimary: week.mbsPrimary,
+            strengthTheme: week.strengthTheme,
+            plyoContactsCap: week.plyoContactsCap,
+            testingGateway: week.testingGateway,
+            notes: week.notes,
+          }).returning();
+          createdWeeks.push(newWeek);
+        }
+      }
+
+      return { phases: createdPhases, weeks: createdWeeks };
+    });
+  }
+
+  async duplicatePhase(phaseId: string, targetProgramId?: string): Promise<ProgramPhase> {
+    return await db.transaction(async (tx) => {
+      const [sourcePhase] = await tx.select().from(programPhases).where(eq(programPhases.id, phaseId));
+      if (!sourcePhase) throw new Error('Phase not found');
+
+      const destinationProgramId = targetProgramId || sourcePhase.programId;
+
+      const [newPhase] = await tx.insert(programPhases).values({
+        programId: destinationProgramId,
+        name: `${sourcePhase.name} (Copy)`,
+        phaseType: sourcePhase.phaseType,
+        startWeek: sourcePhase.startWeek,
+        endWeek: sourcePhase.endWeek,
+        goals: sourcePhase.goals,
+        orderIndex: sourcePhase.orderIndex,
+      }).returning();
+
+      const sourceWeeks = await tx.select().from(programWeeks).where(eq(programWeeks.phaseId, phaseId));
+
+      for (const week of sourceWeeks) {
+        const [newWeek] = await tx.insert(programWeeks).values({
+          programId: destinationProgramId,
+          phaseId: newPhase.id,
+          weekNumber: week.weekNumber,
+          beltTarget: week.beltTarget,
+          focus: week.focus,
+          runningQualities: week.runningQualities,
+          mbsPrimary: week.mbsPrimary,
+          strengthTheme: week.strengthTheme,
+          plyoContactsCap: week.plyoContactsCap,
+          testingGateway: week.testingGateway,
+          notes: week.notes,
+        }).returning();
+
+        const sourceBlocks = await tx.select().from(trainingBlocks).where(
+          and(eq(trainingBlocks.programId, sourcePhase.programId), eq(trainingBlocks.weekNumber, week.weekNumber))
+        );
+
+        for (const block of sourceBlocks) {
+          const [newBlock] = await tx.insert(trainingBlocks).values({
+            programId: destinationProgramId,
+            weekNumber: block.weekNumber,
+            dayNumber: block.dayNumber,
+            title: block.title,
+            belt: block.belt,
+            focus: block.focus,
+            scheme: block.scheme,
+            notes: block.notes,
+            orderIndex: block.orderIndex,
+            aiGenerated: block.aiGenerated,
+          }).returning();
+
+          const sourceExercises = await tx.select().from(blockExercises).where(eq(blockExercises.blockId, block.id));
+          if (sourceExercises.length > 0) {
+            const newExValues = sourceExercises.map(ex => ({
+              blockId: newBlock.id,
+              exerciseId: ex.exerciseId,
+              scheme: ex.scheme,
+              notes: ex.notes,
+              orderIndex: ex.orderIndex,
+            }));
+            await tx.insert(blockExercises).values(newExValues);
+          }
+        }
+      }
+
+      return newPhase;
+    });
+  }
+
+  async duplicateWeeks(programId: string, startWeek: number, endWeek: number, insertAtWeek: number, shiftSubsequent: boolean): Promise<ProgramWeek[]> {
+    return await db.transaction(async (tx) => {
+      const sourceWeeks = await tx.select().from(programWeeks).where(
+        and(
+          eq(programWeeks.programId, programId),
+          // NOTE: Drizzle doesn't have gte/lte, so we need to use sql
+        )
+      );
+
+      const weeksToClone = sourceWeeks.filter(w => w.weekNumber >= startWeek && w.weekNumber <= endWeek);
+      const weekCount = endWeek - startWeek + 1;
+
+      if (shiftSubsequent) {
+        const subsequentWeeks = sourceWeeks.filter(w => w.weekNumber >= insertAtWeek);
+        for (const week of subsequentWeeks) {
+          await tx.update(programWeeks).set({
+            weekNumber: week.weekNumber + weekCount,
+          }).where(eq(programWeeks.id, week.id));
+        }
+
+        const subsequentBlocks = await tx.select().from(trainingBlocks).where(
+          and(eq(trainingBlocks.programId, programId))
+        );
+        const blocksToShift = subsequentBlocks.filter(b => b.weekNumber >= insertAtWeek);
+        for (const block of blocksToShift) {
+          await tx.update(trainingBlocks).set({
+            weekNumber: block.weekNumber + weekCount,
+          }).where(eq(trainingBlocks.id, block.id));
+        }
+      }
+
+      const newWeeks: ProgramWeek[] = [];
+      for (let i = 0; i < weeksToClone.length; i++) {
+        const week = weeksToClone[i];
+        const newWeekNumber = insertAtWeek + i;
+
+        const [newWeek] = await tx.insert(programWeeks).values({
+          programId,
+          phaseId: week.phaseId,
+          weekNumber: newWeekNumber,
+          beltTarget: week.beltTarget,
+          focus: week.focus,
+          runningQualities: week.runningQualities,
+          mbsPrimary: week.mbsPrimary,
+          strengthTheme: week.strengthTheme,
+          plyoContactsCap: week.plyoContactsCap,
+          testingGateway: week.testingGateway,
+          notes: week.notes,
+        }).returning();
+        newWeeks.push(newWeek);
+
+        const sourceBlocks = await tx.select().from(trainingBlocks).where(
+          and(eq(trainingBlocks.programId, programId), eq(trainingBlocks.weekNumber, week.weekNumber))
+        );
+
+        for (const block of sourceBlocks) {
+          const [newBlock] = await tx.insert(trainingBlocks).values({
+            programId,
+            weekNumber: newWeekNumber,
+            dayNumber: block.dayNumber,
+            title: block.title,
+            belt: block.belt,
+            focus: block.focus,
+            scheme: block.scheme,
+            notes: block.notes,
+            orderIndex: block.orderIndex,
+            aiGenerated: block.aiGenerated,
+          }).returning();
+
+          const sourceExercises = await tx.select().from(blockExercises).where(eq(blockExercises.blockId, block.id));
+          if (sourceExercises.length > 0) {
+            const newExValues = sourceExercises.map(ex => ({
+              blockId: newBlock.id,
+              exerciseId: ex.exerciseId,
+              scheme: ex.scheme,
+              notes: ex.notes,
+              orderIndex: ex.orderIndex,
+            }));
+            await tx.insert(blockExercises).values(newExValues);
+          }
+        }
+      }
+
+      return newWeeks;
     });
   }
 }

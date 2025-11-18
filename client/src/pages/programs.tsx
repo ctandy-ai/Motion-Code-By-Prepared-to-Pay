@@ -75,6 +75,25 @@ export default function Programs() {
     },
   });
 
+  const importTemplateMutation = useMutation({
+    mutationFn: (programId: string) =>
+      apiRequest("POST", `/api/programs/${programId}/import-default-template`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs"] });
+      toast({
+        title: "52-Week Template Imported",
+        description: "The athletic performance program has been loaded successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Import Failed",
+        description: "Could not load the template. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertProgram) => {
     createMutation.mutate(data);
   };
@@ -233,6 +252,14 @@ export default function Programs() {
                 >
                   <Calendar className="h-3.5 w-3.5 mr-1.5 inline" />
                   Open Planner
+                </button>
+                <button
+                  className="btn btn-sec w-full text-xs"
+                  onClick={() => importTemplateMutation.mutate(program.id)}
+                  disabled={importTemplateMutation.isPending}
+                  data-testid={`button-import-${program.id}`}
+                >
+                  {importTemplateMutation.isPending ? "Importing..." : "Load 52-Week Template"}
                 </button>
                 <div className="flex gap-2">
                   <button

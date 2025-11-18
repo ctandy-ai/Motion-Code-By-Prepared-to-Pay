@@ -177,6 +177,11 @@ export const programWeeks = pgTable("program_weeks", {
   volumeTarget: integer("volume_target"),
   intensityZone: text("intensity_zone"),
   notes: text("notes"),
+  runningQualities: text("running_qualities"),
+  mbsPrimary: text("mbs_primary"),
+  strengthTheme: text("strength_theme"),
+  plyoContactsCap: integer("plyo_contacts_cap"),
+  testingGateway: text("testing_gateway"),
 }, (table) => ({
   programWeekIdx: index("program_weeks_program_week_idx").on(table.programId, table.weekNumber),
 }));
