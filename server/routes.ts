@@ -1231,6 +1231,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/templates", async (req, res) => {
+    try {
+      const templates = await storage.listTemplates();
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch templates" });
+    }
+  });
+
+  app.get("/api/templates/:id", async (req, res) => {
+    try {
+      const templateData = await storage.getTemplateWithStructure(req.params.id);
+      res.json(templateData);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch template" });
+    }
+  });
+
+  app.post("/api/templates/:id/copy-to-program", async (req, res) => {
+    try {
+      const coachId = req.coachId || 'default-coach';
+      const { programName } = req.body;
+      
+      const newProgram = await storage.copyTemplateToProgram(req.params.id, coachId, programName);
+      res.status(201).json(newProgram);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to copy template to program" });
+    }
+  });
+
+  app.post("/api/templates/:id/copy-phases", async (req, res) => {
+    try {
+      const coachId = req.coachId || 'default-coach';
+      const { phaseIds, targetProgramId } = req.body;
+      
+      if (!phaseIds || !Array.isArray(phaseIds) || phaseIds.length === 0) {
+        return res.status(400).json({ error: "phaseIds array is required" });
+      }
+      if (!targetProgramId) {
+        return res.status(400).json({ error: "targetProgramId is required" });
+      }
+
+      const newPhases = await storage.copyTemplatePhasesToProgram(req.params.id, phaseIds, targetProgramId, coachId);
+      res.status(201).json(newPhases);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to copy phases from template" });
+    }
+  });
+
+  app.post("/api/templates/:id/copy-weeks", async (req, res) => {
+    try {
+      const coachId = req.coachId || 'default-coach';
+      const { startWeek, endWeek, targetProgramId, insertAtWeek } = req.body;
+      
+      if (startWeek === undefined || endWeek === undefined || !targetProgramId || insertAtWeek === undefined) {
+        return res.status(400).json({ error: "startWeek, endWeek, targetProgramId, and insertAtWeek are required" });
+      }
+
+      const newWeeks = await storage.copyTemplateWeeksToProgram(
+        req.params.id, 
+        startWeek, 
+        endWeek, 
+        targetProgramId, 
+        insertAtWeek, 
+        coachId
+      );
+      res.status(201).json(newWeeks);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to copy weeks from template" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
