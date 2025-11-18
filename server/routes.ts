@@ -1179,10 +1179,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/programs/:programId/import-default-template", async (req, res) => {
     try {
+      const coachId = req.coachId || 'default-coach';
       const { parseCSVProgram, getDefaultProgramCSVPath } = await import("./program-importer.js");
       const csvPath = getDefaultProgramCSVPath();
       const parsedData = parseCSVProgram(csvPath);
-      const result = await storage.importProgramFromCSV(req.params.programId, parsedData);
+      const result = await storage.importProgramFromCSV(req.params.programId, parsedData, coachId);
       res.status(201).json(result);
     } catch (error: any) {
       console.error("CSV import error:", error);
@@ -1192,37 +1193,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/programs/:programId/import-csv", async (req, res) => {
     try {
+      const coachId = req.coachId || 'default-coach';
       const { csvData } = req.body;
-      const result = await storage.importProgramFromCSV(req.params.programId, csvData);
+      const result = await storage.importProgramFromCSV(req.params.programId, csvData, coachId);
       res.status(201).json(result);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to import CSV data" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to import CSV data" });
     }
   });
 
   app.post("/api/programs/phases/:phaseId/duplicate", async (req, res) => {
     try {
+      const coachId = req.coachId || 'default-coach';
       const { targetProgramId } = req.body;
-      const newPhase = await storage.duplicatePhase(req.params.phaseId, targetProgramId);
+      const newPhase = await storage.duplicatePhase(req.params.phaseId, coachId, targetProgramId);
       res.status(201).json(newPhase);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to duplicate phase" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to duplicate phase" });
     }
   });
 
   app.post("/api/programs/:programId/duplicate-weeks", async (req, res) => {
     try {
+      const coachId = req.coachId || 'default-coach';
       const { startWeek, endWeek, insertAtWeek, shiftSubsequent } = req.body;
       const weeks = await storage.duplicateWeeks(
         req.params.programId,
         startWeek,
         endWeek,
         insertAtWeek,
-        shiftSubsequent || false
+        shiftSubsequent || false,
+        coachId
       );
       res.status(201).json(weeks);
-    } catch (error) {
-      res.status(400).json({ error: "Failed to duplicate weeks" });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "Failed to duplicate weeks" });
     }
   });
 

@@ -158,9 +158,11 @@ export interface IStorage {
   duplicateWeekBlocks(programId: string, sourceWeek: number, targetWeek: number): Promise<TrainingBlock[]>;
   moveBlock(blockId: string, newWeekNumber: number, newDayNumber: number, newOrderIndex: number): Promise<TrainingBlock | undefined>;
   reorderBlocks(programId: string, weekNumber: number, dayNumber: number, blockIds: string[]): Promise<void>;
-  importProgramFromCSV(programId: string, csvData: any): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[] }>;
-  duplicatePhase(phaseId: string, targetProgramId?: string): Promise<ProgramPhase>;
-  duplicateWeeks(programId: string, startWeek: number, endWeek: number, insertAtWeek: number, shiftSubsequent: boolean): Promise<ProgramWeek[]>;
+  importProgramFromCSV(programId: string, csvData: any, coachId: string): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[] }>;
+  duplicatePhase(phaseId: string, coachId: string, targetProgramId?: string): Promise<ProgramPhase>;
+  duplicateWeeks(programId: string, startWeek: number, endWeek: number, insertAtWeek: number, shiftSubsequent: boolean, coachId: string): Promise<ProgramWeek[]>;
+  assertProgramOwner(programId: string, coachId: string): Promise<void>;
+  assertPhaseOwner(phaseId: string, coachId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -748,7 +750,30 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async importProgramFromCSV(programId: string, csvData: any): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[] }> {
+  async assertProgramOwner(programId: string, coachId: string): Promise<void> {
+    const [program] = await db.select().from(programs).where(eq(programs.id, programId));
+    if (!program) {
+      throw new Error('Program not found');
+    }
+    if (program.coachId !== coachId) {
+      throw new Error('Unauthorized: You do not own this program');
+    }
+  }
+
+  async assertPhaseOwner(phaseId: string, coachId: string): Promise<void> {
+    const [phase] = await db.select().from(programPhases).where(eq(programPhases.id, phaseId));
+    if (!phase) {
+      throw new Error('Phase not found');
+    }
+    const [program] = await db.select().from(programs).where(eq(programs.id, phase.programId));
+    if (!program || program.coachId !== coachId) {
+      throw new Error('Unauthorized: You do not own this phase');
+    }
+  }
+
+  async importProgramFromCSV(programId: string, csvData: any, coachId: string): Promise<{ phases: ProgramPhase[], weeks: ProgramWeek[] }> {
+    await this.assertProgramOwner(programId, coachId);
+    
     return await db.transaction(async (tx) => {
       const createdPhases: ProgramPhase[] = [];
       const createdWeeks: ProgramWeek[] = [];
@@ -787,12 +812,16 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async duplicatePhase(phaseId: string, targetProgramId?: string): Promise<ProgramPhase> {
+  async duplicatePhase(phaseId: string, coachId: string, targetProgramId?: string): Promise<ProgramPhase> {
+    await this.assertPhaseOwner(phaseId, coachId);
+    
     return await db.transaction(async (tx) => {
       const [sourcePhase] = await tx.select().from(programPhases).where(eq(programPhases.id, phaseId));
       if (!sourcePhase) throw new Error('Phase not found');
 
       const destinationProgramId = targetProgramId || sourcePhase.programId;
+      
+      await this.assertProgramOwner(destinationProgramId, coachId);
 
       const [newPhase] = await tx.insert(programPhases).values({
         programId: destinationProgramId,
@@ -857,7 +886,9 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async duplicateWeeks(programId: string, startWeek: number, endWeek: number, insertAtWeek: number, shiftSubsequent: boolean): Promise<ProgramWeek[]> {
+  async duplicateWeeks(programId: string, startWeek: number, endWeek: number, insertAtWeek: number, shiftSubsequent: boolean, coachId: string): Promise<ProgramWeek[]> {
+    await this.assertProgramOwner(programId, coachId);
+    
     return await db.transaction(async (tx) => {
       const sourceWeeks = await tx.select().from(programWeeks).where(
         and(

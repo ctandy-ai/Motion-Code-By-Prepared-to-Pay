@@ -66,6 +66,7 @@ export type AthleteTeam = typeof athleteTeams.$inferSelect;
 
 export const programs = pgTable("programs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coachId: varchar("coach_id").default('default-coach'),
   name: text("name").notNull(),
   description: text("description"),
   duration: integer("duration").notNull(),
