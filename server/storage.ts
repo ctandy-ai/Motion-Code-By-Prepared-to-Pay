@@ -17,6 +17,14 @@ import {
   type InsertTemplateExercise,
   type TemplateWeekMetadata,
   type InsertTemplateWeekMetadata,
+  type TemplatePhase,
+  type InsertTemplatePhase,
+  type TemplateWeek,
+  type InsertTemplateWeek,
+  type TemplateTrainingBlock,
+  type InsertTemplateTrainingBlock,
+  type TemplateTrainingBlockExercise,
+  type InsertTemplateTrainingBlockExercise,
   type ProgramPhase,
   type InsertProgramPhase,
   type ProgramWeek,
@@ -45,6 +53,10 @@ import {
   programTemplates,
   templateExercises,
   templateWeekMetadata,
+  templatePhases,
+  templateWeeks,
+  templateTrainingBlocks,
+  templateTrainingBlockExercises,
   programPhases,
   programWeeks,
   trainingBlocks,
@@ -163,6 +175,18 @@ export interface IStorage {
   duplicateWeeks(programId: string, startWeek: number, endWeek: number, insertAtWeek: number, shiftSubsequent: boolean, coachId: string): Promise<ProgramWeek[]>;
   assertProgramOwner(programId: string, coachId: string): Promise<void>;
   assertPhaseOwner(phaseId: string, coachId: string): Promise<void>;
+  
+  createTemplate(template: InsertProgramTemplate): Promise<ProgramTemplate>;
+  listTemplates(): Promise<ProgramTemplate[]>;
+  getTemplateWithStructure(templateId: string): Promise<{
+    template: ProgramTemplate;
+    phases: TemplatePhase[];
+    weeks: TemplateWeek[];
+    blocks: (TemplateTrainingBlock & { exercises: TemplateTrainingBlockExercise[] })[];
+  }>;
+  copyTemplateToProgram(templateId: string, coachId: string, programName?: string): Promise<Program>;
+  copyTemplatePhasesToProgram(templateId: string, phaseIds: string[], targetProgramId: string, coachId: string): Promise<ProgramPhase[]>;
+  copyTemplateWeeksToProgram(templateId: string, startWeek: number, endWeek: number, targetProgramId: string, insertAtWeek: number, coachId: string): Promise<ProgramWeek[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -967,6 +991,253 @@ export class DatabaseStorage implements IStorage {
               orderIndex: ex.orderIndex,
             }));
             await tx.insert(blockExercises).values(newExValues);
+          }
+        }
+      }
+
+      return newWeeks;
+    });
+  }
+
+  async createTemplate(template: InsertProgramTemplate): Promise<ProgramTemplate> {
+    const [newTemplate] = await db.insert(programTemplates).values(template).returning();
+    return newTemplate;
+  }
+
+  async listTemplates(): Promise<ProgramTemplate[]> {
+    return await db.select().from(programTemplates).where(eq(programTemplates.isPublic, 1));
+  }
+
+  async getTemplateWithStructure(templateId: string): Promise<{
+    template: ProgramTemplate;
+    phases: TemplatePhase[];
+    weeks: TemplateWeek[];
+    blocks: (TemplateTrainingBlock & { exercises: TemplateTrainingBlockExercise[] })[];
+  }> {
+    const [template] = await db.select().from(programTemplates).where(eq(programTemplates.id, templateId));
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    const phases = await db.select().from(templatePhases).where(eq(templatePhases.templateId, templateId));
+    const weeks = await db.select().from(templateWeeks).where(eq(templateWeeks.templateId, templateId));
+    const allBlocks = await db.select().from(templateTrainingBlocks).where(eq(templateTrainingBlocks.templateId, templateId));
+
+    const blocksWithExercises = await Promise.all(
+      allBlocks.map(async (block) => {
+        const exercises = await db.select().from(templateTrainingBlockExercises).where(
+          eq(templateTrainingBlockExercises.blockId, block.id)
+        );
+        return { ...block, exercises };
+      })
+    );
+
+    return { template, phases, weeks, blocks: blocksWithExercises };
+  }
+
+  async copyTemplateToProgram(templateId: string, coachId: string, programName?: string): Promise<Program> {
+    const { template, phases, weeks, blocks } = await this.getTemplateWithStructure(templateId);
+
+    return await db.transaction(async (tx) => {
+      const [newProgram] = await tx.insert(programs).values({
+        coachId,
+        name: programName || template.name,
+        description: template.description,
+        duration: template.duration,
+      }).returning();
+
+      for (const phase of phases) {
+        const [newPhase] = await tx.insert(programPhases).values({
+          programId: newProgram.id,
+          name: phase.name,
+          startWeek: phase.startWeek,
+          endWeek: phase.endWeek,
+          phaseType: phase.phaseType,
+          goals: phase.goals,
+          orderIndex: phase.orderIndex,
+        }).returning();
+
+        for (const week of weeks.filter(w => w.phaseId === phase.id)) {
+          const [newWeek] = await tx.insert(programWeeks).values({
+            programId: newProgram.id,
+            phaseId: newPhase.id,
+            weekNumber: week.weekNumber,
+            beltTarget: week.beltTarget,
+            focus: week.focus,
+            volumeTarget: week.volumeTarget,
+            intensityZone: week.intensityZone,
+            runningQualities: week.runningQualities,
+            mbsPrimary: week.mbsPrimary,
+            strengthTheme: week.strengthTheme,
+            plyoContactsCap: week.plyoContactsCap,
+            testingGateway: week.testingGateway,
+            notes: week.notes,
+          }).returning();
+
+          const weekBlocks = blocks.filter(b => b.templateWeekId === week.id);
+          for (const block of weekBlocks) {
+            const [newBlock] = await tx.insert(trainingBlocks).values({
+              programId: newProgram.id,
+              programWeekId: newWeek.id,
+              weekNumber: block.weekNumber,
+              dayNumber: block.dayNumber,
+              title: block.title,
+              belt: block.belt,
+              focus: block.focus,
+              scheme: block.scheme,
+              notes: block.notes,
+              orderIndex: block.orderIndex,
+            }).returning();
+
+            if (block.exercises.length > 0) {
+              const newExercises = block.exercises.map(ex => ({
+                blockId: newBlock.id,
+                exerciseId: ex.exerciseId,
+                scheme: ex.scheme,
+                notes: ex.notes,
+                orderIndex: ex.orderIndex,
+              }));
+              await tx.insert(blockExercises).values(newExercises);
+            }
+          }
+        }
+      }
+
+      return newProgram;
+    });
+  }
+
+  async copyTemplatePhasesToProgram(templateId: string, phaseIds: string[], targetProgramId: string, coachId: string): Promise<ProgramPhase[]> {
+    await this.assertProgramOwner(targetProgramId, coachId);
+    const { phases, weeks, blocks } = await this.getTemplateWithStructure(templateId);
+
+    const phasesToCopy = phases.filter(p => phaseIds.includes(p.id));
+    if (phasesToCopy.length === 0) {
+      throw new Error('No matching phases found');
+    }
+
+    return await db.transaction(async (tx) => {
+      const existingWeeks = await tx.select().from(programWeeks).where(eq(programWeeks.programId, targetProgramId));
+      const maxWeek = existingWeeks.length > 0 ? Math.max(...existingWeeks.map(w => w.weekNumber)) : 0;
+
+      const newPhases: ProgramPhase[] = [];
+      let weekOffset = maxWeek;
+
+      for (const phase of phasesToCopy) {
+        const [newPhase] = await tx.insert(programPhases).values({
+          programId: targetProgramId,
+          name: phase.name,
+          startWeek: phase.startWeek + weekOffset,
+          endWeek: phase.endWeek + weekOffset,
+          phaseType: phase.phaseType,
+          goals: phase.goals,
+          orderIndex: phase.orderIndex,
+        }).returning();
+        newPhases.push(newPhase);
+
+        const phaseWeeks = weeks.filter(w => w.phaseId === phase.id);
+        for (const week of phaseWeeks) {
+          const [newWeek] = await tx.insert(programWeeks).values({
+            programId: targetProgramId,
+            phaseId: newPhase.id,
+            weekNumber: week.weekNumber + weekOffset,
+            beltTarget: week.beltTarget,
+            focus: week.focus,
+            runningQualities: week.runningQualities,
+            mbsPrimary: week.mbsPrimary,
+            strengthTheme: week.strengthTheme,
+            plyoContactsCap: week.plyoContactsCap,
+            testingGateway: week.testingGateway,
+            notes: week.notes,
+          }).returning();
+
+          const weekBlocks = blocks.filter(b => b.templateWeekId === week.id);
+          for (const block of weekBlocks) {
+            const [newBlock] = await tx.insert(trainingBlocks).values({
+              programId: targetProgramId,
+              programWeekId: newWeek.id,
+              weekNumber: block.weekNumber + weekOffset,
+              dayNumber: block.dayNumber,
+              title: block.title,
+              belt: block.belt,
+              focus: block.focus,
+              scheme: block.scheme,
+              notes: block.notes,
+              orderIndex: block.orderIndex,
+            }).returning();
+
+            if (block.exercises.length > 0) {
+              const newExercises = block.exercises.map(ex => ({
+                blockId: newBlock.id,
+                exerciseId: ex.exerciseId,
+                scheme: ex.scheme,
+                notes: ex.notes,
+                orderIndex: ex.orderIndex,
+              }));
+              await tx.insert(blockExercises).values(newExercises);
+            }
+          }
+        }
+      }
+
+      return newPhases;
+    });
+  }
+
+  async copyTemplateWeeksToProgram(templateId: string, startWeek: number, endWeek: number, targetProgramId: string, insertAtWeek: number, coachId: string): Promise<ProgramWeek[]> {
+    await this.assertProgramOwner(targetProgramId, coachId);
+    const { weeks, blocks } = await this.getTemplateWithStructure(templateId);
+
+    const weeksToCopy = weeks.filter(w => w.weekNumber >= startWeek && w.weekNumber <= endWeek);
+    if (weeksToCopy.length === 0) {
+      throw new Error('No matching weeks found in template');
+    }
+
+    return await db.transaction(async (tx) => {
+      const newWeeks: ProgramWeek[] = [];
+      for (let i = 0; i < weeksToCopy.length; i++) {
+        const week = weeksToCopy[i];
+        const newWeekNumber = insertAtWeek + i;
+
+        const [newWeek] = await tx.insert(programWeeks).values({
+          programId: targetProgramId,
+          phaseId: null,
+          weekNumber: newWeekNumber,
+          beltTarget: week.beltTarget,
+          focus: week.focus,
+          runningQualities: week.runningQualities,
+          mbsPrimary: week.mbsPrimary,
+          strengthTheme: week.strengthTheme,
+          plyoContactsCap: week.plyoContactsCap,
+          testingGateway: week.testingGateway,
+          notes: week.notes,
+        }).returning();
+        newWeeks.push(newWeek);
+
+        const weekBlocks = blocks.filter(b => b.templateWeekId === week.id);
+        for (const block of weekBlocks) {
+          const [newBlock] = await tx.insert(trainingBlocks).values({
+            programId: targetProgramId,
+            programWeekId: newWeek.id,
+            weekNumber: newWeekNumber,
+            dayNumber: block.dayNumber,
+            title: block.title,
+            belt: block.belt,
+            focus: block.focus,
+            scheme: block.scheme,
+            notes: block.notes,
+            orderIndex: block.orderIndex,
+          }).returning();
+
+          if (block.exercises.length > 0) {
+            const newExercises = block.exercises.map(ex => ({
+              blockId: newBlock.id,
+              exerciseId: ex.exerciseId,
+              scheme: ex.scheme,
+              notes: ex.notes,
+              orderIndex: ex.orderIndex,
+            }));
+            await tx.insert(blockExercises).values(newExercises);
           }
         }
       }
