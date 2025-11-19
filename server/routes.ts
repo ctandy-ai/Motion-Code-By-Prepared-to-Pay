@@ -1249,6 +1249,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/templates/:id/structure", async (req, res) => {
+    try {
+      const templateData = await storage.getTemplateWithStructure(req.params.id);
+      res.json(templateData);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || "Failed to fetch template structure" });
+    }
+  });
+
   app.post("/api/templates/:id/copy-to-program", async (req, res) => {
     try {
       const coachId = req.coachId || 'default-coach';
