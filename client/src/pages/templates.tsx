@@ -55,13 +55,15 @@ export default function Templates() {
 
   const copyTemplateMutation = useMutation({
     mutationFn: async (data: { templateId: string; programName: string; coachId?: string }) => {
-      return await apiRequest(`/api/templates/${data.templateId}/copy-to-program`, {
-        method: 'POST',
-        body: JSON.stringify({ 
+      const response = await apiRequest(
+        'POST',
+        `/api/templates/${data.templateId}/copy-to-program`,
+        { 
           programName: data.programName,
           coachId: data.coachId || 'default-coach'
-        }),
-      });
+        }
+      );
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/programs'] });
