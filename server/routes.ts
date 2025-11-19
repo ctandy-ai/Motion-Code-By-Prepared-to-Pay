@@ -1121,7 +1121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Command Operations
-  app.post("/api/programs/:programId/structure", async (req, res) => {
+  app.get("/api/programs/:programId/structure", async (req, res) => {
     try {
       const structure = await storage.getProgramStructure(req.params.programId);
       res.json(structure);

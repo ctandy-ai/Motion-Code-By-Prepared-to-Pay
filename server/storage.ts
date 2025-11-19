@@ -1038,6 +1038,29 @@ export class DatabaseStorage implements IStorage {
   async copyTemplateToProgram(templateId: string, coachId: string, programName?: string): Promise<Program> {
     const { template, phases, weeks, blocks } = await this.getTemplateWithStructure(templateId);
 
+    if (phases.length === 0 || weeks.length === 0) {
+      throw new Error(`Cannot copy template "${template.name}": template has no phases or weeks defined`);
+    }
+
+    const weeksWithoutPhase = weeks.filter(w => !w.phaseId || w.phaseId.trim().length === 0);
+    if (weeksWithoutPhase.length > 0) {
+      throw new Error(`Cannot copy template "${template.name}": template has ${weeksWithoutPhase.length} week(s) with missing phaseId`);
+    }
+
+    const phaseIds = new Set(phases.map(p => p.id));
+    const orphanWeeks = weeks.filter(w => w.phaseId != null && !phaseIds.has(w.phaseId));
+    if (orphanWeeks.length > 0) {
+      const badIds = orphanWeeks.map(w => w.phaseId).join(', ');
+      throw new Error(`Cannot copy template "${template.name}": template has ${orphanWeeks.length} week(s) with invalid phaseId (${badIds})`);
+    }
+
+    for (const phase of phases) {
+      const phaseWeeks = weeks.filter(w => w.phaseId === phase.id);
+      if (phaseWeeks.length === 0) {
+        throw new Error(`Cannot copy template "${template.name}": phase "${phase.name}" has no associated weeks`);
+      }
+    }
+
     return await db.transaction(async (tx) => {
       const [newProgram] = await tx.insert(programs).values({
         coachId,

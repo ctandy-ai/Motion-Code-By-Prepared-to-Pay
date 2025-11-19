@@ -33,10 +33,6 @@ export default function PlannerPage() {
   }>({
     queryKey: ["/api/programs", programId, "structure"],
     enabled: !!programId,
-    queryFn: async () => {
-      const res = await apiRequest("POST", `/api/programs/${programId}/structure`, undefined);
-      return await res.json();
-    },
   });
 
   const { data: weekData } = useQuery<{
