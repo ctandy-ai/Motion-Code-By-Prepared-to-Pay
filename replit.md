@@ -33,8 +33,15 @@ The platform is built with a modern web stack, prioritizing a seamless and engag
 - **Spacing System**: Consistent spacing throughout - `space-y-8` for page sections, `gap-6` for card grids, standard Shadcn padding for card internals.
 
 ### Technical Implementations & Feature Specifications
+- **Program Templates System** (NEW - Nov 2025):
+    - **Template Library**: Read-only, shareable program templates at `/templates`. Includes 7 pre-built templates across categories (Strength, Speed, Rehab, Periodization).
+    - **52-Week Athletic Performance Program**: Elite template imported from CSV with 5 phases (GPP-1, SPP-1, SPP-2, Cyclical In-Season, Performance Maintain) covering full 52-week annual plan with belt progression.
+    - **Template Browsing**: Search/filter templates by category, view detailed phase/week structure in modal dialog.
+    - **Copy to Program**: One-click copy creates editable program from template with all phases/weeks/blocks. Programs can then be assigned to athletes.
+    - **Database Architecture**: Separate template tables (program_templates, template_phases, template_weeks, template_training_blocks) ensure templates remain pristine while programs are editable.
+    - **CSV Import System**: `template-csv-importer.ts` module parses periodization CSVs and creates structured templates with phase grouping and week metadata.
+    - **API Endpoints**: GET `/api/templates` (list), GET `/api/templates/:id/structure` (full hierarchy), POST `/api/templates/:id/copy-to-program` (create program), POST `/api/templates/import-52week` (import 52-week CSV).
 - **Program Management**: Coaches can create, manage, and assign training programs. Key features include:
-    - **Program Templates**: Pre-built, customizable training programs across categories (Strength, Speed, Rehab, etc.).
     - **Program Builder**: Adding/removing exercises, configuring sets/reps, and organizing by week/day.
 - **Elite Periodization System** (NEW - Nov 2025):
     - **Tri-Pane Workspace**: Professional planner interface at `/programs/:id/planner` combining 52-week timeline, weekly drag-and-drop board, and block composer.
