@@ -1303,6 +1303,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/templates/import-52week", async (req, res) => {
+    try {
+      const existingTemplates = await storage.listTemplates();
+      if (existingTemplates.some(t => t.name === '52-Week Athletic Performance Program')) {
+        return res.status(409).json({ error: "52-Week template already exists" });
+      }
+
+      const { importTemplateFromCSV, getDefaultTemplateCSVPath } = await import("./template-csv-importer.js");
+      const csvPath = getDefaultTemplateCSVPath();
+      const result = await importTemplateFromCSV(
+        csvPath,
+        '52-Week Athletic Performance Program',
+        'Elite 52-week periodization plan covering GPP, SPP, peak, taper, competition, and recovery phases with belt progression system (White→Blue→Black)'
+      );
+      
+      res.status(201).json(result);
+    } catch (error: any) {
+      console.error("Template import error:", error);
+      res.status(500).json({ error: error.message || "Failed to import 52-week template" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
