@@ -1025,10 +1025,23 @@ export class DatabaseStorage implements IStorage {
 
     const blocksWithExercises = await Promise.all(
       allBlocks.map(async (block) => {
-        const exercises = await db.select().from(templateTrainingBlockExercises).where(
-          eq(templateTrainingBlockExercises.blockId, block.id)
-        );
-        return { ...block, exercises };
+        const blockExercises = await db.select({
+          id: templateTrainingBlockExercises.id,
+          blockId: templateTrainingBlockExercises.blockId,
+          exerciseId: templateTrainingBlockExercises.exerciseId,
+          scheme: templateTrainingBlockExercises.scheme,
+          notes: templateTrainingBlockExercises.notes,
+          orderIndex: templateTrainingBlockExercises.orderIndex,
+          exerciseName: exercises.name,
+          exerciseCategory: exercises.category,
+          exerciseMuscleGroup: exercises.muscleGroup,
+          exerciseDifficulty: exercises.difficulty,
+        })
+        .from(templateTrainingBlockExercises)
+        .leftJoin(exercises, eq(templateTrainingBlockExercises.exerciseId, exercises.id))
+        .where(eq(templateTrainingBlockExercises.blockId, block.id))
+        .orderBy(templateTrainingBlockExercises.orderIndex);
+        return { ...block, exercises: blockExercises };
       })
     );
 

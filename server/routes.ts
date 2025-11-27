@@ -1334,6 +1334,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/templates/seed-pathway-templates", async (req, res) => {
+    try {
+      const { runFullSeed } = await import("./template-seeder.js");
+      await runFullSeed();
+      res.status(201).json({ message: "24 pathway templates seeded successfully" });
+    } catch (error: any) {
+      console.error("Template seed error:", error);
+      res.status(500).json({ error: error.message || "Failed to seed pathway templates" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

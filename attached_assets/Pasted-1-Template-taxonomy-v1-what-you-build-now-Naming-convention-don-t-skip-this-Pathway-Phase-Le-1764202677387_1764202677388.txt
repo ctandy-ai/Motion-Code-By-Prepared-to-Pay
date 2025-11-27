@@ -1,0 +1,109 @@
+1. Template taxonomy v1 (what you build now)
+
+Naming convention (don’t skip this):
+
+Pathway_Phase_Level_Environment_Frequency
+
+Examples:
+
+ACL_P2_Blue_Gym_3x
+
+Hams_P3_Blue_Field+Gym_3x
+
+Perf_P4_Black_InSeason_2x
+
+A. ACL pathway
+
+Phases:
+
+P1 = Early load tolerance / basics
+
+P2 = Strength + capacity
+
+P3 = Power + COD / change of direction
+
+P4 = Return-to-sport / in-season
+
+Levels:
+
+White = newbie / low training age
+
+Blue = intermediate
+
+Black = advanced / high training age
+
+Environments:
+
+Gym
+
+Field+Gym
+
+Home
+
+Build these first (9 templates):
+
+ACL_P1_White_Home_3x – early stage, minimal gear
+
+ACL_P1_Blue_Gym_3x – machine + basic barbell
+
+ACL_P2_Blue_Gym_3x – main workhorse, most ACLs will live here
+
+ACL_P2_Black_Gym_4x – athletes with higher training age
+
+ACL_P2_Blue_Field+Gym_3x – starting to integrate running/COD
+
+ACL_P3_Blue_Field+Gym_3x – higher-speed work, decel, COD
+
+ACL_P3_Black_Field+Gym_4x – performance return higher level
+
+ACL_P4_Blue_Field+Gym_2x – in-season ACL maintenance
+
+ACL_P4_Black_Field+Gym_2x – high-level in-season ACL athlete
+
+B. Hamstring pathway
+
+Same logic.
+
+Build these (6 templates):
+
+Hams_P1_White_Home_3x – acute / minimal gear
+
+Hams_P1_Blue_Gym_3x – intro strength
+
+Hams_P2_Blue_Gym_3x – Nordics / RDLs / hinges
+
+Hams_P2_Black_Gym_4x – higher density
+
+Hams_P3_Blue_Field+Gym_3x – sprint integration
+
+Hams_P4_Blue_Field+Gym_2x – in-season hamstring maintenance
+
+C. Performance-only pathway
+
+For no major injury / S&C focus.
+
+Build these (6 templates):
+
+Perf_P2_White_Gym_2x – gen pop / low training age
+
+Perf_P2_Blue_Gym_3x – bread-and-butter perf template
+
+Perf_P3_Blue_Field+Gym_3x – field sport athletes off-season
+
+Perf_P3_Black_Field+Gym_4x – high performance / off-season
+
+Perf_P4_Blue_InSeason_2x – most community footballers
+
+Perf_P4_Black_InSeason_2x – higher level athletes in-season
+
+D. Fallback / special weeks (non-negotiable)
+
+You need at least:
+
+Fallback_BusyWeek_2x – shorter, high-yield sessions
+
+Fallback_Deload_2x – low volume/intensity
+
+Fallback_HomeOnly_3x – bands / DBs
+
+Those save you when life hits and you still want something in the app.

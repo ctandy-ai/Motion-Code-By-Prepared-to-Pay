@@ -14,17 +14,37 @@ import { useToast } from "@/hooks/use-toast";
 import { Copy, FileText, Sparkles, Calendar, Layers, Clock, Target } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ProgramTemplate, TemplatePhase, TemplateWeek } from "@shared/schema";
+import type { ProgramTemplate, TemplatePhase, TemplateWeek, TemplateTrainingBlock } from "@shared/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, Dumbbell } from "lucide-react";
 
 const copyTemplateSchema = z.object({
   programName: z.string().min(1, "Program name is required"),
   coachId: z.string().optional(),
 });
 
+interface BlockExercise {
+  id: string;
+  exerciseId: string;
+  exerciseName: string | null;
+  exerciseCategory: string | null;
+  exerciseMuscleGroup: string | null;
+  exerciseDifficulty: string | null;
+  scheme: string | null;
+  notes: string | null;
+  orderIndex: number;
+}
+
+interface BlockWithExercises extends TemplateTrainingBlock {
+  exercises: BlockExercise[];
+}
+
 interface TemplateStructure {
   template: ProgramTemplate;
-  phases: (TemplatePhase & { weeks: TemplateWeek[] })[];
+  phases: TemplatePhase[];
+  weeks: TemplateWeek[];
+  blocks: BlockWithExercises[];
 }
 
 export default function Templates() {
@@ -349,68 +369,116 @@ export default function Templates() {
               </div>
             ) : (
               <div className="space-y-6">
-                {templateStructure.phases.map((phase) => (
-                  <Card key={phase.id} className="bglass border-0">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="text-lg text-slate-100">{phase.name}</CardTitle>
-                          <CardDescription className="text-slate-400">
-                            Weeks {phase.startWeek}-{phase.endWeek} ({phase.endWeek - phase.startWeek + 1} weeks)
-                          </CardDescription>
+                {templateStructure.phases.map((phase) => {
+                  const phaseWeeks = templateStructure.weeks.filter(w => w.phaseId === phase.id);
+                  
+                  return (
+                    <Card key={phase.id} className="bglass border-0">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-lg text-slate-100">{phase.name}</CardTitle>
+                            <CardDescription className="text-slate-400">
+                              Weeks {phase.startWeek}-{phase.endWeek} ({phase.endWeek - phase.startWeek + 1} weeks)
+                            </CardDescription>
+                          </div>
+                          <Badge className={getPhaseTypeColor(phase.phaseType)}>
+                            {phase.phaseType}
+                          </Badge>
                         </div>
-                        <Badge className={getPhaseTypeColor(phase.phaseType)}>
-                          {phase.phaseType}
-                        </Badge>
-                      </div>
-                      {phase.goals && (
-                        <p className="text-sm text-slate-400 mt-2">{phase.goals}</p>
-                      )}
-                    </CardHeader>
-                    <CardContent>
-                      {phase.weeks && phase.weeks.length > 0 && (
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead className="w-16">Week</TableHead>
-                              <TableHead>Belt</TableHead>
-                              <TableHead>Focus</TableHead>
-                              <TableHead>Strength</TableHead>
-                              <TableHead>Running</TableHead>
-                              <TableHead>Gateway</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {phase.weeks.map((week) => (
-                              <TableRow key={week.id} data-testid={`week-row-${week.weekNumber}`}>
-                                <TableCell className="font-medium text-slate-100">{week.weekNumber}</TableCell>
-                                <TableCell>
-                                  <Badge variant="secondary" className="text-xs">
-                                    {week.beltTarget || 'N/A'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="text-sm text-slate-300">
-                                  {week.focus && week.focus.length > 0 ? week.focus.join(', ') : 'N/A'}
-                                </TableCell>
-                                <TableCell className="text-sm text-slate-300">{week.strengthTheme || 'N/A'}</TableCell>
-                                <TableCell className="text-sm text-slate-300">{week.runningQualities || 'N/A'}</TableCell>
-                                <TableCell>
-                                  {week.testingGateway ? (
-                                    <Badge className="text-xs bg-primary/20 text-primary border-primary/40">
-                                      {week.testingGateway}
+                        {phase.goals && (
+                          <p className="text-sm text-slate-400 mt-2">{phase.goals}</p>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {phaseWeeks.map((week) => {
+                          const weekBlocks = templateStructure.blocks.filter(b => b.templateWeekId === week.id);
+                          const totalExercises = weekBlocks.reduce((acc, b) => acc + (b.exercises?.length || 0), 0);
+                          
+                          return (
+                            <Collapsible key={week.id}>
+                              <CollapsibleTrigger className="w-full">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800/70 transition-colors">
+                                  <div className="flex items-center gap-4">
+                                    <span className="font-semibold text-slate-100">Week {week.weekNumber}</span>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {week.beltTarget || 'N/A'}
                                     </Badge>
+                                    {week.focus && week.focus.length > 0 && (
+                                      <span className="text-sm text-slate-400">
+                                        {week.focus.slice(0, 2).join(', ')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs text-slate-500">
+                                      {weekBlocks.length} blocks • {totalExercises} exercises
+                                    </span>
+                                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                                  </div>
+                                </div>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent>
+                                <div className="mt-3 space-y-3 pl-4">
+                                  {weekBlocks.length === 0 ? (
+                                    <p className="text-sm text-slate-500 italic">No blocks in this week</p>
                                   ) : (
-                                    <span className="text-xs text-slate-500">—</span>
+                                    weekBlocks.map((block) => (
+                                      <div key={block.id} className="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-medium text-slate-200">{block.title}</span>
+                                            <Badge variant="outline" className="text-xs">
+                                              Day {block.dayNumber}
+                                            </Badge>
+                                            <Badge variant="secondary" className="text-xs">
+                                              {block.belt}
+                                            </Badge>
+                                          </div>
+                                          <span className="text-xs text-slate-500">
+                                            {block.exercises?.length || 0} exercises
+                                          </span>
+                                        </div>
+                                        {block.focus && block.focus.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 mb-2">
+                                            {block.focus.map((f, idx) => (
+                                              <Badge key={idx} variant="outline" className="text-xs text-slate-400">
+                                                {f}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                        {block.exercises && block.exercises.length > 0 && (
+                                          <div className="space-y-1 mt-2">
+                                            {block.exercises.map((ex) => (
+                                              <div 
+                                                key={ex.id} 
+                                                className="flex items-center justify-between text-sm py-1 px-2 rounded bg-slate-800/30"
+                                              >
+                                                <div className="flex items-center gap-2">
+                                                  <Dumbbell className="h-3 w-3 text-teal-400" />
+                                                  <span className="text-slate-300">{ex.exerciseName || 'Unknown Exercise'}</span>
+                                                  {ex.exerciseMuscleGroup && (
+                                                    <span className="text-xs text-slate-500">({ex.exerciseMuscleGroup})</span>
+                                                  )}
+                                                </div>
+                                                <span className="text-xs text-slate-400">{ex.scheme || ''}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ))
                                   )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                                </div>
+                              </CollapsibleContent>
+                            </Collapsible>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </ScrollArea>
