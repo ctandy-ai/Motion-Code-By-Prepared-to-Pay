@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Athlete, InsertAthlete } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Mail, Users as UsersIcon, Upload } from "lucide-react";
+import { Plus, Search, Mail, Users as UsersIcon, Upload, Eye } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -385,7 +385,7 @@ export default function Athletes() {
                 </p>
               </CardContent>
 
-              <CardFooter className="gap-2 border-t pt-4">
+              <CardFooter className="gap-2 border-t pt-4 flex-wrap">
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -396,7 +396,16 @@ export default function Athletes() {
                   View Profile
                 </Button>
                 <Button 
-                  variant="outline" 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => setLocation(`/athlete/${athlete.id}/portal`)}
+                  data-testid={`button-portal-${athlete.id}`}
+                >
+                  <Eye className="h-3 w-3 mr-1" />
+                  Portal
+                </Button>
+                <Button 
+                  variant="ghost" 
                   size="sm"
                   onClick={() => deleteMutation.mutate(athlete.id)}
                   data-testid={`button-delete-${athlete.id}`}

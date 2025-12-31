@@ -13,6 +13,7 @@ import PlannerPage from "@/pages/planner-page";
 import Templates from "@/pages/templates";
 import Athletes from "@/pages/athletes";
 import AthleteDetail from "@/pages/athlete-detail";
+import AthletePortal from "@/pages/athlete-portal";
 import Workout from "@/pages/workout";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/templates" component={Templates} />
       <Route path="/athletes" component={Athletes} />
       <Route path="/athletes/:athleteId" component={AthleteDetail} />
+      <Route path="/athlete/:athleteId/portal" component={AthletePortal} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/progress" component={Progress} />
       <Route path="/coach-tools" component={CoachTools} />
