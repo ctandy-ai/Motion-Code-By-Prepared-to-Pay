@@ -15,6 +15,7 @@ import {
   insertBlockExerciseSchema,
   insertBlockTemplateSchema,
   insertTemplateBlockExerciseSchema,
+  insertReadinessSurveySchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1342,6 +1343,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Template seed error:", error);
       res.status(500).json({ error: error.message || "Failed to seed pathway templates" });
+    }
+  });
+
+  // Readiness Survey routes
+  app.get("/api/athletes/:athleteId/readiness-surveys", async (req, res) => {
+    try {
+      const surveys = await storage.getReadinessSurveys(req.params.athleteId);
+      res.json(surveys);
+    } catch (error) {
+      console.error("Failed to fetch readiness surveys:", error);
+      res.status(500).json({ error: "Failed to fetch readiness surveys" });
+    }
+  });
+
+  app.get("/api/athletes/:athleteId/readiness-surveys/today", async (req, res) => {
+    try {
+      const survey = await storage.getTodaysSurvey(req.params.athleteId);
+      res.json(survey || null);
+    } catch (error) {
+      console.error("Failed to fetch today's survey:", error);
+      res.status(500).json({ error: "Failed to fetch today's survey" });
+    }
+  });
+
+  app.post("/api/readiness-surveys", async (req, res) => {
+    try {
+      const validated = insertReadinessSurveySchema.parse(req.body);
+      
+      // Check if athlete already submitted today
+      const existingSurvey = await storage.getTodaysSurvey(validated.athleteId);
+      if (existingSurvey) {
+        return res.status(409).json({ 
+          error: "Survey already submitted today",
+          existingSurvey 
+        });
+      }
+      
+      const survey = await storage.createReadinessSurvey(validated);
+      res.status(201).json(survey);
+    } catch (error) {
+      console.error("Failed to create readiness survey:", error);
+      res.status(400).json({ error: "Invalid survey data" });
+    }
+  });
+
+  app.get("/api/readiness-surveys/:id", async (req, res) => {
+    try {
+      const survey = await storage.getReadinessSurvey(req.params.id);
+      if (!survey) {
+        return res.status(404).json({ error: "Survey not found" });
+      }
+      res.json(survey);
+    } catch (error) {
+      console.error("Failed to fetch survey:", error);
+      res.status(500).json({ error: "Failed to fetch survey" });
     }
   });
 

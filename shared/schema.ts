@@ -472,3 +472,26 @@ export const insertChallengeCompletionSchema = createInsertSchema(challengeCompl
 });
 export type InsertChallengeCompletion = z.infer<typeof insertChallengeCompletionSchema>;
 export type ChallengeCompletion = typeof challengeCompletions.$inferSelect;
+
+export const readinessSurveys = pgTable("readiness_surveys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  surveyDate: timestamp("survey_date").defaultNow(),
+  sleepQuality: integer("sleep_quality").notNull(),
+  sleepHours: real("sleep_hours").notNull(),
+  muscleSoreness: integer("muscle_soreness").notNull(),
+  energyLevel: integer("energy_level").notNull(),
+  stressLevel: integer("stress_level").notNull(),
+  mood: integer("mood").notNull(),
+  overallReadiness: integer("overall_readiness").notNull(),
+  notes: text("notes"),
+}, (table) => ({
+  athleteDateIdx: index("readiness_surveys_athlete_date_idx").on(table.athleteId, table.surveyDate),
+}));
+
+export const insertReadinessSurveySchema = createInsertSchema(readinessSurveys).omit({
+  id: true,
+  surveyDate: true
+});
+export type InsertReadinessSurvey = z.infer<typeof insertReadinessSurveySchema>;
+export type ReadinessSurvey = typeof readinessSurveys.$inferSelect;

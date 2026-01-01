@@ -43,6 +43,8 @@ import {
   type InsertWorkoutLog,
   type PersonalRecord,
   type InsertPersonalRecord,
+  type ReadinessSurvey,
+  type InsertReadinessSurvey,
   users,
   exercises,
   athletes,
@@ -66,9 +68,10 @@ import {
   athletePrograms,
   workoutLogs,
   personalRecords,
+  readinessSurveys,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, gte, lt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -187,6 +190,11 @@ export interface IStorage {
   copyTemplateToProgram(templateId: string, coachId: string, programName?: string): Promise<Program>;
   copyTemplatePhasesToProgram(templateId: string, phaseIds: string[], targetProgramId: string, coachId: string): Promise<ProgramPhase[]>;
   copyTemplateWeeksToProgram(templateId: string, startWeek: number, endWeek: number, targetProgramId: string, insertAtWeek: number, coachId: string): Promise<ProgramWeek[]>;
+
+  getReadinessSurveys(athleteId: string): Promise<ReadinessSurvey[]>;
+  getReadinessSurvey(id: string): Promise<ReadinessSurvey | undefined>;
+  getTodaysSurvey(athleteId: string): Promise<ReadinessSurvey | undefined>;
+  createReadinessSurvey(survey: InsertReadinessSurvey): Promise<ReadinessSurvey>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1280,6 +1288,43 @@ export class DatabaseStorage implements IStorage {
 
       return newWeeks;
     });
+  }
+
+  async getReadinessSurveys(athleteId: string): Promise<ReadinessSurvey[]> {
+    return await db
+      .select()
+      .from(readinessSurveys)
+      .where(eq(readinessSurveys.athleteId, athleteId))
+      .orderBy(desc(readinessSurveys.surveyDate));
+  }
+
+  async getReadinessSurvey(id: string): Promise<ReadinessSurvey | undefined> {
+    const [survey] = await db.select().from(readinessSurveys).where(eq(readinessSurveys.id, id));
+    return survey || undefined;
+  }
+
+  async getTodaysSurvey(athleteId: string): Promise<ReadinessSurvey | undefined> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [survey] = await db
+      .select()
+      .from(readinessSurveys)
+      .where(
+        and(
+          eq(readinessSurveys.athleteId, athleteId),
+          gte(readinessSurveys.surveyDate, today),
+          lt(readinessSurveys.surveyDate, tomorrow)
+        )
+      );
+    return survey || undefined;
+  }
+
+  async createReadinessSurvey(survey: InsertReadinessSurvey): Promise<ReadinessSurvey> {
+    const [newSurvey] = await db.insert(readinessSurveys).values(survey).returning();
+    return newSurvey;
   }
 }
 
