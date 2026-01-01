@@ -15,6 +15,7 @@ import Athletes from "@/pages/athletes";
 import AthleteDetail from "@/pages/athlete-detail";
 import AthletePortal from "@/pages/athlete-portal";
 import LogWorkout from "@/pages/log-workout";
+import WellnessSurvey from "@/pages/wellness-survey";
 import Workout from "@/pages/workout";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/athletes/:athleteId" component={AthleteDetail} />
       <Route path="/athlete/:athleteId/portal" component={AthletePortal} />
       <Route path="/athlete/:athleteId/log-workout" component={LogWorkout} />
+      <Route path="/athlete/:athleteId/wellness" component={WellnessSurvey} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/progress" component={Progress} />
       <Route path="/coach-tools" component={CoachTools} />

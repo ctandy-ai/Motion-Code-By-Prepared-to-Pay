@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Edit,
   ClipboardList,
-  MessageSquare
+  MessageSquare,
+  Heart
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -526,6 +527,15 @@ export default function AthletePortal() {
               <span className="text-xs text-white font-medium">Log Workout</span>
             </Button>
             <Button 
+              variant="default" 
+              className="h-auto py-4 flex-col gap-2 bg-gradient-to-r from-rose-500 to-pink-500 hover:opacity-90"
+              onClick={() => setLocation(`/athlete/${athleteId}/wellness`)}
+              data-testid="button-wellness-check"
+            >
+              <Heart className="w-6 h-6 text-white" />
+              <span className="text-xs text-white font-medium">Wellness Check</span>
+            </Button>
+            <Button 
               variant="outline" 
               className="h-auto py-4 flex-col gap-2 hover-elevate"
               onClick={() => setLocation("/progress")}
@@ -542,14 +552,6 @@ export default function AthletePortal() {
             >
               <Calendar className="w-6 h-6 text-accent" />
               <span className="text-xs">Calendar</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2 hover-elevate"
-              data-testid="button-achievements"
-            >
-              <Medal className="w-6 h-6 text-amber-400" />
-              <span className="text-xs">Achievements</span>
             </Button>
           </div>
         </CardContent>
