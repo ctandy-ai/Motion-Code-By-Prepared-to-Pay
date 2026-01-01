@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise } from "@shared/schema";
+import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -85,6 +85,16 @@ export default function AthleteDetail() {
 
   const { data: exercises = [] } = useQuery<Exercise[]>({
     queryKey: ["/api/exercises"],
+  });
+
+  const { data: wellnessSurveys = [] } = useQuery<ReadinessSurvey[]>({
+    queryKey: ["/api/athletes", athleteId, "readiness-surveys"],
+    queryFn: async () => {
+      const response = await fetch(`/api/athletes/${athleteId}/readiness-surveys`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!athleteId,
   });
 
   const getExerciseName = (exerciseId: string) => {
@@ -525,6 +535,133 @@ export default function AthleteDetail() {
                 <Plus className="w-4 h-4 mr-1" />
                 Log First Workout
               </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Heart className="w-5 h-5 text-rose-400" />
+            Wellness & Readiness
+          </h2>
+        </div>
+        
+        {wellnessSurveys.length > 0 ? (
+          <div className="space-y-3">
+            {wellnessSurveys.slice(0, 7).map((survey) => {
+              const calculateReadinessScore = () => {
+                const weights = {
+                  sleepQuality: 0.20,
+                  muscleSoreness: 0.15,
+                  energyLevel: 0.20,
+                  stressLevel: 0.15,
+                  mood: 0.10,
+                  overallReadiness: 0.20,
+                };
+                const safeNum = (val: number | null | undefined, fallback = 5) => {
+                  const num = Number(val);
+                  return isNaN(num) ? fallback : num;
+                };
+                let score = 0;
+                score += safeNum(survey.sleepQuality) * weights.sleepQuality;
+                score += (11 - safeNum(survey.muscleSoreness)) * weights.muscleSoreness;
+                score += safeNum(survey.energyLevel) * weights.energyLevel;
+                score += (11 - safeNum(survey.stressLevel)) * weights.stressLevel;
+                score += safeNum(survey.mood) * weights.mood;
+                score += safeNum(survey.overallReadiness) * weights.overallReadiness;
+                return Math.round(score * 10);
+              };
+              
+              const readinessScore = calculateReadinessScore();
+              const getScoreColor = () => {
+                if (readinessScore >= 80) return "text-green-400";
+                if (readinessScore >= 60) return "text-amber-400";
+                return "text-red-400";
+              };
+              const getStatusIcon = () => {
+                if (readinessScore >= 80) return CheckCircle2;
+                return AlertCircle;
+              };
+              const StatusIcon = getStatusIcon();
+              
+              return (
+                <Card 
+                  key={survey.id} 
+                  className="bglass border-0 shadow-glass"
+                  data-testid={`wellness-survey-${survey.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                        readinessScore >= 80 ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20' :
+                        readinessScore >= 60 ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20' :
+                        'bg-gradient-to-br from-red-500/20 to-orange-500/20'
+                      }`}>
+                        <span className={`text-xl font-display font-bold ${getScoreColor()}`}>
+                          {readinessScore}
+                        </span>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <StatusIcon className={`w-4 h-4 ${getScoreColor()}`} />
+                          <span className={`font-medium ${getScoreColor()}`}>
+                            {readinessScore >= 80 ? 'Ready to Train' : readinessScore >= 60 ? 'Moderate Readiness' : 'Consider Recovery'}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
+                          <span className="flex items-center gap-1">
+                            <Moon className="w-3 h-3" />
+                            Sleep: {survey.sleepHours ?? 7}h ({survey.sleepQuality ?? 5}/10)
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Battery className="w-3 h-3" />
+                            Energy: {survey.energyLevel ?? 5}/10
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Brain className="w-3 h-3" />
+                            Stress: {survey.stressLevel ?? 5}/10
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-slate-500">
+                          {survey.surveyDate ? new Date(survey.surveyDate).toLocaleDateString() : 'Today'}
+                        </p>
+                        {survey.notes && (
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            Has notes
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {survey.notes && (
+                      <div className="mt-3 pt-3 border-t border-ink-3">
+                        <p className="text-sm text-slate-400 italic">"{survey.notes}"</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+            
+            {wellnessSurveys.length > 7 && (
+              <p className="text-center text-sm text-slate-500 py-2">
+                + {wellnessSurveys.length - 7} more surveys
+              </p>
+            )}
+          </div>
+        ) : (
+          <Card className="bglass border-0 shadow-glass">
+            <CardContent className="p-8 text-center">
+              <Heart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-slate-300 mb-1">No Wellness Data Yet</h3>
+              <p className="text-sm text-slate-500">
+                This athlete hasn't submitted any wellness surveys yet
+              </p>
             </CardContent>
           </Card>
         )}
