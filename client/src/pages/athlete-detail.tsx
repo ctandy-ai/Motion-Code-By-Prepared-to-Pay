@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Athlete, AthleteProgram, Program, InsertAthleteProgram } from "@shared/schema";
+import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -72,6 +72,25 @@ export default function AthleteDetail() {
   const { data: allPrograms } = useQuery<Program[]>({
     queryKey: ["/api/programs"],
   });
+
+  const { data: workoutLogs = [] } = useQuery<WorkoutLog[]>({
+    queryKey: ["/api/workout-logs", athleteId],
+    queryFn: async () => {
+      const response = await fetch(`/api/workout-logs?athleteId=${athleteId}`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!athleteId,
+  });
+
+  const { data: exercises = [] } = useQuery<Exercise[]>({
+    queryKey: ["/api/exercises"],
+  });
+
+  const getExerciseName = (exerciseId: string) => {
+    const exercise = exercises.find(e => e.id === exerciseId);
+    return exercise?.name || 'Unknown Exercise';
+  };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -414,6 +433,100 @@ export default function AthleteDetail() {
               Assign First Program
             </Button>
           </div>
+        )}
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-primary" />
+            Recent Workout Logs
+          </h2>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setLocation(`/athlete/${athleteId}/portal`)}
+            data-testid="button-view-portal"
+          >
+            <Eye className="w-4 h-4 mr-1" />
+            View Portal
+          </Button>
+        </div>
+        
+        {workoutLogs.length > 0 ? (
+          <div className="space-y-3">
+            {workoutLogs.slice(0, 10).map((log) => {
+              const reps = log.repsPerSet ? log.repsPerSet.split(',').map(Number).filter(n => !isNaN(n)) : [];
+              const weights = log.weightPerSet ? log.weightPerSet.split(',').map(Number).filter(n => !isNaN(n)) : [];
+              const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
+              const totalVolume = reps.reduce((sum, r, i) => sum + (r * (weights[i] || 0)), 0);
+              
+              return (
+                <Card 
+                  key={log.id} 
+                  className="bglass border-0 shadow-glass"
+                  data-testid={`workout-log-${log.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+                        <Dumbbell className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-slate-200 truncate">
+                          {getExerciseName(log.exerciseId)}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                          <span>{log.sets} sets</span>
+                          <span>Max: {maxWeight}kg</span>
+                          <span>Volume: {totalVolume.toLocaleString()}kg</span>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs text-slate-500">
+                          {log.completedAt ? new Date(log.completedAt).toLocaleDateString() : 'Today'}
+                        </p>
+                        {log.notes && (
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            Has notes
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    {log.notes && (
+                      <div className="mt-3 pt-3 border-t border-ink-3">
+                        <p className="text-sm text-slate-400 italic">"{log.notes}"</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+            
+            {workoutLogs.length > 10 && (
+              <p className="text-center text-sm text-slate-500 py-2">
+                + {workoutLogs.length - 10} more logs
+              </p>
+            )}
+          </div>
+        ) : (
+          <Card className="bglass border-0 shadow-glass">
+            <CardContent className="p-8 text-center">
+              <Dumbbell className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-slate-300 mb-1">No Workout Logs Yet</h3>
+              <p className="text-sm text-slate-500 mb-4">
+                This athlete hasn't logged any workouts yet
+              </p>
+              <Button 
+                variant="outline"
+                onClick={() => setLocation(`/athlete/${athleteId}/log-workout`)}
+                data-testid="button-log-workout-cta"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Log First Workout
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

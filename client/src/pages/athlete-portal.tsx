@@ -517,13 +517,13 @@ export default function AthletePortal() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Button 
-              variant="outline" 
-              className="h-auto py-4 flex-col gap-2 hover-elevate"
-              onClick={() => setLocation("/workout")}
+              variant="default" 
+              className="h-auto py-4 flex-col gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90"
+              onClick={() => setLocation(`/athlete/${athleteId}/log-workout`)}
               data-testid="button-log-workout"
             >
-              <Dumbbell className="w-6 h-6 text-primary" />
-              <span className="text-xs">Log Workout</span>
+              <Dumbbell className="w-6 h-6 text-white" />
+              <span className="text-xs text-white font-medium">Log Workout</span>
             </Button>
             <Button 
               variant="outline" 
