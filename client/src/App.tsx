@@ -25,6 +25,7 @@ import CoachTools from "@/pages/coach-tools";
 import AIClassifierTest from "@/pages/ai-classifier-test";
 import RMCalculatorPage from "@/pages/rm-calculator-page";
 import ValdIntegration from "@/pages/vald-integration";
+import AthleteReport from "@/pages/athlete-report";
 import NotFound from "@/pages/not-found";
 import { AICoachChat } from "@/components/ai-coach-chat";
 
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/templates" component={Templates} />
       <Route path="/athletes" component={Athletes} />
       <Route path="/athletes/:athleteId" component={AthleteDetail} />
+      <Route path="/athletes/:athleteId/report" component={AthleteReport} />
       <Route path="/athlete/:athleteId/portal" component={AthletePortal} />
       <Route path="/athlete/:athleteId/log-workout" component={LogWorkout} />
       <Route path="/athlete/:athleteId/wellness" component={WellnessSurvey} />
