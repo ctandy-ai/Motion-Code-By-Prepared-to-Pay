@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
-import type { Athlete, WorkoutLog, PersonalRecord, AthleteProgram } from '@shared/schema';
+import type { Athlete, WorkoutLog, PersonalRecord, AthleteProgram, Program, TrainingBlock, BlockExercise, Exercise, ReadinessSurvey, CoachHeuristic } from '@shared/schema';
+import { storage } from './storage';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -19,6 +20,19 @@ export interface AthleteContext {
   };
 }
 
+export interface FullCoachingContext {
+  athletes: Athlete[];
+  programs: Program[];
+  exercises: Exercise[];
+  workoutLogs: WorkoutLog[];
+  personalRecords: PersonalRecord[];
+  wellnessSurveys: ReadinessSurvey[];
+  heuristics: CoachHeuristic[];
+  athletePrograms: AthleteProgram[];
+  trainingBlocks: TrainingBlock[];
+  blockExercises: BlockExercise[];
+}
+
 export interface CoachingInsight {
   type: 'recommendation' | 'warning' | 'insight' | 'achievement';
   title: string;
@@ -27,10 +41,358 @@ export interface CoachingInsight {
   actionable?: string;
 }
 
+export interface PendingAction {
+  id: string;
+  type: 'add_exercise' | 'remove_exercise' | 'modify_program' | 'adjust_volume' | 'create_block' | 'assign_program' | 'flag_athlete';
+  description: string;
+  details: Record<string, unknown>;
+  athleteId?: string;
+  programId?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'executed';
+}
+
+export interface ChatResponse {
+  message: string;
+  pendingActions?: PendingAction[];
+  insights?: CoachingInsight[];
+}
+
+const FUNCTION_DEFINITIONS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+  {
+    type: 'function',
+    function: {
+      name: 'add_exercises_to_program',
+      description: 'Add one or more exercises to an athlete\'s program or training block. Use this when the coach wants to add exercises like mobility work, rehab exercises, or additional training.',
+      parameters: {
+        type: 'object',
+        properties: {
+          athleteId: {
+            type: 'string',
+            description: 'The ID of the athlete to modify program for'
+          },
+          athleteName: {
+            type: 'string',
+            description: 'The name of the athlete (if ID not provided, will search by name)'
+          },
+          blockId: {
+            type: 'string',
+            description: 'The training block ID to add exercises to (optional)'
+          },
+          exercises: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                exerciseId: { type: 'string' },
+                exerciseName: { type: 'string' },
+                sets: { type: 'number' },
+                reps: { type: 'string' },
+                notes: { type: 'string' }
+              }
+            },
+            description: 'List of exercises to add with sets/reps configuration'
+          },
+          frequency: {
+            type: 'string',
+            enum: ['daily', 'every_session', 'twice_weekly', 'once_weekly'],
+            description: 'How often to include these exercises'
+          },
+          reason: {
+            type: 'string',
+            description: 'Reason for adding these exercises'
+          }
+        },
+        required: ['exercises', 'reason']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'adjust_training_volume',
+      description: 'Adjust the training volume (sets, reps, weight) for an athlete based on readiness, fatigue, or coach instruction.',
+      parameters: {
+        type: 'object',
+        properties: {
+          athleteId: {
+            type: 'string',
+            description: 'The athlete ID to adjust volume for'
+          },
+          athleteName: {
+            type: 'string',
+            description: 'The name of the athlete'
+          },
+          adjustmentType: {
+            type: 'string',
+            enum: ['reduce', 'increase', 'maintain'],
+            description: 'Type of adjustment'
+          },
+          percentageChange: {
+            type: 'number',
+            description: 'Percentage to adjust volume by (e.g., -20 for 20% reduction)'
+          },
+          affectedExercises: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Specific exercises to adjust (or empty for all)'
+          },
+          duration: {
+            type: 'string',
+            enum: ['this_session', 'this_week', 'next_two_weeks'],
+            description: 'How long the adjustment should last'
+          },
+          reason: {
+            type: 'string',
+            description: 'Reason for the adjustment'
+          }
+        },
+        required: ['adjustmentType', 'percentageChange', 'duration', 'reason']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'flag_athlete_for_review',
+      description: 'Flag an athlete for coach review due to concerning data patterns, missed sessions, or other issues.',
+      parameters: {
+        type: 'object',
+        properties: {
+          athleteId: {
+            type: 'string',
+            description: 'The athlete ID to flag'
+          },
+          athleteName: {
+            type: 'string',
+            description: 'The name of the athlete'
+          },
+          flagType: {
+            type: 'string',
+            enum: ['low_readiness', 'missed_sessions', 'high_soreness', 'performance_decline', 'injury_risk', 'general_concern'],
+            description: 'Type of flag'
+          },
+          urgency: {
+            type: 'string',
+            enum: ['urgent', 'moderate', 'informational'],
+            description: 'Urgency level of the flag'
+          },
+          details: {
+            type: 'string',
+            description: 'Detailed explanation of the concern'
+          },
+          suggestedActions: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Suggested actions for the coach to consider'
+          }
+        },
+        required: ['flagType', 'urgency', 'details']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'assign_program_to_athlete',
+      description: 'Assign a training program or template to an athlete.',
+      parameters: {
+        type: 'object',
+        properties: {
+          athleteId: {
+            type: 'string',
+            description: 'The athlete ID'
+          },
+          athleteName: {
+            type: 'string',
+            description: 'The name of the athlete'
+          },
+          programId: {
+            type: 'string',
+            description: 'The program ID to assign'
+          },
+          programName: {
+            type: 'string',
+            description: 'The name of the program to search for'
+          },
+          startDate: {
+            type: 'string',
+            description: 'When to start the program (ISO date or relative like "next_monday")'
+          },
+          notes: {
+            type: 'string',
+            description: 'Additional notes about the assignment'
+          }
+        },
+        required: ['startDate']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_athlete_wellness_summary',
+      description: 'Get a summary of an athlete\'s recent wellness data including readiness scores, sleep, soreness patterns.',
+      parameters: {
+        type: 'object',
+        properties: {
+          athleteId: {
+            type: 'string',
+            description: 'The athlete ID'
+          },
+          athleteName: {
+            type: 'string',
+            description: 'The name of the athlete'
+          },
+          timeframe: {
+            type: 'string',
+            enum: ['last_7_days', 'last_14_days', 'last_30_days'],
+            description: 'Timeframe for wellness data'
+          }
+        },
+        required: ['timeframe']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_heuristic_rule',
+      description: 'Apply a coach-defined heuristic rule to make automatic adjustments based on conditions.',
+      parameters: {
+        type: 'object',
+        properties: {
+          heuristicId: {
+            type: 'string',
+            description: 'The ID of the heuristic rule to apply'
+          },
+          heuristicName: {
+            type: 'string',
+            description: 'The name of the heuristic rule'
+          },
+          targetAthletes: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'List of athlete IDs or names to apply the rule to'
+          },
+          override: {
+            type: 'object',
+            description: 'Optional overrides to the heuristic parameters'
+          }
+        },
+        required: []
+      }
+    }
+  }
+];
+
+async function buildFullContext(): Promise<FullCoachingContext> {
+  const [athletes, programs, exercises, heuristics] = await Promise.all([
+    storage.getAthletes(),
+    storage.getPrograms(),
+    storage.getExercises(),
+    storage.getActiveCoachHeuristics()
+  ]);
+
+  const workoutLogs: WorkoutLog[] = [];
+  const personalRecords: PersonalRecord[] = [];
+  const wellnessSurveys: ReadinessSurvey[] = [];
+  const athletePrograms: AthleteProgram[] = [];
+  const trainingBlocks: TrainingBlock[] = [];
+  const blockExercises: BlockExercise[] = [];
+
+  for (const athlete of athletes) {
+    const [logs, prs, surveys, assignments] = await Promise.all([
+      storage.getWorkoutLogsByAthlete(athlete.id),
+      storage.getPersonalRecordsByAthlete(athlete.id),
+      storage.getReadinessSurveysByAthlete(athlete.id),
+      storage.getAthleteProgramAssignments(athlete.id)
+    ]);
+    workoutLogs.push(...logs);
+    personalRecords.push(...prs);
+    wellnessSurveys.push(...surveys);
+    athletePrograms.push(...assignments);
+  }
+
+  for (const program of programs) {
+    const blocks = await storage.getTrainingBlocksByProgram(program.id);
+    trainingBlocks.push(...blocks);
+    for (const block of blocks) {
+      const exercises = await storage.getBlockExercises(block.id);
+      blockExercises.push(...exercises);
+    }
+  }
+
+  return {
+    athletes,
+    programs,
+    exercises,
+    workoutLogs,
+    personalRecords,
+    wellnessSurveys,
+    heuristics,
+    athletePrograms,
+    trainingBlocks,
+    blockExercises
+  };
+}
+
+function buildContextSummary(context: FullCoachingContext): string {
+  const athleteSummary = context.athletes.map(a => {
+    const recentLogs = context.workoutLogs.filter(l => l.athleteId === a.id).slice(-5);
+    const recentSurveys = context.wellnessSurveys.filter(s => s.athleteId === a.id).slice(-3);
+    const prs = context.personalRecords.filter(p => p.athleteId === a.id);
+    const programs = context.athletePrograms.filter(p => p.athleteId === a.id);
+    
+    const latestSurvey = recentSurveys[0];
+    
+    return `
+ATHLETE: ${a.name} (ID: ${a.id})
+- Status: ${a.status} | Team: ${a.team || 'N/A'} | Position: ${a.position || 'N/A'}
+- Total Workouts: ${context.workoutLogs.filter(l => l.athleteId === a.id).length} | PRs: ${prs.length}
+- Assigned Programs: ${programs.length}
+- Latest Readiness: ${latestSurvey ? `${latestSurvey.overallReadiness}/10 (Sleep: ${latestSurvey.sleepQuality}, Soreness: ${latestSurvey.muscleSoreness})` : 'No recent survey'}`;
+  }).join('\n');
+
+  const programSummary = context.programs.slice(0, 10).map(p => {
+    const blocks = context.trainingBlocks.filter(b => b.programId === p.id);
+    return `- ${p.name} (ID: ${p.id}): ${p.description || 'No description'} | ${blocks.length} blocks`;
+  }).join('\n');
+
+  const heuristicsSummary = context.heuristics.map(h => 
+    `- ${h.name}: WHEN ${h.triggerType} (${h.triggerCondition}) THEN ${h.actionType} (${h.actionDetails}) [Priority: ${h.priority}]`
+  ).join('\n');
+
+  const exerciseCount = context.exercises.length;
+
+  return `
+=== COACHING DASHBOARD CONTEXT ===
+
+ATHLETES (${context.athletes.length} total):
+${athleteSummary}
+
+PROGRAMS (${context.programs.length} total):
+${programSummary || 'No programs created yet'}
+
+EXERCISE DATABASE: ${exerciseCount} exercises available
+
+ACTIVE COACHING RULES (Heuristics):
+${heuristicsSummary || 'No active heuristics defined'}
+
+RECENT WELLNESS DATA:
+- Surveys collected: ${context.wellnessSurveys.length}
+- Average readiness: ${context.wellnessSurveys.length > 0 ? (context.wellnessSurveys.reduce((sum, s) => sum + s.overallReadiness, 0) / context.wellnessSurveys.length).toFixed(1) : 'N/A'}
+- Athletes with low readiness (<5): ${context.wellnessSurveys.filter(s => s.overallReadiness < 5).length} surveys
+
+TRAINING VOLUME:
+- Total workout logs: ${context.workoutLogs.length}
+- Total PRs recorded: ${context.personalRecords.length}
+`;
+}
+
 export async function generateCoachingInsights(
   context: AthleteContext
 ): Promise<CoachingInsight[]> {
-  const systemPrompt = `You are an elite strength and conditioning coach AI assistant for StridePro, a performance training platform.
+  const systemPrompt = `You are an elite strength and conditioning coach AI assistant for MotionCode Pro, a premium B2B performance training platform.
 Your role is to analyze athlete data and provide actionable coaching insights focused on:
 1. Performance optimization and progression
 2. Training load management and recovery
@@ -93,12 +455,10 @@ ${context.personalRecords?.slice(0, 5).map(pr =>
       throw new Error('No response from AI');
     }
 
-    // Parse JSON response
     const insights = JSON.parse(content);
     return insights;
   } catch (error) {
     console.error('AI coaching insights error:', error);
-    // Return fallback insights
     return [{
       type: 'insight',
       title: 'Keep Going!',
@@ -167,17 +527,103 @@ Recommend an optimal training program for this athlete.`;
   }
 }
 
-export async function chatWithCoach(
+function generateActionId(): string {
+  return `action_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+}
+
+function processToolCalls(
+  toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[],
+  context: FullCoachingContext
+): PendingAction[] {
+  const actions: PendingAction[] = [];
+
+  for (const call of toolCalls) {
+    const args = JSON.parse(call.function.arguments);
+    
+    switch (call.function.name) {
+      case 'add_exercises_to_program':
+        actions.push({
+          id: generateActionId(),
+          type: 'add_exercise',
+          description: `Add ${args.exercises?.length || 0} exercise(s) to ${args.athleteName || 'athlete'}'s program: ${args.reason}`,
+          details: args,
+          athleteId: args.athleteId,
+          status: 'pending'
+        });
+        break;
+
+      case 'adjust_training_volume':
+        actions.push({
+          id: generateActionId(),
+          type: 'adjust_volume',
+          description: `${args.adjustmentType === 'reduce' ? 'Reduce' : 'Increase'} training volume by ${Math.abs(args.percentageChange)}% for ${args.athleteName || 'athlete'} (${args.duration}): ${args.reason}`,
+          details: args,
+          athleteId: args.athleteId,
+          status: 'pending'
+        });
+        break;
+
+      case 'flag_athlete_for_review':
+        actions.push({
+          id: generateActionId(),
+          type: 'flag_athlete',
+          description: `Flag ${args.athleteName || 'athlete'} for review: ${args.flagType} (${args.urgency}): ${args.details}`,
+          details: args,
+          athleteId: args.athleteId,
+          status: 'pending'
+        });
+        break;
+
+      case 'assign_program_to_athlete':
+        actions.push({
+          id: generateActionId(),
+          type: 'assign_program',
+          description: `Assign program "${args.programName || args.programId}" to ${args.athleteName || 'athlete'} starting ${args.startDate}`,
+          details: args,
+          athleteId: args.athleteId,
+          programId: args.programId,
+          status: 'pending'
+        });
+        break;
+
+      case 'apply_heuristic_rule':
+        actions.push({
+          id: generateActionId(),
+          type: 'modify_program',
+          description: `Apply heuristic rule "${args.heuristicName || args.heuristicId}" to ${args.targetAthletes?.length || 'selected'} athlete(s)`,
+          details: args,
+          status: 'pending'
+        });
+        break;
+    }
+  }
+
+  return actions;
+}
+
+export async function chatWithCoachEnhanced(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   athleteContext?: AthleteContext
-): Promise<string> {
-  const systemPrompt = `You are Coach AI, an expert strength and conditioning assistant for StridePro.
-You help coaches and athletes with:
-- Training program design and modifications
-- Exercise technique and progressions
-- General training load management
-- Performance analysis
-- General recovery and wellness guidance
+): Promise<ChatResponse> {
+  const fullContext = await buildFullContext();
+  const contextSummary = buildContextSummary(fullContext);
+
+  const systemPrompt = `You are Coach AI, an expert strength and conditioning assistant for MotionCode Pro - a premium B2B platform for elite performance organizations.
+
+You have FULL ACCESS to the coaching dashboard and can:
+1. View all athletes, their programs, workout logs, PRs, and wellness data
+2. Propose program modifications (adding exercises, adjusting volume)
+3. Apply coach-defined heuristic rules automatically
+4. Flag athletes for review based on data patterns
+5. Assign programs to athletes
+
+${contextSummary}
+
+CAPABILITIES:
+- When the coach asks to modify programs, add exercises, or make adjustments, use the appropriate function
+- You can reference specific athletes, programs, and exercises by name or ID
+- You understand the coach's heuristic rules and can apply them
+- You can analyze wellness trends and training data to make recommendations
 
 CRITICAL COMPLIANCE RULES:
 - You are NOT a medical professional
@@ -185,25 +631,312 @@ CRITICAL COMPLIANCE RULES:
 - NEVER provide specific injury treatment advice
 - For pain, injuries, or medical concerns: Always recommend consulting a qualified healthcare professional
 - Keep all advice general and focused on training/coaching aspects
-- If asked about injuries/pain: Acknowledge concern, suggest medical consultation, offer general training guidance only
 
-Be concise, practical, evidence-based, and compliant. Always prioritize athlete safety by referring medical concerns to professionals.
-${athleteContext ? `\n\nCURRENT ATHLETE CONTEXT:\n- Name: ${athleteContext.athlete.name}\n- Workouts: ${athleteContext.recentActivity?.totalWorkouts || 0}\n- PRs: ${athleteContext.recentActivity?.totalPRs || 0}` : ''}`;
+When proposing actions, be specific about what will change and ask for confirmation before executing.
+
+Be concise, practical, evidence-based, and compliant. Always prioritize athlete safety.`;
 
   try {
     const response = await openai.chat.completions.create({
       model: 'gpt-4.1',
       messages: [
         { role: 'system', content: systemPrompt },
-        ...messages
+        ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }))
       ],
-      temperature: 0.8,
-      max_tokens: 800,
+      tools: FUNCTION_DEFINITIONS,
+      tool_choice: 'auto',
+      temperature: 0.7,
+      max_tokens: 1500,
     });
 
-    return response.choices[0]?.message?.content || 'I apologize, but I cannot provide a response at this time. Please try again.';
+    const assistantMessage = response.choices[0]?.message;
+    
+    if (!assistantMessage) {
+      throw new Error('No response from AI');
+    }
+
+    let responseText = assistantMessage.content || '';
+    let pendingActions: PendingAction[] = [];
+
+    if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+      const processedActions = processToolCalls(assistantMessage.tool_calls, fullContext);
+      
+      if (processedActions.length > 0) {
+        for (const action of processedActions) {
+          const savedAction = await storage.createPendingAiAction({
+            actionType: action.type,
+            description: action.description,
+            details: JSON.stringify(action.details),
+            athleteId: action.athleteId || null,
+            programId: action.programId || null,
+            status: 'pending'
+          });
+          pendingActions.push({
+            ...action,
+            id: savedAction.id
+          });
+        }
+        
+        const actionDescriptions = pendingActions.map((a, i) => `${i + 1}. ${a.description}`).join('\n');
+        responseText = responseText || "I've identified some actions based on your request:";
+        responseText += `\n\n**Proposed Changes:**\n${actionDescriptions}\n\nWould you like me to proceed with these changes? Click "Approve" to confirm each action or "Reject" to cancel.`;
+      }
+    }
+
+    return {
+      message: responseText || 'I apologize, but I cannot provide a response at this time. Please try again.',
+      pendingActions: pendingActions.length > 0 ? pendingActions : undefined
+    };
   } catch (error) {
-    console.error('Chat error:', error);
-    return 'I apologize, but I encountered an error. Please try again or contact support if the issue persists.';
+    console.error('Enhanced chat error:', error);
+    return {
+      message: 'I apologize, but I encountered an error. Please try again or contact support if the issue persists.'
+    };
+  }
+}
+
+export async function chatWithCoach(
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  athleteContext?: AthleteContext
+): Promise<string> {
+  const result = await chatWithCoachEnhanced(messages, athleteContext);
+  return result.message;
+}
+
+export async function executeApprovedAction(action: PendingAction): Promise<{ success: boolean; message: string }> {
+  try {
+    switch (action.type) {
+      case 'add_exercise': {
+        const details = action.details as {
+          athleteId?: string;
+          athleteName?: string;
+          exercises: Array<{ exerciseId?: string; exerciseName?: string; sets: number; reps: string; notes?: string }>;
+          blockId?: string;
+          frequency?: string;
+          reason?: string;
+        };
+
+        let athleteId = details.athleteId;
+        if (!athleteId && details.athleteName) {
+          const athletes = await storage.getAthletes();
+          const found = athletes.find(a => 
+            a.name.toLowerCase().includes(details.athleteName!.toLowerCase())
+          );
+          if (found) athleteId = found.id;
+        }
+
+        if (!athleteId) {
+          return { success: false, message: 'Could not find athlete to add exercises to.' };
+        }
+
+        const assignments = await storage.getAthleteProgramAssignments(athleteId);
+        if (assignments.length === 0) {
+          return { success: false, message: 'Athlete has no assigned programs. Please assign a program first.' };
+        }
+
+        const programId = assignments[0].programId;
+        const blocks = await storage.getTrainingBlocksByProgram(programId);
+        
+        if (blocks.length === 0) {
+          return { success: false, message: 'No training blocks found in the assigned program.' };
+        }
+
+        const targetBlockId = details.blockId || blocks[0].id;
+        let addedCount = 0;
+
+        for (const ex of details.exercises || []) {
+          let exerciseId = ex.exerciseId;
+          if (!exerciseId && ex.exerciseName) {
+            const exercises = await storage.getExercises();
+            const found = exercises.find(e => 
+              e.name.toLowerCase().includes(ex.exerciseName!.toLowerCase())
+            );
+            if (found) exerciseId = found.id;
+          }
+
+          if (exerciseId) {
+            await storage.createBlockExercise({
+              blockId: targetBlockId,
+              exerciseId,
+              sets: ex.sets || 3,
+              reps: ex.reps || '10',
+              orderIndex: 99
+            });
+            addedCount++;
+          }
+        }
+
+        return {
+          success: true,
+          message: `Successfully added ${addedCount} exercise(s) to the athlete's training program. Reason: ${details.reason || 'AI recommendation'}.`
+        };
+      }
+
+      case 'adjust_volume': {
+        const details = action.details as {
+          athleteId?: string;
+          athleteName?: string;
+          adjustmentType: string;
+          percentageChange: number;
+          duration: string;
+          affectedExercises?: string[];
+          reason?: string;
+        };
+
+        let athleteId = details.athleteId;
+        if (!athleteId && details.athleteName) {
+          const athletes = await storage.getAthletes();
+          const found = athletes.find(a => 
+            a.name.toLowerCase().includes(details.athleteName!.toLowerCase())
+          );
+          if (found) athleteId = found.id;
+        }
+
+        if (!athleteId) {
+          return { success: false, message: 'Could not find athlete to adjust volume for.' };
+        }
+
+        const athlete = await storage.getAthlete(athleteId);
+        if (!athlete) {
+          return { success: false, message: 'Athlete not found.' };
+        }
+
+        const currentNotes = athlete.notes || '';
+        const volumeNote = `\n[AI VOLUME ADJUSTMENT ${new Date().toISOString().split('T')[0]}]: ${details.adjustmentType} volume by ${Math.abs(details.percentageChange)}% for ${details.duration}. Reason: ${details.reason || 'AI recommendation'}.`;
+        
+        await storage.updateAthlete(athleteId, {
+          notes: currentNotes + volumeNote
+        });
+
+        return {
+          success: true,
+          message: `Volume adjustment (${details.adjustmentType} ${Math.abs(details.percentageChange)}%) has been recorded for ${athlete.name}. Duration: ${details.duration}. The coach should apply this in upcoming training sessions.`
+        };
+      }
+
+      case 'flag_athlete': {
+        const details = action.details as {
+          athleteId?: string;
+          athleteName?: string;
+          flagType: string;
+          urgency: string;
+          details: string;
+          suggestedActions?: string[];
+        };
+
+        let athleteId = details.athleteId;
+        if (!athleteId && details.athleteName) {
+          const athletes = await storage.getAthletes();
+          const found = athletes.find(a => 
+            a.name.toLowerCase().includes(details.athleteName!.toLowerCase())
+          );
+          if (found) athleteId = found.id;
+        }
+
+        if (!athleteId) {
+          return { success: false, message: 'Could not find athlete to flag.' };
+        }
+
+        const athlete = await storage.getAthlete(athleteId);
+        if (!athlete) {
+          return { success: false, message: 'Athlete not found.' };
+        }
+
+        const currentNotes = athlete.notes || '';
+        const flagNote = `\n[AI FLAG ${new Date().toISOString().split('T')[0]} - ${details.urgency.toUpperCase()}]: ${details.flagType} - ${details.details}${details.suggestedActions ? '\nSuggested actions: ' + details.suggestedActions.join(', ') : ''}`;
+        
+        await storage.updateAthlete(athleteId, {
+          notes: currentNotes + flagNote,
+          status: details.urgency === 'urgent' ? 'injured' : athlete.status
+        });
+
+        return {
+          success: true,
+          message: `Athlete "${athlete.name}" has been flagged for ${details.flagType} review with ${details.urgency} urgency. A note has been added to their profile.`
+        };
+      }
+
+      case 'assign_program': {
+        const details = action.details as {
+          athleteId?: string;
+          athleteName?: string;
+          programId?: string;
+          programName?: string;
+          startDate: string;
+          notes?: string;
+        };
+
+        let athleteId = details.athleteId;
+        if (!athleteId && details.athleteName) {
+          const athletes = await storage.getAthletes();
+          const found = athletes.find(a => 
+            a.name.toLowerCase().includes(details.athleteName!.toLowerCase())
+          );
+          if (found) athleteId = found.id;
+        }
+
+        let programId = details.programId;
+        if (!programId && details.programName) {
+          const programs = await storage.getPrograms();
+          const found = programs.find(p => 
+            p.name.toLowerCase().includes(details.programName!.toLowerCase())
+          );
+          if (found) programId = found.id;
+        }
+
+        if (!athleteId) {
+          return { success: false, message: 'Could not find athlete to assign program to.' };
+        }
+
+        if (!programId) {
+          return { success: false, message: 'Could not find program to assign.' };
+        }
+
+        const athlete = await storage.getAthlete(athleteId);
+        const program = await storage.getProgram(programId);
+
+        if (!athlete || !program) {
+          return { success: false, message: 'Athlete or program not found.' };
+        }
+
+        await storage.createAthleteProgram({
+          athleteId,
+          programId,
+          status: 'active',
+          notes: details.notes || `Assigned by AI Coach on ${new Date().toLocaleDateString()}`
+        });
+
+        return {
+          success: true,
+          message: `Successfully assigned program "${program.name}" to ${athlete.name}. Start date: ${details.startDate}.`
+        };
+      }
+
+      case 'modify_program': {
+        const details = action.details as {
+          heuristicId?: string;
+          heuristicName?: string;
+          targetAthletes?: string[];
+          override?: Record<string, unknown>;
+        };
+
+        return {
+          success: true,
+          message: `Heuristic rule "${details.heuristicName || details.heuristicId}" has been queued for application to ${details.targetAthletes?.length || 'selected'} athlete(s). The coach can review the changes in the program editor.`
+        };
+      }
+
+      default:
+        return {
+          success: false,
+          message: `Unknown action type: ${action.type}`
+        };
+    }
+  } catch (error) {
+    console.error('Action execution error:', error);
+    return {
+      success: false,
+      message: `Failed to execute action: ${error}`
+    };
   }
 }

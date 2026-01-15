@@ -19,6 +19,8 @@ import WellnessSurvey from "@/pages/wellness-survey";
 import Workout from "@/pages/workout";
 import Calendar from "@/pages/calendar";
 import Progress from "@/pages/progress";
+import Analytics from "@/pages/analytics";
+import Heuristics from "@/pages/heuristics";
 import CoachTools from "@/pages/coach-tools";
 import AIClassifierTest from "@/pages/ai-classifier-test";
 import RMCalculatorPage from "@/pages/rm-calculator-page";
@@ -42,6 +44,8 @@ function Router() {
       <Route path="/athlete/:athleteId/wellness" component={WellnessSurvey} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/progress" component={Progress} />
+      <Route path="/analytics" component={Analytics} />
+      <Route path="/heuristics" component={Heuristics} />
       <Route path="/coach-tools" component={CoachTools} />
       <Route path="/ai-classifier" component={AIClassifierTest} />
       <Route path="/rm-calculator" component={RMCalculatorPage} />

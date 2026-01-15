@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator, BarChart3, Brain } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -55,6 +55,11 @@ const mainMenuItems = [
     url: "/progress",
     icon: TrendingUp,
   },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: BarChart3,
+  },
 ];
 
 const coachToolsItems = [
@@ -83,6 +88,13 @@ const coachToolsItems = [
     url: "/rm-calculator",
     icon: Calculator,
     description: "Calculate 1RM & percentages",
+    isPro: true,
+  },
+  {
+    title: "Intelligence Rules",
+    url: "/heuristics",
+    icon: Brain,
+    description: "AI coaching heuristics",
     isPro: true,
   },
 ];

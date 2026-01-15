@@ -28,6 +28,7 @@ export const athletes = pgTable("athletes", {
   position: text("position"),
   status: text("status").default("Registered"),
   avatarUrl: text("avatar_url"),
+  notes: text("notes"),
   dateJoined: timestamp("date_joined").defaultNow(),
 });
 
@@ -495,3 +496,46 @@ export const insertReadinessSurveySchema = createInsertSchema(readinessSurveys).
 });
 export type InsertReadinessSurvey = z.infer<typeof insertReadinessSurveySchema>;
 export type ReadinessSurvey = typeof readinessSurveys.$inferSelect;
+
+export const coachHeuristics = pgTable("coach_heuristics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coachId: varchar("coach_id").default('default-coach'),
+  name: text("name").notNull(),
+  description: text("description"),
+  triggerType: text("trigger_type").notNull(),
+  triggerCondition: text("trigger_condition").notNull(),
+  actionType: text("action_type").notNull(),
+  actionDetails: text("action_details").notNull(),
+  isActive: integer("is_active").notNull().default(1),
+  priority: integer("priority").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCoachHeuristicSchema = createInsertSchema(coachHeuristics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCoachHeuristic = z.infer<typeof insertCoachHeuristicSchema>;
+export type CoachHeuristic = typeof coachHeuristics.$inferSelect;
+
+export const pendingAiActions = pgTable("pending_ai_actions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  actionType: varchar("action_type").notNull(),
+  description: text("description").notNull(),
+  details: text("details").notNull(),
+  athleteId: varchar("athlete_id"),
+  programId: varchar("program_id"),
+  status: varchar("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPendingAiActionSchema = createInsertSchema(pendingAiActions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertPendingAiAction = z.infer<typeof insertPendingAiActionSchema>;
+export type PendingAiAction = typeof pendingAiActions.$inferSelect;

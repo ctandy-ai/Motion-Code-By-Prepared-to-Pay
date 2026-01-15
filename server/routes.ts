@@ -16,6 +16,8 @@ import {
   insertBlockTemplateSchema,
   insertTemplateBlockExerciseSchema,
   insertReadinessSurveySchema,
+  insertCoachHeuristicSchema,
+  insertPendingAiActionSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -325,7 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/ai/chat", async (req, res) => {
     try {
-      const { chatWithCoach } = await import("./ai-coach");
+      const { chatWithCoachEnhanced } = await import("./ai-coach");
       const { messages, athleteId } = req.body;
 
       if (!messages || !Array.isArray(messages)) {
@@ -351,8 +353,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const response = await chatWithCoach(messages, athleteContext);
-      res.json({ message: response });
+      const response = await chatWithCoachEnhanced(messages, athleteContext);
+      res.json(response);
     } catch (error) {
       console.error("Chat error:", error);
       res.status(500).json({ error: "Failed to process chat" });
@@ -1343,6 +1345,291 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Template seed error:", error);
       res.status(500).json({ error: error.message || "Failed to seed pathway templates" });
+    }
+  });
+
+  // Pending AI Actions routes
+  app.get("/api/ai/pending-actions", async (req, res) => {
+    try {
+      const actions = await storage.getPendingAiActionsByStatus("pending");
+      res.json(actions);
+    } catch (error) {
+      console.error("Failed to fetch pending actions:", error);
+      res.status(500).json({ error: "Failed to fetch pending actions" });
+    }
+  });
+
+  app.post("/api/ai/pending-actions", async (req, res) => {
+    try {
+      const validated = insertPendingAiActionSchema.parse(req.body);
+      const action = await storage.createPendingAiAction(validated);
+      res.status(201).json(action);
+    } catch (error) {
+      console.error("Failed to create pending action:", error);
+      res.status(400).json({ error: "Invalid action data" });
+    }
+  });
+
+  app.post("/api/ai/pending-actions/:id/approve", async (req, res) => {
+    try {
+      const action = await storage.getPendingAiAction(req.params.id);
+      if (!action) {
+        return res.status(404).json({ error: "Action not found" });
+      }
+
+      const { executeApprovedAction } = await import("./ai-coach");
+      const result = await executeApprovedAction({
+        id: action.id,
+        type: action.actionType as any,
+        description: action.description,
+        details: JSON.parse(action.details),
+        athleteId: action.athleteId || undefined,
+        programId: action.programId || undefined,
+        status: 'approved'
+      });
+
+      await storage.updatePendingAiAction(action.id, { status: result.success ? 'executed' : 'failed' });
+      res.json({ ...result, action });
+    } catch (error) {
+      console.error("Failed to approve action:", error);
+      res.status(500).json({ error: "Failed to approve action" });
+    }
+  });
+
+  app.post("/api/ai/pending-actions/:id/reject", async (req, res) => {
+    try {
+      const action = await storage.updatePendingAiAction(req.params.id, { status: "rejected" });
+      if (!action) {
+        return res.status(404).json({ error: "Action not found" });
+      }
+      res.json({ success: true, action });
+    } catch (error) {
+      console.error("Failed to reject action:", error);
+      res.status(500).json({ error: "Failed to reject action" });
+    }
+  });
+
+  // Coach Heuristics routes
+  app.get("/api/heuristics", async (req, res) => {
+    try {
+      const coachId = req.query.coachId as string | undefined;
+      const heuristics = await storage.getCoachHeuristics(coachId);
+      res.json(heuristics);
+    } catch (error) {
+      console.error("Failed to fetch heuristics:", error);
+      res.status(500).json({ error: "Failed to fetch heuristics" });
+    }
+  });
+
+  app.get("/api/heuristics/active", async (req, res) => {
+    try {
+      const coachId = req.query.coachId as string | undefined;
+      const heuristics = await storage.getActiveCoachHeuristics(coachId);
+      res.json(heuristics);
+    } catch (error) {
+      console.error("Failed to fetch active heuristics:", error);
+      res.status(500).json({ error: "Failed to fetch active heuristics" });
+    }
+  });
+
+  app.get("/api/heuristics/:id", async (req, res) => {
+    try {
+      const heuristic = await storage.getCoachHeuristic(req.params.id);
+      if (!heuristic) {
+        return res.status(404).json({ error: "Heuristic not found" });
+      }
+      res.json(heuristic);
+    } catch (error) {
+      console.error("Failed to fetch heuristic:", error);
+      res.status(500).json({ error: "Failed to fetch heuristic" });
+    }
+  });
+
+  app.post("/api/heuristics", async (req, res) => {
+    try {
+      const validated = insertCoachHeuristicSchema.parse(req.body);
+      const heuristic = await storage.createCoachHeuristic(validated);
+      res.status(201).json(heuristic);
+    } catch (error) {
+      console.error("Failed to create heuristic:", error);
+      res.status(400).json({ error: "Invalid heuristic data" });
+    }
+  });
+
+  app.patch("/api/heuristics/:id", async (req, res) => {
+    try {
+      const validated = insertCoachHeuristicSchema.partial().parse(req.body);
+      const heuristic = await storage.updateCoachHeuristic(req.params.id, validated);
+      if (!heuristic) {
+        return res.status(404).json({ error: "Heuristic not found" });
+      }
+      res.json(heuristic);
+    } catch (error) {
+      console.error("Failed to update heuristic:", error);
+      res.status(400).json({ error: "Failed to update heuristic" });
+    }
+  });
+
+  app.delete("/api/heuristics/:id", async (req, res) => {
+    try {
+      const deleted = await storage.deleteCoachHeuristic(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ error: "Heuristic not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete heuristic:", error);
+      res.status(500).json({ error: "Failed to delete heuristic" });
+    }
+  });
+
+  // Analytics Dashboard routes
+  app.get("/api/analytics/overview", async (req, res) => {
+    try {
+      const athletes = await storage.getAthletes();
+      const allWorkoutLogs: any[] = [];
+      const allPRs: any[] = [];
+      const allSurveys: any[] = [];
+
+      for (const athlete of athletes) {
+        const logs = await storage.getWorkoutLogs(athlete.id);
+        const prs = await storage.getPersonalRecords(athlete.id);
+        const surveys = await storage.getReadinessSurveys(athlete.id);
+        
+        allWorkoutLogs.push(...logs.map(log => ({ ...log, athleteName: athlete.name })));
+        allPRs.push(...prs.map(pr => ({ ...pr, athleteName: athlete.name })));
+        allSurveys.push(...surveys.map(s => ({ ...s, athleteName: athlete.name })));
+      }
+
+      const exercises = await storage.getExercises();
+      const exerciseMap = new Map(exercises.map(e => [e.id, e]));
+
+      // Strength progression data (last 30 days, grouped by exercise)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const strengthData = allWorkoutLogs
+        .filter(log => log.completedAt && new Date(log.completedAt) >= thirtyDaysAgo)
+        .map(log => {
+          const weights = log.weightPerSet?.split(',').map((w: string) => parseFloat(w.trim())).filter((w: number) => !isNaN(w)) || [];
+          const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
+          const exercise = exerciseMap.get(log.exerciseId);
+          return {
+            date: new Date(log.completedAt).toISOString().split('T')[0],
+            exerciseId: log.exerciseId,
+            exerciseName: exercise?.name || 'Unknown',
+            maxWeight,
+            athleteName: log.athleteName,
+          };
+        })
+        .filter(d => d.maxWeight > 0);
+
+      // PR timeline (last 20 PRs)
+      const prTimeline = allPRs
+        .sort((a, b) => new Date(b.achievedAt || 0).getTime() - new Date(a.achievedAt || 0).getTime())
+        .slice(0, 20)
+        .map(pr => {
+          const exercise = exerciseMap.get(pr.exerciseId);
+          return {
+            id: pr.id,
+            athleteName: pr.athleteName,
+            exerciseName: exercise?.name || 'Unknown',
+            weight: pr.maxWeight,
+            reps: pr.reps,
+            date: pr.achievedAt,
+          };
+        });
+
+      // Wellness trends (last 14 days)
+      const fourteenDaysAgo = new Date();
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+      
+      const wellnessData = allSurveys
+        .filter(s => s.surveyDate && new Date(s.surveyDate) >= fourteenDaysAgo)
+        .map(s => {
+          const sleepQuality = s.sleepQuality ?? 0;
+          const energyLevel = s.energyLevel ?? 0;
+          const overallReadiness = s.overallReadiness ?? 0;
+          const muscleSoreness = s.muscleSoreness ?? 5;
+          const stressLevel = s.stressLevel ?? 5;
+          const mood = s.mood ?? 5;
+          
+          const readinessScore = Math.round(
+            (sleepQuality * 0.20) +
+            (energyLevel * 0.20) +
+            (overallReadiness * 0.20) +
+            ((10 - muscleSoreness) * 0.15) +
+            ((10 - stressLevel) * 0.15) +
+            (mood * 0.10)
+          );
+          
+          return {
+            date: new Date(s.surveyDate).toISOString().split('T')[0],
+            readinessScore: isNaN(readinessScore) ? 5 : readinessScore,
+            sleepQuality,
+            energyLevel,
+            athleteName: s.athleteName,
+          };
+        });
+
+      // Volume tracking (workouts per week)
+      const volumeByWeek: Record<string, { sets: number; reps: number; workouts: number }> = {};
+      allWorkoutLogs.forEach(log => {
+        if (!log.completedAt) return;
+        const date = new Date(log.completedAt);
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        const weekKey = weekStart.toISOString().split('T')[0];
+        
+        if (!volumeByWeek[weekKey]) {
+          volumeByWeek[weekKey] = { sets: 0, reps: 0, workouts: 0 };
+        }
+        
+        volumeByWeek[weekKey].sets += log.sets || 0;
+        const repsArray = log.repsPerSet?.split(',').map((r: string) => parseInt(r.trim())).filter((r: number) => !isNaN(r)) || [];
+        volumeByWeek[weekKey].reps += repsArray.reduce((sum: number, r: number) => sum + r, 0);
+        volumeByWeek[weekKey].workouts += 1;
+      });
+
+      const volumeData = Object.entries(volumeByWeek)
+        .map(([week, data]) => ({ week, ...data }))
+        .sort((a, b) => a.week.localeCompare(b.week))
+        .slice(-8);
+
+      // Top exercises by PR count
+      const exercisePRCount: Record<string, number> = {};
+      allPRs.forEach(pr => {
+        exercisePRCount[pr.exerciseId] = (exercisePRCount[pr.exerciseId] || 0) + 1;
+      });
+      
+      const topExercises = Object.entries(exercisePRCount)
+        .map(([exerciseId, count]) => ({
+          exerciseId,
+          exerciseName: exerciseMap.get(exerciseId)?.name || 'Unknown',
+          prCount: count,
+        }))
+        .sort((a, b) => b.prCount - a.prCount)
+        .slice(0, 5);
+
+      res.json({
+        strengthData,
+        prTimeline,
+        wellnessData,
+        volumeData,
+        topExercises,
+        summary: {
+          totalAthletes: athletes.length,
+          totalWorkouts: allWorkoutLogs.length,
+          totalPRs: allPRs.length,
+          totalSurveys: allSurveys.length,
+          avgReadiness: wellnessData.length > 0 
+            ? Math.round(wellnessData.reduce((sum, w) => sum + w.readinessScore, 0) / wellnessData.length)
+            : 0,
+        },
+      });
+    } catch (error) {
+      console.error("Analytics overview error:", error);
+      res.status(500).json({ error: "Failed to fetch analytics data" });
     }
   });
 

@@ -45,6 +45,10 @@ import {
   type InsertPersonalRecord,
   type ReadinessSurvey,
   type InsertReadinessSurvey,
+  type CoachHeuristic,
+  type InsertCoachHeuristic,
+  type PendingAiAction,
+  type InsertPendingAiAction,
   users,
   exercises,
   athletes,
@@ -69,6 +73,8 @@ import {
   workoutLogs,
   personalRecords,
   readinessSurveys,
+  coachHeuristics,
+  pendingAiActions,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -1325,6 +1331,82 @@ export class DatabaseStorage implements IStorage {
   async createReadinessSurvey(survey: InsertReadinessSurvey): Promise<ReadinessSurvey> {
     const [newSurvey] = await db.insert(readinessSurveys).values(survey).returning();
     return newSurvey;
+  }
+
+  async getCoachHeuristics(coachId?: string): Promise<CoachHeuristic[]> {
+    if (coachId) {
+      return await db
+        .select()
+        .from(coachHeuristics)
+        .where(eq(coachHeuristics.coachId, coachId))
+        .orderBy(desc(coachHeuristics.priority));
+    }
+    return await db.select().from(coachHeuristics).orderBy(desc(coachHeuristics.priority));
+  }
+
+  async getActiveCoachHeuristics(coachId?: string): Promise<CoachHeuristic[]> {
+    const heuristics = await this.getCoachHeuristics(coachId);
+    return heuristics.filter(h => h.isActive === 1);
+  }
+
+  async getCoachHeuristic(id: string): Promise<CoachHeuristic | undefined> {
+    const [heuristic] = await db.select().from(coachHeuristics).where(eq(coachHeuristics.id, id));
+    return heuristic || undefined;
+  }
+
+  async createCoachHeuristic(heuristic: InsertCoachHeuristic): Promise<CoachHeuristic> {
+    const [newHeuristic] = await db.insert(coachHeuristics).values(heuristic).returning();
+    return newHeuristic;
+  }
+
+  async updateCoachHeuristic(id: string, heuristic: Partial<InsertCoachHeuristic>): Promise<CoachHeuristic | undefined> {
+    const [updated] = await db
+      .update(coachHeuristics)
+      .set({ ...heuristic, updatedAt: new Date() })
+      .where(eq(coachHeuristics.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteCoachHeuristic(id: string): Promise<boolean> {
+    const result = await db.delete(coachHeuristics).where(eq(coachHeuristics.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getPendingAiActions(): Promise<PendingAiAction[]> {
+    return await db.select().from(pendingAiActions).orderBy(desc(pendingAiActions.createdAt));
+  }
+
+  async getPendingAiActionsByStatus(status: string): Promise<PendingAiAction[]> {
+    return await db
+      .select()
+      .from(pendingAiActions)
+      .where(eq(pendingAiActions.status, status))
+      .orderBy(desc(pendingAiActions.createdAt));
+  }
+
+  async getPendingAiAction(id: string): Promise<PendingAiAction | undefined> {
+    const [action] = await db.select().from(pendingAiActions).where(eq(pendingAiActions.id, id));
+    return action || undefined;
+  }
+
+  async createPendingAiAction(action: InsertPendingAiAction): Promise<PendingAiAction> {
+    const [newAction] = await db.insert(pendingAiActions).values(action).returning();
+    return newAction;
+  }
+
+  async updatePendingAiAction(id: string, action: Partial<InsertPendingAiAction>): Promise<PendingAiAction | undefined> {
+    const [updated] = await db
+      .update(pendingAiActions)
+      .set({ ...action, updatedAt: new Date() })
+      .where(eq(pendingAiActions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deletePendingAiAction(id: string): Promise<boolean> {
+    const result = await db.delete(pendingAiActions).where(eq(pendingAiActions.id, id));
+    return result.rowCount !== null && result.rowCount > 0;
   }
 }
 
