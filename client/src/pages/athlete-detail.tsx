@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey } from "@shared/schema";
+import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -92,6 +92,22 @@ export default function AthleteDetail() {
     queryFn: async () => {
       const response = await fetch(`/api/athletes/${athleteId}/readiness-surveys`);
       if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!athleteId,
+  });
+
+  interface ValdDataResponse {
+    profile: ValdProfile | undefined;
+    tests: ValdTest[];
+    latestResults: Record<string, ValdTrialResult[]>;
+  }
+
+  const { data: valdData } = useQuery<ValdDataResponse>({
+    queryKey: ["/api/vald/athletes", athleteId, "data"],
+    queryFn: async () => {
+      const response = await fetch(`/api/vald/athletes/${athleteId}/data`);
+      if (!response.ok) return { profile: undefined, tests: [], latestResults: {} };
       return response.json();
     },
     enabled: !!athleteId,
@@ -666,6 +682,98 @@ export default function AthleteDetail() {
           </Card>
         )}
       </div>
+
+      {valdData && (valdData.profile || valdData.tests.length > 0) && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Zap className="w-5 h-5 text-cyan-400" />
+              VALD Testing Data
+            </h2>
+            {valdData.profile && (
+              <Badge className="bg-cyan-500/20 text-cyan-400">
+                Connected
+              </Badge>
+            )}
+          </div>
+
+          {valdData.tests.length > 0 ? (
+            <div className="space-y-3">
+              {valdData.tests.slice(0, 5).map((test) => {
+                const results = valdData.latestResults[test.id] || [];
+                const keyMetrics = results.slice(0, 3);
+                
+                return (
+                  <Card 
+                    key={test.id} 
+                    className="bglass border-0 shadow-glass"
+                    data-testid={`vald-test-${test.id}`}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
+                          <Activity className="w-6 h-6 text-cyan-400" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-slate-200">
+                              {test.testName || test.testType}
+                            </span>
+                            <Badge variant="secondary" className="text-xs capitalize">
+                              {test.deviceType}
+                            </Badge>
+                          </div>
+                          
+                          {keyMetrics.length > 0 && (
+                            <div className="flex flex-wrap gap-3 mt-2">
+                              {keyMetrics.map((metric, idx) => (
+                                <div key={idx} className="text-xs">
+                                  <span className="text-slate-500">{metric.metricName}: </span>
+                                  <span className="text-slate-300 font-medium">
+                                    {typeof metric.metricValue === 'number' 
+                                      ? metric.metricValue.toFixed(2) 
+                                      : metric.metricValue}
+                                    {metric.metricUnit && ` ${metric.metricUnit}`}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="text-right shrink-0">
+                          <p className="text-xs text-slate-500">
+                            {test.recordedAt 
+                              ? new Date(test.recordedAt).toLocaleDateString() 
+                              : 'Unknown date'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+              
+              {valdData.tests.length > 5 && (
+                <p className="text-center text-sm text-slate-500 py-2">
+                  + {valdData.tests.length - 5} more tests
+                </p>
+              )}
+            </div>
+          ) : (
+            <Card className="bglass border-0 shadow-glass">
+              <CardContent className="p-8 text-center">
+                <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <h3 className="font-semibold text-slate-300 mb-1">No VALD Tests Yet</h3>
+                <p className="text-sm text-slate-500">
+                  Sync tests from VALD Hub to see testing data here
+                </p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -539,3 +539,102 @@ export const insertPendingAiActionSchema = createInsertSchema(pendingAiActions).
 });
 export type InsertPendingAiAction = z.infer<typeof insertPendingAiActionSchema>;
 export type PendingAiAction = typeof pendingAiActions.$inferSelect;
+
+export const valdProfiles = pgTable("vald_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").references(() => athletes.id, { onDelete: 'cascade' }),
+  valdProfileId: varchar("vald_profile_id").notNull().unique(),
+  valdTenantId: varchar("vald_tenant_id").notNull(),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  email: text("email"),
+  dateOfBirth: timestamp("date_of_birth"),
+  syncedAt: timestamp("synced_at").defaultNow(),
+}, (table) => ({
+  athleteIdIdx: index("vald_profiles_athlete_id_idx").on(table.athleteId),
+  valdProfileIdIdx: index("vald_profiles_vald_profile_id_idx").on(table.valdProfileId),
+}));
+
+export const insertValdProfileSchema = createInsertSchema(valdProfiles).omit({
+  id: true,
+  syncedAt: true,
+});
+export type InsertValdProfile = z.infer<typeof insertValdProfileSchema>;
+export type ValdProfile = typeof valdProfiles.$inferSelect;
+
+export const valdTests = pgTable("vald_tests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  valdProfileId: varchar("vald_profile_id").notNull().references(() => valdProfiles.id, { onDelete: 'cascade' }),
+  athleteId: varchar("athlete_id").references(() => athletes.id, { onDelete: 'cascade' }),
+  valdTestId: varchar("vald_test_id").notNull().unique(),
+  testType: text("test_type").notNull(),
+  deviceType: text("device_type").notNull(),
+  testName: text("test_name"),
+  recordedAt: timestamp("recorded_at").notNull(),
+  syncedAt: timestamp("synced_at").defaultNow(),
+  metadata: text("metadata"),
+}, (table) => ({
+  athleteIdIdx: index("vald_tests_athlete_id_idx").on(table.athleteId),
+  testTypeIdx: index("vald_tests_test_type_idx").on(table.testType),
+  recordedAtIdx: index("vald_tests_recorded_at_idx").on(table.recordedAt),
+}));
+
+export const insertValdTestSchema = createInsertSchema(valdTests).omit({
+  id: true,
+  syncedAt: true,
+});
+export type InsertValdTest = z.infer<typeof insertValdTestSchema>;
+export type ValdTest = typeof valdTests.$inferSelect;
+
+export const valdTrialResults = pgTable("vald_trial_results", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  valdTestId: varchar("vald_test_id").notNull().references(() => valdTests.id, { onDelete: 'cascade' }),
+  trialNumber: integer("trial_number").notNull(),
+  limb: text("limb"),
+  metricName: text("metric_name").notNull(),
+  metricValue: real("metric_value").notNull(),
+  metricUnit: text("metric_unit"),
+  startTime: real("start_time"),
+  endTime: real("end_time"),
+}, (table) => ({
+  valdTestIdIdx: index("vald_trial_results_test_id_idx").on(table.valdTestId),
+  metricNameIdx: index("vald_trial_results_metric_name_idx").on(table.metricName),
+}));
+
+export const insertValdTrialResultSchema = createInsertSchema(valdTrialResults).omit({
+  id: true,
+});
+export type InsertValdTrialResult = z.infer<typeof insertValdTrialResultSchema>;
+export type ValdTrialResult = typeof valdTrialResults.$inferSelect;
+
+export const valdSyncLog = pgTable("vald_sync_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  syncType: text("sync_type").notNull(),
+  status: text("status").notNull(),
+  recordsProcessed: integer("records_processed").default(0),
+  errorMessage: text("error_message"),
+  startedAt: timestamp("started_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+});
+
+export const insertValdSyncLogSchema = createInsertSchema(valdSyncLog).omit({
+  id: true,
+  startedAt: true,
+});
+export type InsertValdSyncLog = z.infer<typeof insertValdSyncLogSchema>;
+export type ValdSyncLog = typeof valdSyncLog.$inferSelect;
+
+// VALD API Request Validation Schemas
+export const valdDeviceTypes = ['forcedecks', 'nordbord', 'dynamo', 'smartspeed', 'airband', 'humantrak'] as const;
+export type ValdDeviceType = typeof valdDeviceTypes[number];
+
+export const valdSyncTestsRequestSchema = z.object({
+  deviceType: z.enum(valdDeviceTypes).default('forcedecks'),
+  modifiedFromUtc: z.string().datetime().optional(),
+});
+export type ValdSyncTestsRequest = z.infer<typeof valdSyncTestsRequestSchema>;
+
+export const valdLinkProfileRequestSchema = z.object({
+  athleteId: z.string().min(1, 'athleteId is required'),
+});
+export type ValdLinkProfileRequest = z.infer<typeof valdLinkProfileRequestSchema>;

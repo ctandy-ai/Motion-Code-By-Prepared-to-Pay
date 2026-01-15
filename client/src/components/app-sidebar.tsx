@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator, BarChart3, Brain } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator, BarChart3, Brain, Zap } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -95,6 +95,13 @@ const coachToolsItems = [
     url: "/heuristics",
     icon: Brain,
     description: "AI coaching heuristics",
+    isPro: true,
+  },
+  {
+    title: "VALD Hub",
+    url: "/vald",
+    icon: Zap,
+    description: "Sync VALD testing data",
     isPro: true,
   },
 ];

@@ -24,6 +24,7 @@ import Heuristics from "@/pages/heuristics";
 import CoachTools from "@/pages/coach-tools";
 import AIClassifierTest from "@/pages/ai-classifier-test";
 import RMCalculatorPage from "@/pages/rm-calculator-page";
+import ValdIntegration from "@/pages/vald-integration";
 import NotFound from "@/pages/not-found";
 import { AICoachChat } from "@/components/ai-coach-chat";
 
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/coach-tools" component={CoachTools} />
       <Route path="/ai-classifier" component={AIClassifierTest} />
       <Route path="/rm-calculator" component={RMCalculatorPage} />
+      <Route path="/vald" component={ValdIntegration} />
       <Route component={NotFound} />
     </Switch>
   );

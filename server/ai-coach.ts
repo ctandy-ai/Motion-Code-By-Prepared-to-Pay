@@ -31,6 +31,7 @@ export interface FullCoachingContext {
   athletePrograms: AthleteProgram[];
   trainingBlocks: TrainingBlock[];
   blockExercises: BlockExercise[];
+  valdTestData?: Array<{ athleteId: string; tests: any[] }>;
 }
 
 export interface CoachingInsight {
@@ -299,26 +300,31 @@ async function buildFullContext(): Promise<FullCoachingContext> {
   const athletePrograms: AthleteProgram[] = [];
   const trainingBlocks: TrainingBlock[] = [];
   const blockExercises: BlockExercise[] = [];
+  const valdTestData: Array<{ athleteId: string; tests: any[] }> = [];
 
   for (const athlete of athletes) {
-    const [logs, prs, surveys, assignments] = await Promise.all([
-      storage.getWorkoutLogsByAthlete(athlete.id),
-      storage.getPersonalRecordsByAthlete(athlete.id),
-      storage.getReadinessSurveysByAthlete(athlete.id),
-      storage.getAthleteProgramAssignments(athlete.id)
+    const [logs, prs, surveys, assignments, valdData] = await Promise.all([
+      storage.getWorkoutLogs(athlete.id),
+      storage.getPersonalRecords(athlete.id),
+      storage.getReadinessSurveys(athlete.id),
+      storage.getAthletePrograms(athlete.id),
+      storage.getValdTestsForAthlete(athlete.id).catch(() => [])
     ]);
     workoutLogs.push(...logs);
     personalRecords.push(...prs);
     wellnessSurveys.push(...surveys);
     athletePrograms.push(...assignments);
+    if (valdData.length > 0) {
+      valdTestData.push({ athleteId: athlete.id, tests: valdData });
+    }
   }
 
   for (const program of programs) {
-    const blocks = await storage.getTrainingBlocksByProgram(program.id);
+    const blocks = await storage.getTrainingBlocks(program.id);
     trainingBlocks.push(...blocks);
     for (const block of blocks) {
-      const exercises = await storage.getBlockExercises(block.id);
-      blockExercises.push(...exercises);
+      const blockExs = await storage.getBlockExercises(block.id);
+      blockExercises.push(...blockExs);
     }
   }
 
@@ -332,7 +338,8 @@ async function buildFullContext(): Promise<FullCoachingContext> {
     heuristics,
     athletePrograms,
     trainingBlocks,
-    blockExercises
+    blockExercises,
+    valdTestData
   };
 }
 
@@ -386,6 +393,15 @@ RECENT WELLNESS DATA:
 TRAINING VOLUME:
 - Total workout logs: ${context.workoutLogs.length}
 - Total PRs recorded: ${context.personalRecords.length}
+
+VALD TESTING DATA:
+${context.valdTestData && context.valdTestData.length > 0 
+  ? context.valdTestData.map(v => {
+      const athlete = context.athletes.find(a => a.id === v.athleteId);
+      const recentTests = v.tests.slice(0, 3);
+      return `- ${athlete?.name || 'Unknown'}: ${v.tests.length} tests (${recentTests.map(t => t.testType || 'Test').join(', ')})`;
+    }).join('\n')
+  : 'No VALD testing data available'}
 `;
 }
 

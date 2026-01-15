@@ -1688,6 +1688,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // VALD Hub Integration routes
+  app.get("/api/vald/config", async (req, res) => {
+    try {
+      const { valdHubService } = await import("./vald-hub");
+      const config = valdHubService.getConfiguration();
+      res.json(config);
+    } catch (error) {
+      console.error("Failed to get VALD config:", error);
+      res.status(500).json({ error: "Failed to get VALD configuration" });
+    }
+  });
+
+  app.get("/api/vald/profiles", async (req, res) => {
+    try {
+      const profiles = await storage.getValdProfiles();
+      res.json(profiles);
+    } catch (error) {
+      console.error("Failed to fetch VALD profiles:", error);
+      res.status(500).json({ error: "Failed to fetch VALD profiles" });
+    }
+  });
+
+  app.post("/api/vald/sync/profiles", async (req, res) => {
+    try {
+      const { valdHubService } = await import("./vald-hub");
+      
+      if (!valdHubService.isConfigured()) {
+        return res.status(400).json({ error: "VALD Hub credentials not configured" });
+      }
+
+      const log = await storage.createValdSyncLog({
+        syncType: 'profiles',
+        status: 'in_progress',
+        recordsProcessed: 0,
+      });
+
+      try {
+        const tenantId = await valdHubService.getTenantId();
+        const apiProfiles = await valdHubService.getProfiles();
+        
+        let processed = 0;
+        for (const apiProfile of apiProfiles) {
+          const existing = await storage.getValdProfileByValdId(apiProfile.id);
+          if (!existing) {
+            const insertData = valdHubService.transformProfileToInsert(apiProfile, tenantId);
+            await storage.createValdProfile(insertData);
+            processed++;
+          }
+        }
+
+        await storage.updateValdSyncLog(log.id, {
+          status: 'completed',
+          recordsProcessed: processed,
+          completedAt: new Date(),
+        });
+
+        res.json({ success: true, processed, total: apiProfiles.length });
+      } catch (syncError: any) {
+        await storage.updateValdSyncLog(log.id, {
+          status: 'failed',
+          errorMessage: syncError.message,
+          completedAt: new Date(),
+        });
+        throw syncError;
+      }
+    } catch (error: any) {
+      console.error("Failed to sync VALD profiles:", error);
+      res.status(500).json({ error: error.message || "Failed to sync VALD profiles" });
+    }
+  });
+
+  app.post("/api/vald/profiles/:id/link", async (req, res) => {
+    try {
+      const { valdLinkProfileRequestSchema } = await import("@shared/schema");
+      
+      const parseResult = valdLinkProfileRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: parseResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const { athleteId } = parseResult.data;
+      
+      const profile = await storage.linkValdProfileToAthlete(req.params.id, athleteId);
+      if (!profile) {
+        return res.status(404).json({ error: "VALD profile not found" });
+      }
+      
+      // Update existing tests to link to athlete (not create duplicates)
+      const tests = await storage.getValdTestsForProfile(profile.id);
+      for (const test of tests) {
+        if (!test.athleteId) {
+          await storage.updateValdTestAthleteLink(test.id, athleteId);
+        }
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Failed to link VALD profile:", error);
+      res.status(500).json({ error: "Failed to link VALD profile" });
+    }
+  });
+
+  app.post("/api/vald/sync/tests", async (req, res) => {
+    try {
+      const { valdHubService } = await import("./vald-hub");
+      const { valdSyncTestsRequestSchema } = await import("@shared/schema");
+      
+      const parseResult = valdSyncTestsRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: parseResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const { deviceType, modifiedFromUtc } = parseResult.data;
+      
+      if (!valdHubService.isConfigured()) {
+        return res.status(400).json({ error: "VALD Hub credentials not configured" });
+      }
+
+      const log = await storage.createValdSyncLog({
+        syncType: `tests-${deviceType}`,
+        status: 'in_progress',
+        recordsProcessed: 0,
+      });
+
+      try {
+        const apiTests = await valdHubService.getAllTests(deviceType, modifiedFromUtc);
+        
+        let processed = 0;
+        for (const apiTest of apiTests) {
+          const existingTest = await storage.getValdTestByValdId(apiTest.id);
+          if (existingTest) continue;
+
+          const valdProfile = await storage.getValdProfileByValdId(apiTest.profileId);
+          if (!valdProfile) continue;
+
+          const insertData = valdHubService.transformTestToInsert(
+            apiTest, 
+            valdProfile.id, 
+            valdProfile.athleteId,
+            deviceType
+          );
+          await storage.createValdTest(insertData);
+          processed++;
+        }
+
+        await storage.updateValdSyncLog(log.id, {
+          status: 'completed',
+          recordsProcessed: processed,
+          completedAt: new Date(),
+        });
+
+        res.json({ success: true, processed, total: apiTests.length });
+      } catch (syncError: any) {
+        await storage.updateValdSyncLog(log.id, {
+          status: 'failed',
+          errorMessage: syncError.message,
+          completedAt: new Date(),
+        });
+        throw syncError;
+      }
+    } catch (error: any) {
+      console.error("Failed to sync VALD tests:", error);
+      res.status(500).json({ error: error.message || "Failed to sync VALD tests" });
+    }
+  });
+
+  app.get("/api/vald/athletes/:athleteId/tests", async (req, res) => {
+    try {
+      const tests = await storage.getValdTestsForAthlete(req.params.athleteId);
+      res.json(tests);
+    } catch (error) {
+      console.error("Failed to fetch athlete VALD tests:", error);
+      res.status(500).json({ error: "Failed to fetch athlete VALD tests" });
+    }
+  });
+
+  app.get("/api/vald/athletes/:athleteId/data", async (req, res) => {
+    try {
+      const data = await storage.getAthleteValdData(req.params.athleteId);
+      
+      const serializableData = {
+        profile: data.profile,
+        tests: data.tests,
+        latestResults: Object.fromEntries(data.latestResults),
+      };
+      
+      res.json(serializableData);
+    } catch (error) {
+      console.error("Failed to fetch athlete VALD data:", error);
+      res.status(500).json({ error: "Failed to fetch athlete VALD data" });
+    }
+  });
+
+  app.get("/api/vald/tests/:testId/results", async (req, res) => {
+    try {
+      const results = await storage.getValdTrialResults(req.params.testId);
+      res.json(results);
+    } catch (error) {
+      console.error("Failed to fetch test results:", error);
+      res.status(500).json({ error: "Failed to fetch test results" });
+    }
+  });
+
+  app.get("/api/vald/sync-logs", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const logs = await storage.getValdSyncLogs(limit);
+      res.json(logs);
+    } catch (error) {
+      console.error("Failed to fetch sync logs:", error);
+      res.status(500).json({ error: "Failed to fetch sync logs" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

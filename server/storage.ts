@@ -49,6 +49,14 @@ import {
   type InsertCoachHeuristic,
   type PendingAiAction,
   type InsertPendingAiAction,
+  type ValdProfile,
+  type InsertValdProfile,
+  type ValdTest,
+  type InsertValdTest,
+  type ValdTrialResult,
+  type InsertValdTrialResult,
+  type ValdSyncLog,
+  type InsertValdSyncLog,
   users,
   exercises,
   athletes,
@@ -75,6 +83,10 @@ import {
   readinessSurveys,
   coachHeuristics,
   pendingAiActions,
+  valdProfiles,
+  valdTests,
+  valdTrialResults,
+  valdSyncLog,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -1407,6 +1419,158 @@ export class DatabaseStorage implements IStorage {
   async deletePendingAiAction(id: string): Promise<boolean> {
     const result = await db.delete(pendingAiActions).where(eq(pendingAiActions.id, id));
     return result.rowCount !== null && result.rowCount > 0;
+  }
+
+  async getValdProfiles(): Promise<ValdProfile[]> {
+    return await db.select().from(valdProfiles);
+  }
+
+  async getValdProfile(id: string): Promise<ValdProfile | undefined> {
+    const [profile] = await db.select().from(valdProfiles).where(eq(valdProfiles.id, id));
+    return profile || undefined;
+  }
+
+  async getValdProfileByValdId(valdProfileId: string): Promise<ValdProfile | undefined> {
+    const [profile] = await db.select().from(valdProfiles).where(eq(valdProfiles.valdProfileId, valdProfileId));
+    return profile || undefined;
+  }
+
+  async getValdProfileByAthleteId(athleteId: string): Promise<ValdProfile | undefined> {
+    const [profile] = await db.select().from(valdProfiles).where(eq(valdProfiles.athleteId, athleteId));
+    return profile || undefined;
+  }
+
+  async createValdProfile(profile: InsertValdProfile): Promise<ValdProfile> {
+    const [newProfile] = await db.insert(valdProfiles).values(profile).returning();
+    return newProfile;
+  }
+
+  async updateValdProfile(id: string, profile: Partial<InsertValdProfile>): Promise<ValdProfile | undefined> {
+    const [updated] = await db
+      .update(valdProfiles)
+      .set({ ...profile, syncedAt: new Date() })
+      .where(eq(valdProfiles.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async linkValdProfileToAthlete(valdProfileId: string, athleteId: string): Promise<ValdProfile | undefined> {
+    const [updated] = await db
+      .update(valdProfiles)
+      .set({ athleteId, syncedAt: new Date() })
+      .where(eq(valdProfiles.id, valdProfileId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getValdTestsForAthlete(athleteId: string): Promise<ValdTest[]> {
+    return await db
+      .select()
+      .from(valdTests)
+      .where(eq(valdTests.athleteId, athleteId))
+      .orderBy(desc(valdTests.recordedAt));
+  }
+
+  async getValdTestsForProfile(valdProfileId: string): Promise<ValdTest[]> {
+    return await db
+      .select()
+      .from(valdTests)
+      .where(eq(valdTests.valdProfileId, valdProfileId))
+      .orderBy(desc(valdTests.recordedAt));
+  }
+
+  async getValdTest(id: string): Promise<ValdTest | undefined> {
+    const [test] = await db.select().from(valdTests).where(eq(valdTests.id, id));
+    return test || undefined;
+  }
+
+  async getValdTestByValdId(valdTestId: string): Promise<ValdTest | undefined> {
+    const [test] = await db.select().from(valdTests).where(eq(valdTests.valdTestId, valdTestId));
+    return test || undefined;
+  }
+
+  async createValdTest(test: InsertValdTest): Promise<ValdTest> {
+    const [newTest] = await db.insert(valdTests).values(test).returning();
+    return newTest;
+  }
+
+  async updateValdTestAthleteLink(testId: string, athleteId: string): Promise<ValdTest | undefined> {
+    const [updated] = await db
+      .update(valdTests)
+      .set({ athleteId })
+      .where(eq(valdTests.id, testId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async updateValdTest(id: string, test: Partial<InsertValdTest>): Promise<ValdTest | undefined> {
+    const [updated] = await db
+      .update(valdTests)
+      .set(test)
+      .where(eq(valdTests.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async bulkCreateValdTests(tests: InsertValdTest[]): Promise<ValdTest[]> {
+    if (tests.length === 0) return [];
+    return await db.insert(valdTests).values(tests).returning();
+  }
+
+  async getValdTrialResults(valdTestId: string): Promise<ValdTrialResult[]> {
+    return await db
+      .select()
+      .from(valdTrialResults)
+      .where(eq(valdTrialResults.valdTestId, valdTestId));
+  }
+
+  async createValdTrialResult(result: InsertValdTrialResult): Promise<ValdTrialResult> {
+    const [newResult] = await db.insert(valdTrialResults).values(result).returning();
+    return newResult;
+  }
+
+  async bulkCreateValdTrialResults(results: InsertValdTrialResult[]): Promise<ValdTrialResult[]> {
+    if (results.length === 0) return [];
+    return await db.insert(valdTrialResults).values(results).returning();
+  }
+
+  async getValdSyncLogs(limit: number = 10): Promise<ValdSyncLog[]> {
+    return await db
+      .select()
+      .from(valdSyncLog)
+      .orderBy(desc(valdSyncLog.startedAt))
+      .limit(limit);
+  }
+
+  async createValdSyncLog(log: InsertValdSyncLog): Promise<ValdSyncLog> {
+    const [newLog] = await db.insert(valdSyncLog).values(log).returning();
+    return newLog;
+  }
+
+  async updateValdSyncLog(id: string, log: Partial<InsertValdSyncLog & { completedAt: Date }>): Promise<ValdSyncLog | undefined> {
+    const [updated] = await db
+      .update(valdSyncLog)
+      .set(log)
+      .where(eq(valdSyncLog.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async getAthleteValdData(athleteId: string): Promise<{
+    profile: ValdProfile | undefined;
+    tests: ValdTest[];
+    latestResults: Map<string, ValdTrialResult[]>;
+  }> {
+    const profile = await this.getValdProfileByAthleteId(athleteId);
+    const tests = await this.getValdTestsForAthlete(athleteId);
+    
+    const latestResults = new Map<string, ValdTrialResult[]>();
+    for (const test of tests.slice(0, 5)) {
+      const results = await this.getValdTrialResults(test.id);
+      latestResults.set(test.id, results);
+    }
+    
+    return { profile, tests, latestResults };
   }
 }
 
