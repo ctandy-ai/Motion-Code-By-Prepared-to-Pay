@@ -12,9 +12,13 @@ interface ValdTokenResponse {
 }
 
 interface ValdApiProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
+  id?: string;
+  profileId?: string;
+  externalId?: string;
+  firstName?: string;
+  lastName?: string;
+  givenName?: string;
+  familyName?: string;
   email?: string;
   dateOfBirth?: string;
 }
@@ -244,11 +248,21 @@ class ValdHubService {
   }
 
   transformProfileToInsert(profile: ValdApiProfile, tenantId: string): InsertValdProfile {
+    // Handle different API field naming conventions
+    const profileId = profile.id || profile.profileId || profile.externalId;
+    const firstName = profile.firstName || profile.givenName || '';
+    const lastName = profile.lastName || profile.familyName || '';
+    
+    if (!profileId) {
+      console.log('VALD profile missing ID, raw data:', JSON.stringify(profile).substring(0, 300));
+      throw new Error('VALD profile missing required ID field');
+    }
+    
     return {
-      valdProfileId: profile.id,
+      valdProfileId: profileId,
       valdTenantId: tenantId,
-      firstName: profile.firstName,
-      lastName: profile.lastName,
+      firstName,
+      lastName,
       email: profile.email || null,
       dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : null,
       athleteId: null,
