@@ -176,7 +176,28 @@ class ValdHubService {
 
   async getProfiles(): Promise<ValdApiProfile[]> {
     const tenantId = await this.getTenantId();
-    return this.apiRequest<ValdApiProfile[]>('profile', '/profiles', { tenantId });
+    const response = await this.apiRequest<ValdApiProfile[] | { data: ValdApiProfile[]; items: ValdApiProfile[] }>('profile', '/profiles', { tenantId });
+    
+    // Handle different API response formats
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && typeof response === 'object') {
+      // Some APIs return { data: [...] } or { items: [...] }
+      if ('data' in response && Array.isArray(response.data)) {
+        return response.data;
+      }
+      if ('items' in response && Array.isArray(response.items)) {
+        return response.items;
+      }
+      // Check for any array property
+      const arrayProp = Object.values(response).find(v => Array.isArray(v));
+      if (arrayProp) {
+        return arrayProp as ValdApiProfile[];
+      }
+    }
+    console.log('VALD API profiles response format:', JSON.stringify(response).substring(0, 500));
+    return [];
   }
 
   async getTestsForProfile(
