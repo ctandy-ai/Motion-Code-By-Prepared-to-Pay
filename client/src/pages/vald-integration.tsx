@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
@@ -19,7 +21,12 @@ import {
   XCircle, 
   Clock,
   Database,
-  Zap
+  Zap,
+  Search,
+  Sparkles,
+  ChevronsUpDown,
+  Check,
+  User
 } from "lucide-react";
 
 interface ValdConfig {
@@ -56,11 +63,95 @@ interface Athlete {
   team: string | null;
 }
 
+interface MatchedAthlete extends Athlete {
+  matchScore: number;
+  matchReason: string;
+}
+
+function calculateNameSimilarity(name1: string, name2: string): number {
+  if (!name1 || !name2) return 0;
+  
+  const normalize = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
+  const n1 = normalize(name1);
+  const n2 = normalize(name2);
+  
+  if (n1 === n2) return 100;
+  
+  const tokens1 = n1.split(/\s+/).filter(Boolean);
+  const tokens2 = n2.split(/\s+/).filter(Boolean);
+  
+  let matchedTokens = 0;
+  for (const t1 of tokens1) {
+    for (const t2 of tokens2) {
+      if (t1 === t2 || t1.includes(t2) || t2.includes(t1)) {
+        matchedTokens++;
+        break;
+      }
+    }
+  }
+  
+  const totalTokens = Math.max(tokens1.length, tokens2.length);
+  if (totalTokens === 0) return 0;
+  
+  return Math.round((matchedTokens / totalTokens) * 100);
+}
+
+function findBestMatches(
+  profile: ValdProfile, 
+  athletes: Athlete[], 
+  linkedAthleteIds: Set<string>
+): MatchedAthlete[] {
+  const profileName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
+  const profileEmail = profile.email?.toLowerCase() || '';
+  
+  const matches: MatchedAthlete[] = athletes
+    .filter(a => !linkedAthleteIds.has(a.id))
+    .map(athlete => {
+      const nameScore = calculateNameSimilarity(profileName, athlete.name);
+      
+      let emailBonus = 0;
+      let matchReason = '';
+      
+      if (profileEmail && athlete.email) {
+        const athleteEmail = athlete.email.toLowerCase();
+        if (profileEmail === athleteEmail) {
+          emailBonus = 30;
+          matchReason = 'Email match';
+        } else if (profileEmail.split('@')[0] === athleteEmail.split('@')[0]) {
+          emailBonus = 15;
+          matchReason = 'Email username match';
+        }
+      }
+      
+      const totalScore = Math.min(100, nameScore + emailBonus);
+      
+      if (!matchReason) {
+        if (nameScore >= 90) matchReason = 'Exact name match';
+        else if (nameScore >= 70) matchReason = 'Name match';
+        else if (nameScore >= 50) matchReason = 'Partial name match';
+        else matchReason = '';
+      }
+      
+      return {
+        ...athlete,
+        matchScore: totalScore,
+        matchReason,
+      };
+    })
+    .filter(m => m.matchScore > 0)
+    .sort((a, b) => b.matchScore - a.matchScore);
+  
+  return matches.slice(0, 5);
+}
+
 export default function ValdIntegration() {
   const { toast } = useToast();
   const [selectedDevice, setSelectedDevice] = useState("forcedecks");
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<ValdProfile | null>(null);
+  const [athleteSearchOpen, setAthleteSearchOpen] = useState(false);
+  const [athleteSearch, setAthleteSearch] = useState("");
+  const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null);
 
   const { data: config } = useQuery<ValdConfig>({
     queryKey: ["/api/vald/config"],
@@ -126,6 +217,9 @@ export default function ValdIntegration() {
       });
       setLinkDialogOpen(false);
       setSelectedProfile(null);
+      setSelectedAthleteId(null);
+      setAthleteSearch("");
+      setAthleteSearchOpen(false);
       queryClient.invalidateQueries({ queryKey: ["/api/vald/profiles"] });
     },
     onError: (error: any) => {
@@ -139,6 +233,29 @@ export default function ValdIntegration() {
 
   const linkedProfiles = profiles.filter(p => p.athleteId);
   const unlinkedProfiles = profiles.filter(p => !p.athleteId);
+  const linkedAthleteIds = useMemo(() => new Set(profiles.filter(p => p.athleteId).map(p => p.athleteId!)), [profiles]);
+  
+  const availableAthletes = useMemo(() => 
+    athletes.filter(a => !linkedAthleteIds.has(a.id)), 
+    [athletes, linkedAthleteIds]
+  );
+  
+  const suggestedMatches = useMemo(() => {
+    if (!selectedProfile) return [];
+    return findBestMatches(selectedProfile, athletes, linkedAthleteIds);
+  }, [selectedProfile, athletes, linkedAthleteIds]);
+  
+  const filteredAthletes = useMemo(() => {
+    if (!athleteSearch) return availableAthletes;
+    const search = athleteSearch.toLowerCase();
+    return availableAthletes.filter(a => 
+      a.name.toLowerCase().includes(search) ||
+      a.email?.toLowerCase().includes(search) ||
+      a.team?.toLowerCase().includes(search)
+    );
+  }, [availableAthletes, athleteSearch]);
+  
+  const selectedAthlete = athletes.find(a => a.id === selectedAthleteId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -331,48 +448,165 @@ export default function ValdIntegration() {
                             {!profile.athleteId && (
                               <Dialog open={linkDialogOpen && selectedProfile?.id === profile.id} onOpenChange={(open) => {
                                 setLinkDialogOpen(open);
-                                if (!open) setSelectedProfile(null);
+                                if (!open) {
+                                  setSelectedProfile(null);
+                                  setSelectedAthleteId(null);
+                                  setAthleteSearch("");
+                                }
                               }}>
                                 <DialogTrigger asChild>
                                   <Button 
                                     size="sm" 
                                     variant="outline"
-                                    onClick={() => setSelectedProfile(profile)}
+                                    onClick={() => {
+                                      setSelectedProfile(profile);
+                                      setSelectedAthleteId(null);
+                                      setAthleteSearch("");
+                                      setAthleteSearchOpen(false);
+                                    }}
                                     data-testid={`button-link-profile-${profile.id}`}
                                   >
                                     <LinkIcon className="w-3 h-3 mr-1" />
                                     Link
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent className="bglass">
+                                <DialogContent className="bglass max-w-lg">
                                   <DialogHeader>
                                     <DialogTitle>Link VALD Profile</DialogTitle>
                                     <DialogDescription>
-                                      Select an athlete to link with {profile.firstName} {profile.lastName}
+                                      Link {profile.firstName} {profile.lastName} to an athlete
                                     </DialogDescription>
                                   </DialogHeader>
+                                  
                                   <div className="space-y-4 py-4">
-                                    <Select
-                                      onValueChange={(athleteId) => {
-                                        linkProfileMutation.mutate({ 
-                                          profileId: profile.id, 
-                                          athleteId 
-                                        });
-                                      }}
-                                    >
-                                      <SelectTrigger data-testid="select-athlete-link">
-                                        <SelectValue placeholder="Select an athlete" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {athletes
-                                          .filter(a => !profiles.some(p => p.athleteId === a.id))
-                                          .map((athlete) => (
-                                            <SelectItem key={athlete.id} value={athlete.id}>
-                                              {athlete.name} {athlete.team ? `(${athlete.team})` : ""}
-                                            </SelectItem>
+                                    <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-muted/50">
+                                      <div>
+                                        <p className="text-xs text-muted-foreground mb-1">VALD Profile</p>
+                                        <p className="font-medium">{profile.firstName} {profile.lastName}</p>
+                                        {profile.email && <p className="text-xs text-muted-foreground">{profile.email}</p>}
+                                      </div>
+                                      {selectedAthlete && (
+                                        <div>
+                                          <p className="text-xs text-muted-foreground mb-1">Selected Athlete</p>
+                                          <p className="font-medium">{selectedAthlete.name}</p>
+                                          {selectedAthlete.team && <p className="text-xs text-muted-foreground">{selectedAthlete.team}</p>}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {suggestedMatches.length > 0 && suggestedMatches[0].matchScore >= 50 && (
+                                      <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-sm font-medium">
+                                          <Sparkles className="w-4 h-4 text-yellow-500" />
+                                          <span>Suggested Matches</span>
+                                        </div>
+                                        <div className="space-y-2">
+                                          {suggestedMatches.slice(0, 3).filter(m => m.matchScore >= 50).map((match) => (
+                                            <div 
+                                              key={match.id}
+                                              className="flex items-center justify-between p-2 rounded-lg border border-yellow-500/30 bg-yellow-500/10 hover:bg-yellow-500/20 transition-colors"
+                                            >
+                                              <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                                                  <User className="w-4 h-4 text-yellow-500" />
+                                                </div>
+                                                <div>
+                                                  <p className="font-medium text-sm">{match.name}</p>
+                                                  <div className="flex items-center gap-2">
+                                                    <Badge variant="outline" className="text-xs text-yellow-500 border-yellow-500/50">
+                                                      {match.matchScore}% match
+                                                    </Badge>
+                                                    {match.matchReason && (
+                                                      <span className="text-xs text-muted-foreground">{match.matchReason}</span>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <Button
+                                                size="sm"
+                                                onClick={() => linkProfileMutation.mutate({ profileId: profile.id, athleteId: match.id })}
+                                                disabled={linkProfileMutation.isPending}
+                                                data-testid={`button-quick-link-${match.id}`}
+                                              >
+                                                <LinkIcon className="w-3 h-3 mr-1" />
+                                                Link
+                                              </Button>
+                                            </div>
                                           ))}
-                                      </SelectContent>
-                                    </Select>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="space-y-2">
+                                      <p className="text-sm font-medium flex items-center gap-2">
+                                        <Search className="w-4 h-4" />
+                                        Search All Athletes
+                                      </p>
+                                      <Popover open={athleteSearchOpen} onOpenChange={setAthleteSearchOpen}>
+                                        <PopoverTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            aria-expanded={athleteSearchOpen}
+                                            className="w-full justify-between"
+                                            data-testid="combobox-athlete-search"
+                                          >
+                                            {selectedAthlete ? selectedAthlete.name : "Search by name, email, or team..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[400px] p-0" align="start">
+                                          <Command shouldFilter={false}>
+                                            <CommandInput 
+                                              placeholder="Search athletes..." 
+                                              value={athleteSearch}
+                                              onValueChange={setAthleteSearch}
+                                              data-testid="input-athlete-search"
+                                            />
+                                            <CommandList>
+                                              <CommandEmpty>No athletes found.</CommandEmpty>
+                                              <CommandGroup>
+                                                {filteredAthletes.slice(0, 10).map((athlete) => (
+                                                  <CommandItem
+                                                    key={athlete.id}
+                                                    value={athlete.id}
+                                                    onSelect={() => {
+                                                      setSelectedAthleteId(athlete.id);
+                                                      setAthleteSearchOpen(false);
+                                                    }}
+                                                    data-testid={`option-athlete-${athlete.id}`}
+                                                  >
+                                                    <Check className={`mr-2 h-4 w-4 ${selectedAthleteId === athlete.id ? 'opacity-100' : 'opacity-0'}`} />
+                                                    <div className="flex-1">
+                                                      <p className="font-medium">{athlete.name}</p>
+                                                      <p className="text-xs text-muted-foreground">
+                                                        {[athlete.team, athlete.email].filter(Boolean).join(' · ')}
+                                                      </p>
+                                                    </div>
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            </CommandList>
+                                          </Command>
+                                        </PopoverContent>
+                                      </Popover>
+                                    </div>
+
+                                    {selectedAthleteId && (
+                                      <Button
+                                        className="w-full"
+                                        onClick={() => linkProfileMutation.mutate({ profileId: profile.id, athleteId: selectedAthleteId })}
+                                        disabled={linkProfileMutation.isPending}
+                                        data-testid="button-confirm-link"
+                                      >
+                                        {linkProfileMutation.isPending ? (
+                                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                          <LinkIcon className="w-4 h-4 mr-2" />
+                                        )}
+                                        Link to {selectedAthlete?.name}
+                                      </Button>
+                                    )}
                                   </div>
                                 </DialogContent>
                               </Dialog>
