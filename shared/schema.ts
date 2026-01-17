@@ -638,3 +638,116 @@ export const valdLinkProfileRequestSchema = z.object({
   athleteId: z.string().min(1, 'athleteId is required'),
 });
 export type ValdLinkProfileRequest = z.infer<typeof valdLinkProfileRequestSchema>;
+
+// Belt Classification System
+export const beltTypes = ['WHITE', 'BLUE', 'BLACK'] as const;
+export type Belt = typeof beltTypes[number];
+
+export const phaseTypes = [
+  'TRANSITION', 'PRESEASON_A', 'XMAS_BLOCK', 'PRESEASON_B', 
+  'PRECOMP', 'INSEASON_EARLY', 'INSEASON_MID', 'INSEASON_LATE', 'BYE_WEEK'
+] as const;
+export type Phase = typeof phaseTypes[number];
+
+export const waveWeekTypes = [1, 2, 3] as const;
+export type WaveWeek = 1 | 2 | 3;
+
+// Athlete Training Profile - extends athlete with periodization-specific data
+export const athleteTrainingProfiles = pgTable("athlete_training_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull().unique(),
+  dateOfBirth: timestamp("date_of_birth"),
+  trainingAgeYears: real("training_age_years").default(0),
+  
+  // Injury flags
+  recurrentHamstring: integer("recurrent_hamstring").default(0),
+  recurrentCalf: integer("recurrent_calf").default(0),
+  recurrentGroin: integer("recurrent_groin").default(0),
+  recentRTP: integer("recent_rtp").default(0),
+  
+  // Recent exposure tracking (updated periodically)
+  sprintExposuresLast14d: integer("sprint_exposures_last_14d").default(0),
+  highDecelSessionsLast14d: integer("high_decel_sessions_last_14d").default(0),
+  strengthSessionsLast7d: integer("strength_sessions_last_7d").default(0),
+  
+  // Movement quality score (1-5 coach/physio rating)
+  movementQualityScore: integer("movement_quality_score").default(3),
+  
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAthleteTrainingProfileSchema = createInsertSchema(athleteTrainingProfiles).omit({
+  id: true,
+  updatedAt: true,
+});
+export type InsertAthleteTrainingProfile = z.infer<typeof insertAthleteTrainingProfileSchema>;
+export type AthleteTrainingProfile = typeof athleteTrainingProfiles.$inferSelect;
+
+// Belt Classification Snapshots - stores computed belt assignments
+export const athleteBeltClassifications = pgTable("athlete_belt_classifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  belt: text("belt").notNull(),
+  score: integer("score").notNull(),
+  confidence: integer("confidence").notNull(),
+  reasons: text("reasons").array().notNull().default(sql`ARRAY[]::text[]`),
+  
+  // Modifiers
+  needsCapacityWork: integer("needs_capacity_work").default(0),
+  capReactiveContacts: integer("cap_reactive_contacts").default(0),
+  capStrengthVolume: integer("cap_strength_volume").default(0),
+  needsTopUps: integer("needs_top_ups").default(0),
+  
+  // Staff override
+  isOverridden: integer("is_overridden").default(0),
+  overriddenBy: varchar("overridden_by"),
+  overrideReason: text("override_reason"),
+  
+  computedAt: timestamp("computed_at").defaultNow(),
+}, (table) => ({
+  athleteIdIdx: index("belt_classifications_athlete_id_idx").on(table.athleteId),
+  computedAtIdx: index("belt_classifications_computed_at_idx").on(table.computedAt),
+}));
+
+export const insertAthleteBeltClassificationSchema = createInsertSchema(athleteBeltClassifications).omit({
+  id: true,
+  computedAt: true,
+});
+export type InsertAthleteBeltClassification = z.infer<typeof insertAthleteBeltClassificationSchema>;
+export type AthleteBeltClassification = typeof athleteBeltClassifications.$inferSelect;
+
+// Dose Budgets - lookup table for weekly volume caps
+export const doseBudgets = pgTable("dose_budgets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  belt: text("belt").notNull(),
+  phase: text("phase").notNull(),
+  waveWeek: integer("wave_week").notNull(),
+  
+  plyoContactsWeek: integer("plyo_contacts_week").notNull(),
+  hardLowerSetsWeek: integer("hard_lower_sets_week").notNull(),
+  speedExposureTouchesWeek: integer("speed_exposure_touches_week").notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  uniqueBeltPhaseWeek: unique().on(table.belt, table.phase, table.waveWeek),
+}));
+
+export const insertDoseBudgetSchema = createInsertSchema(doseBudgets).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertDoseBudget = z.infer<typeof insertDoseBudgetSchema>;
+export type DoseBudget = typeof doseBudgets.$inferSelect;
+
+// Belt classification request/response schemas
+export const computeBeltRequestSchema = z.object({
+  athleteId: z.string().min(1),
+});
+export type ComputeBeltRequest = z.infer<typeof computeBeltRequestSchema>;
+
+export const overrideBeltRequestSchema = z.object({
+  belt: z.enum(beltTypes),
+  reason: z.string().min(1),
+  overriddenBy: z.string().optional(),
+});
+export type OverrideBeltRequest = z.infer<typeof overrideBeltRequestSchema>;

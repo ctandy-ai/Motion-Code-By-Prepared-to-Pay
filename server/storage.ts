@@ -57,6 +57,12 @@ import {
   type InsertValdTrialResult,
   type ValdSyncLog,
   type InsertValdSyncLog,
+  type AthleteTrainingProfile,
+  type InsertAthleteTrainingProfile,
+  type AthleteBeltClassification,
+  type InsertAthleteBeltClassification,
+  type DoseBudget,
+  type InsertDoseBudget,
   users,
   exercises,
   athletes,
@@ -87,6 +93,9 @@ import {
   valdTests,
   valdTrialResults,
   valdSyncLog,
+  athleteTrainingProfiles,
+  athleteBeltClassifications,
+  doseBudgets,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -1571,6 +1580,121 @@ export class DatabaseStorage implements IStorage {
     }
     
     return { profile, tests, latestResults };
+  }
+
+  async getAthleteTrainingProfile(athleteId: string): Promise<AthleteTrainingProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(athleteTrainingProfiles)
+      .where(eq(athleteTrainingProfiles.athleteId, athleteId));
+    return profile || undefined;
+  }
+
+  async createAthleteTrainingProfile(profile: InsertAthleteTrainingProfile): Promise<AthleteTrainingProfile> {
+    const [newProfile] = await db.insert(athleteTrainingProfiles).values(profile).returning();
+    return newProfile;
+  }
+
+  async updateAthleteTrainingProfile(athleteId: string, profile: Partial<InsertAthleteTrainingProfile>): Promise<AthleteTrainingProfile | undefined> {
+    const [updated] = await db
+      .update(athleteTrainingProfiles)
+      .set({ ...profile, updatedAt: new Date() })
+      .where(eq(athleteTrainingProfiles.athleteId, athleteId))
+      .returning();
+    return updated || undefined;
+  }
+
+  async upsertAthleteTrainingProfile(profile: InsertAthleteTrainingProfile): Promise<AthleteTrainingProfile> {
+    const existing = await this.getAthleteTrainingProfile(profile.athleteId);
+    if (existing) {
+      const updated = await this.updateAthleteTrainingProfile(profile.athleteId, profile);
+      return updated!;
+    }
+    return await this.createAthleteTrainingProfile(profile);
+  }
+
+  async getLatestBeltClassification(athleteId: string): Promise<AthleteBeltClassification | undefined> {
+    const [classification] = await db
+      .select()
+      .from(athleteBeltClassifications)
+      .where(eq(athleteBeltClassifications.athleteId, athleteId))
+      .orderBy(desc(athleteBeltClassifications.computedAt))
+      .limit(1);
+    return classification || undefined;
+  }
+
+  async getBeltClassificationHistory(athleteId: string, limit: number = 10): Promise<AthleteBeltClassification[]> {
+    return await db
+      .select()
+      .from(athleteBeltClassifications)
+      .where(eq(athleteBeltClassifications.athleteId, athleteId))
+      .orderBy(desc(athleteBeltClassifications.computedAt))
+      .limit(limit);
+  }
+
+  async createBeltClassification(classification: InsertAthleteBeltClassification): Promise<AthleteBeltClassification> {
+    const [newClassification] = await db.insert(athleteBeltClassifications).values(classification).returning();
+    return newClassification;
+  }
+
+  async overrideBeltClassification(
+    athleteId: string, 
+    belt: string, 
+    overriddenBy: string, 
+    reason: string
+  ): Promise<AthleteBeltClassification> {
+    const latest = await this.getLatestBeltClassification(athleteId);
+    const newClassification: InsertAthleteBeltClassification = {
+      athleteId,
+      belt,
+      score: latest?.score ?? 0,
+      confidence: latest?.confidence ?? 100,
+      reasons: [...(latest?.reasons || []), `Override: ${reason}`],
+      needsCapacityWork: latest?.needsCapacityWork ?? 0,
+      capReactiveContacts: latest?.capReactiveContacts ?? 0,
+      capStrengthVolume: latest?.capStrengthVolume ?? 0,
+      needsTopUps: latest?.needsTopUps ?? 0,
+      isOverridden: 1,
+      overriddenBy,
+      overrideReason: reason,
+    };
+    return await this.createBeltClassification(newClassification);
+  }
+
+  async getDoseBudget(belt: string, phase: string, waveWeek: number): Promise<DoseBudget | undefined> {
+    const [budget] = await db
+      .select()
+      .from(doseBudgets)
+      .where(
+        and(
+          eq(doseBudgets.belt, belt),
+          eq(doseBudgets.phase, phase),
+          eq(doseBudgets.waveWeek, waveWeek)
+        )
+      );
+    return budget || undefined;
+  }
+
+  async createDoseBudget(budget: InsertDoseBudget): Promise<DoseBudget> {
+    const [newBudget] = await db.insert(doseBudgets).values(budget).returning();
+    return newBudget;
+  }
+
+  async getAllDoseBudgets(): Promise<DoseBudget[]> {
+    return await db.select().from(doseBudgets);
+  }
+
+  async upsertDoseBudget(budget: InsertDoseBudget): Promise<DoseBudget> {
+    const existing = await this.getDoseBudget(budget.belt, budget.phase, budget.waveWeek);
+    if (existing) {
+      const [updated] = await db
+        .update(doseBudgets)
+        .set(budget)
+        .where(eq(doseBudgets.id, existing.id))
+        .returning();
+      return updated;
+    }
+    return await this.createDoseBudget(budget);
   }
 }
 

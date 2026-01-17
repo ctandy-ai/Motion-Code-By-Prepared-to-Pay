@@ -1908,6 +1908,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Belt Classification System Routes
+  const { 
+    classifyBelt, 
+    profileToMeta, 
+    extractTestMetrics, 
+    decisionToInsert,
+    getDoseBudget: computeDoseBudget 
+  } = await import("./belt-classification");
+  const { 
+    beltTypes, 
+    phaseTypes,
+    overrideBeltRequestSchema,
+    insertAthleteTrainingProfileSchema 
+  } = await import("@shared/schema");
+
+  app.get("/api/athletes/:athleteId/training-profile", async (req, res) => {
+    try {
+      const profile = await storage.getAthleteTrainingProfile(req.params.athleteId);
+      res.json(profile || null);
+    } catch (error) {
+      console.error("Failed to fetch training profile:", error);
+      res.status(500).json({ error: "Failed to fetch training profile" });
+    }
+  });
+
+  app.post("/api/athletes/:athleteId/training-profile", async (req, res) => {
+    try {
+      const parseResult = insertAthleteTrainingProfileSchema.safeParse({
+        ...req.body,
+        athleteId: req.params.athleteId,
+      });
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: parseResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const profile = await storage.upsertAthleteTrainingProfile(parseResult.data);
+      res.json(profile);
+    } catch (error) {
+      console.error("Failed to save training profile:", error);
+      res.status(500).json({ error: "Failed to save training profile" });
+    }
+  });
+
+  app.get("/api/athletes/:athleteId/belt", async (req, res) => {
+    try {
+      const classification = await storage.getLatestBeltClassification(req.params.athleteId);
+      res.json(classification || null);
+    } catch (error) {
+      console.error("Failed to fetch belt classification:", error);
+      res.status(500).json({ error: "Failed to fetch belt classification" });
+    }
+  });
+
+  app.get("/api/athletes/:athleteId/belt/history", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const history = await storage.getBeltClassificationHistory(req.params.athleteId, limit);
+      res.json(history);
+    } catch (error) {
+      console.error("Failed to fetch belt history:", error);
+      res.status(500).json({ error: "Failed to fetch belt history" });
+    }
+  });
+
+  app.post("/api/athletes/:athleteId/belt/compute", async (req, res) => {
+    try {
+      const athleteId = req.params.athleteId;
+      
+      const trainingProfile = await storage.getAthleteTrainingProfile(athleteId);
+      const valdData = await storage.getAthleteValdData(athleteId);
+      
+      const meta = profileToMeta(trainingProfile);
+      
+      const testsWithResults = valdData.tests.map(test => ({
+        testType: test.testType || '',
+        results: (valdData.latestResults.get(test.id) || []).map(r => ({
+          metricName: r.metricName,
+          metricValue: r.metricValue,
+        })),
+      }));
+      
+      const keyTests = extractTestMetrics(testsWithResults);
+      if (trainingProfile?.movementQualityScore) {
+        keyTests.movementQualityScore = trainingProfile.movementQualityScore;
+      }
+      
+      const decision = classifyBelt(meta, keyTests);
+      const insertData = decisionToInsert(athleteId, decision);
+      const classification = await storage.createBeltClassification(insertData);
+      
+      res.json({
+        classification,
+        inputs: { meta, keyTests },
+        decision,
+      });
+    } catch (error) {
+      console.error("Failed to compute belt classification:", error);
+      res.status(500).json({ error: "Failed to compute belt classification" });
+    }
+  });
+
+  app.post("/api/athletes/:athleteId/belt/override", async (req, res) => {
+    try {
+      const parseResult = overrideBeltRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid request body", 
+          details: parseResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const { belt, reason, overriddenBy } = parseResult.data;
+      const classification = await storage.overrideBeltClassification(
+        req.params.athleteId,
+        belt,
+        overriddenBy || 'coach',
+        reason
+      );
+      
+      res.json(classification);
+    } catch (error) {
+      console.error("Failed to override belt classification:", error);
+      res.status(500).json({ error: "Failed to override belt classification" });
+    }
+  });
+
+  app.get("/api/dose-budget", async (req, res) => {
+    try {
+      const { belt, phase, waveWeek } = req.query;
+      
+      if (!belt || !phase || !waveWeek) {
+        return res.status(400).json({ error: "belt, phase, and waveWeek are required" });
+      }
+      
+      if (!beltTypes.includes(belt as any)) {
+        return res.status(400).json({ error: `Invalid belt. Must be one of: ${beltTypes.join(', ')}` });
+      }
+      if (!phaseTypes.includes(phase as any)) {
+        return res.status(400).json({ error: `Invalid phase. Must be one of: ${phaseTypes.join(', ')}` });
+      }
+      
+      const week = parseInt(waveWeek as string);
+      if (![1, 2, 3].includes(week)) {
+        return res.status(400).json({ error: "waveWeek must be 1, 2, or 3" });
+      }
+      
+      const budget = computeDoseBudget(belt as any, phase as any, week as any);
+      res.json(budget);
+    } catch (error) {
+      console.error("Failed to get dose budget:", error);
+      res.status(500).json({ error: "Failed to get dose budget" });
+    }
+  });
+
+  app.get("/api/belt-types", async (_req, res) => {
+    res.json({ belts: beltTypes, phases: phaseTypes, waveWeeks: [1, 2, 3] });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

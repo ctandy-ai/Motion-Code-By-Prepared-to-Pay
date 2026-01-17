@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult } from "@shared/schema";
+import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -112,6 +112,59 @@ export default function AthleteDetail() {
     },
     enabled: !!athleteId,
   });
+
+  const { data: beltClassification, isLoading: loadingBelt } = useQuery<AthleteBeltClassification | null>({
+    queryKey: ["/api/athletes", athleteId, "belt"],
+    queryFn: async () => {
+      const response = await fetch(`/api/athletes/${athleteId}/belt`);
+      if (!response.ok) return null;
+      return response.json();
+    },
+    enabled: !!athleteId,
+  });
+
+  const computeBeltMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/athletes/${athleteId}/belt/compute`);
+      return response;
+    },
+    onSuccess: (data: any) => {
+      if (data && data.classification) {
+        queryClient.setQueryData(["/api/athletes", athleteId, "belt"], data.classification);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["/api/athletes", athleteId, "belt"] });
+      }
+      toast({
+        title: "Belt classification computed",
+        description: "The athlete's belt level has been updated based on their profile and test data.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to compute belt",
+        description: error.message || "An error occurred while computing belt classification.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const getBeltColor = (belt: string | undefined) => {
+    switch (belt) {
+      case "WHITE": return "bg-slate-200 text-slate-800";
+      case "BLUE": return "bg-primary/90 text-primary-foreground";
+      case "BLACK": return "bg-slate-900 text-slate-100 border border-amber-500";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getBeltIcon = (belt: string | undefined) => {
+    switch (belt) {
+      case "WHITE": return <Shield className="w-5 h-5" />;
+      case "BLUE": return <Award className="w-5 h-5" />;
+      case "BLACK": return <Trophy className="w-5 h-5" />;
+      default: return <Shield className="w-5 h-5" />;
+    }
+  };
 
   const getExerciseName = (exerciseId: string) => {
     const exercise = exercises.find(e => e.id === exerciseId);
@@ -356,7 +409,57 @@ export default function AthleteDetail() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card className="bglass shadow-glass border-0" data-testid="card-belt-classification">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-slate-400 flex items-center justify-between gap-2">
+              Belt Classification
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => computeBeltMutation.mutate()}
+                disabled={computeBeltMutation.isPending}
+                data-testid="button-compute-belt"
+              >
+                <RefreshCw className={`w-3 h-3 ${computeBeltMutation.isPending ? 'animate-spin' : ''}`} />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingBelt ? (
+              <div className="animate-pulse h-8 bg-slate-700 rounded" />
+            ) : beltClassification ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge className={`${getBeltColor(beltClassification.belt)} px-3 py-1 text-sm font-semibold`}>
+                    {getBeltIcon(beltClassification.belt)}
+                    <span className="ml-1">{beltClassification.belt}</span>
+                  </Badge>
+                  <span className="text-xs text-slate-500">{beltClassification.confidence}% confidence</span>
+                </div>
+                {beltClassification.isOverridden ? (
+                  <p className="text-xs text-yellow-400 flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Staff override
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="text-sm text-slate-500">
+                <p>Not classified yet</p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="p-0 h-auto text-primary"
+                  onClick={() => computeBeltMutation.mutate()}
+                  disabled={computeBeltMutation.isPending}
+                  data-testid="button-classify-now"
+                >
+                  Classify now
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
         <Card className="bglass shadow-glass border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Active Programs</CardTitle>
