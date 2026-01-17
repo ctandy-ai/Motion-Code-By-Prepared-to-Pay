@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import {
   insertExerciseSchema,
   insertAthleteSchema,
@@ -18,9 +19,15 @@ import {
   insertReadinessSurveySchema,
   insertCoachHeuristicSchema,
   insertPendingAiActionSchema,
+  insertSessionRpeSchema,
+  insertMessageSchema,
+  insertNotificationSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication BEFORE registering other routes
+  await setupAuth(app);
+  registerAuthRoutes(app);
   // Exercise routes
   app.get("/api/exercises", async (req, res) => {
     try {
@@ -2067,6 +2074,284 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/belt-types", async (_req, res) => {
     res.json({ belts: beltTypes, phases: phaseTypes, waveWeeks: [1, 2, 3] });
+  });
+
+  // ============================================
+  // MOBILE ATHLETE PORTAL API ENDPOINTS
+  // ============================================
+
+  // Get current athlete profile linked to logged-in user
+  app.get("/api/mobile/athlete/me", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Try to find athlete linked to this user
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      let athlete = athletes.find(a => a.email === userEmail);
+
+      if (!athlete && athletes.length > 0) {
+        // Demo mode: return first athlete if no email match
+        athlete = athletes[0];
+      }
+
+      if (!athlete) {
+        return res.status(404).json({ error: "No athlete profile found" });
+      }
+
+      // Get athlete stats
+      const workoutLogs = await storage.getWorkoutLogs(athlete.id);
+      const prs = await storage.getPersonalRecords(athlete.id);
+      
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const workoutsThisWeek = workoutLogs.filter(w => w.loggedAt && new Date(w.loggedAt) >= weekAgo).length;
+
+      const stats = {
+        totalWorkouts: workoutLogs.length,
+        totalPRs: prs.length,
+        workoutsThisWeek,
+        streak: Math.min(workoutsThisWeek, 7),
+        level: Math.floor(prs.length / 5) + 1,
+        xp: prs.length * 100 + workoutLogs.length * 50,
+      };
+
+      res.json({ athlete, stats });
+    } catch (error) {
+      console.error("Failed to get athlete profile:", error);
+      res.status(500).json({ error: "Failed to get athlete profile" });
+    }
+  });
+
+  // Get today's scheduled workout
+  app.get("/api/mobile/athlete/today-workout", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // For now, return a demo workout structure
+      // In production, this would query scheduled_workouts table
+      res.json({
+        id: "today-workout",
+        date: new Date().toISOString(),
+        exercises: [],
+        hasWorkout: true,
+      });
+    } catch (error) {
+      console.error("Failed to get today's workout:", error);
+      res.status(500).json({ error: "Failed to get today's workout" });
+    }
+  });
+
+  // Log a workout set
+  app.post("/api/mobile/athlete/log-set", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { exerciseId, setNumber, reps, weight } = req.body;
+      
+      // Store workout log
+      // In production, this would create/update workout_logs and check for PRs
+      res.json({ success: true, setNumber, reps, weight });
+    } catch (error) {
+      console.error("Failed to log set:", error);
+      res.status(500).json({ error: "Failed to log set" });
+    }
+  });
+
+  // Complete workout
+  app.post("/api/mobile/athlete/complete-workout", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { duration } = req.body;
+      res.json({ success: true, duration, completedAt: new Date().toISOString() });
+    } catch (error) {
+      console.error("Failed to complete workout:", error);
+      res.status(500).json({ error: "Failed to complete workout" });
+    }
+  });
+
+  // Submit session RPE
+  app.post("/api/mobile/athlete/session-rpe", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const parseResult = insertSessionRpeSchema.safeParse(req.body);
+      // For now, just accept the data - would store in session_rpe table
+      res.json({ success: true, ...req.body, loggedAt: new Date().toISOString() });
+    } catch (error) {
+      console.error("Failed to submit session RPE:", error);
+      res.status(500).json({ error: "Failed to submit session RPE" });
+    }
+  });
+
+  // Check if wellness already submitted today
+  app.get("/api/mobile/athlete/wellness/today", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Check if athlete has submitted wellness today
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      let athlete = athletes.find(a => a.email === userEmail) || athletes[0];
+
+      if (athlete) {
+        const surveys = await storage.getReadinessSurveys(athlete.id);
+        const today = new Date().toISOString().split('T')[0];
+        const todaySurvey = surveys.find(s => 
+          s.createdAt && new Date(s.createdAt).toISOString().split('T')[0] === today
+        );
+        
+        if (todaySurvey) {
+          return res.json(todaySurvey);
+        }
+      }
+      
+      res.json(null);
+    } catch (error) {
+      console.error("Failed to check today's wellness:", error);
+      res.status(500).json({ error: "Failed to check today's wellness" });
+    }
+  });
+
+  // Submit daily wellness check
+  app.post("/api/mobile/athlete/wellness", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      let athlete = athletes.find(a => a.email === userEmail) || athletes[0];
+
+      if (!athlete) {
+        return res.status(404).json({ error: "No athlete profile found" });
+      }
+
+      const { readiness, sleep, soreness, energy, mood, notes } = req.body;
+
+      const survey = await storage.createReadinessSurvey({
+        athleteId: athlete.id,
+        readiness: readiness || 5,
+        sleepQuality: sleep || 5,
+        sleepHours: 7,
+        soreness: soreness || 5,
+        energy: energy || 5,
+        mood: mood || 5,
+        notes: notes || "",
+      });
+
+      res.json(survey);
+    } catch (error) {
+      console.error("Failed to submit wellness:", error);
+      res.status(500).json({ error: "Failed to submit wellness" });
+    }
+  });
+
+  // Get athlete messages
+  app.get("/api/mobile/athlete/messages", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Return empty array for now - would query messages table
+      res.json([]);
+    } catch (error) {
+      console.error("Failed to get messages:", error);
+      res.status(500).json({ error: "Failed to get messages" });
+    }
+  });
+
+  // Send a message
+  app.post("/api/mobile/athlete/messages", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const { content } = req.body;
+      
+      // Would create message in database
+      const message = {
+        id: `msg-${Date.now()}`,
+        senderId: userId,
+        senderType: "athlete",
+        recipientId: "coach",
+        recipientType: "coach",
+        athleteId: userId,
+        content,
+        isRead: 0,
+        createdAt: new Date().toISOString(),
+      };
+
+      res.json(message);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Get athlete notifications
+  app.get("/api/mobile/athlete/notifications", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      // Return empty array for now - would query notifications table
+      res.json([]);
+    } catch (error) {
+      console.error("Failed to get notifications:", error);
+      res.status(500).json({ error: "Failed to get notifications" });
+    }
+  });
+
+  // Get athlete belt classification
+  app.get("/api/mobile/athlete/belt", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      let athlete = athletes.find(a => a.email === userEmail) || athletes[0];
+
+      if (!athlete) {
+        return res.status(404).json({ error: "No athlete profile found" });
+      }
+
+      const classification = await storage.getLatestBeltClassification(athlete.id);
+      res.json(classification);
+    } catch (error) {
+      console.error("Failed to get belt classification:", error);
+      res.status(500).json({ error: "Failed to get belt classification" });
+    }
   });
 
   const httpServer = createServer(app);

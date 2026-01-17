@@ -3,6 +3,9 @@ import { pgTable, text, varchar, integer, timestamp, real, unique, index } from 
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Re-export auth models
+export * from "./models/auth";
+
 export const exercises = pgTable("exercises", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -388,11 +391,21 @@ export type PersonalRecord = typeof personalRecords.$inferSelect;
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  username: text("username"),
+  password: text("password"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
+  email: true,
+  firstName: true,
+  lastName: true,
+  profileImageUrl: true,
   username: true,
   password: true,
 });
@@ -751,3 +764,124 @@ export const overrideBeltRequestSchema = z.object({
   overriddenBy: z.string().optional(),
 });
 export type OverrideBeltRequest = z.infer<typeof overrideBeltRequestSchema>;
+
+// ============================================
+// MOBILE ATHLETE PORTAL - New Schema Tables
+// ============================================
+
+// User Roles - links auth users to their role (coach or athlete)
+export const userRoles = pgTable("user_roles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  role: text("role").notNull().default("athlete"),
+  athleteId: varchar("athlete_id"),
+  coachId: varchar("coach_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("user_roles_user_id_idx").on(table.userId),
+}));
+
+export const insertUserRoleSchema = createInsertSchema(userRoles).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
+export type UserRole = typeof userRoles.$inferSelect;
+
+// Session RPE - athlete logs how hard their workout felt
+export const sessionRpe = pgTable("session_rpe", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  workoutLogId: varchar("workout_log_id"),
+  rpeScore: integer("rpe_score").notNull(),
+  duration: integer("duration_minutes"),
+  notes: text("notes"),
+  loggedAt: timestamp("logged_at").defaultNow(),
+}, (table) => ({
+  athleteIdIdx: index("session_rpe_athlete_id_idx").on(table.athleteId),
+  loggedAtIdx: index("session_rpe_logged_at_idx").on(table.loggedAt),
+}));
+
+export const insertSessionRpeSchema = createInsertSchema(sessionRpe).omit({
+  id: true,
+  loggedAt: true,
+});
+export type InsertSessionRpe = z.infer<typeof insertSessionRpeSchema>;
+export type SessionRpe = typeof sessionRpe.$inferSelect;
+
+// Messages - athlete-coach communication
+export const messages = pgTable("messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  senderId: varchar("sender_id").notNull(),
+  senderType: text("sender_type").notNull(),
+  recipientId: varchar("recipient_id").notNull(),
+  recipientType: text("recipient_type").notNull(),
+  athleteId: varchar("athlete_id").notNull(),
+  content: text("content").notNull(),
+  isRead: integer("is_read").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  athleteIdIdx: index("messages_athlete_id_idx").on(table.athleteId),
+  senderIdIdx: index("messages_sender_id_idx").on(table.senderId),
+  recipientIdIdx: index("messages_recipient_id_idx").on(table.recipientId),
+  createdAtIdx: index("messages_created_at_idx").on(table.createdAt),
+}));
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+});
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+export type Message = typeof messages.$inferSelect;
+
+// Notifications - push notifications for athletes
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  athleteId: varchar("athlete_id"),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  data: text("data"),
+  isRead: integer("is_read").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("notifications_user_id_idx").on(table.userId),
+  athleteIdIdx: index("notifications_athlete_id_idx").on(table.athleteId),
+  createdAtIdx: index("notifications_created_at_idx").on(table.createdAt),
+}));
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+});
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;
+
+// Scheduled Workouts - today's workout for athlete
+export const scheduledWorkouts = pgTable("scheduled_workouts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  athleteProgramId: varchar("athlete_program_id").notNull(),
+  blockId: varchar("block_id"),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  weekNumber: integer("week_number").notNull(),
+  dayNumber: integer("day_number").notNull(),
+  status: text("status").default("pending"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  athleteIdIdx: index("scheduled_workouts_athlete_id_idx").on(table.athleteId),
+  scheduledDateIdx: index("scheduled_workouts_scheduled_date_idx").on(table.scheduledDate),
+  statusIdx: index("scheduled_workouts_status_idx").on(table.status),
+}));
+
+export const insertScheduledWorkoutSchema = createInsertSchema(scheduledWorkouts).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+export type InsertScheduledWorkout = z.infer<typeof insertScheduledWorkoutSchema>;
+export type ScheduledWorkout = typeof scheduledWorkouts.$inferSelect;
