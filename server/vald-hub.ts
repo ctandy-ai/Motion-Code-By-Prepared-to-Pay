@@ -135,7 +135,7 @@ class ValdHubService {
 
   private getApiUrl(service: string, path: string): string {
     const baseUrl = VALD_REGIONS[this.region].baseUrl;
-    return `https://${baseUrl}-external${service}.valdperformance.com${path}`;
+    return `https://${baseUrl}-external-${service}.valdperformance.com${path}`;
   }
 
   private async apiRequest<T>(service: string, path: string, params?: Record<string, string>): Promise<T> {
