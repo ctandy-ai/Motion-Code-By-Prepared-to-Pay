@@ -1,0 +1,388 @@
+3) Replit/app mapping (data model + rules engine + code)
+
+Below is a clean MVP design you can implement fast in your Stride Command Center. It gives you:
+
+belt classification
+
+wave planning
+
+weekly dose budgets
+
+session generation templates
+
+progression + stop rules
+
+Core entities (database tables)
+
+Athlete
+
+AthleteProfile (meta: age, trainingAge, injury flags)
+
+TestResult (CMJ, RSI, hop tests, strength metrics)
+
+BeltAssignment (overall + optional per-quality)
+
+PhaseCalendar (date ranges for phases)
+
+WavePlan (3-week wave metadata)
+
+WeeklyPlan (dose budgets + session list)
+
+Session (structured blocks)
+
+SessionLog (what happened + stop rule events)
+
+Minimal scoring approach (fast + robust)
+
+Instead of overfitting an algorithm early, use rule-based classification with a numeric “confidence score” that staff can override.
+
+TypeScript (drop-in) — types + rules engine (MVP)
+// --- types.ts ---
+export type Belt = "WHITE" | "BLUE" | "BLACK";
+export type Phase =
+  | "TRANSITION"
+  | "PRESEASON_A"
+  | "XMAS_BLOCK"
+  | "PRESEASON_B"
+  | "PRECOMP"
+  | "INSEASON_EARLY"
+  | "INSEASON_MID"
+  | "INSEASON_LATE"
+  | "BYE_WEEK";
+
+export type WaveWeek = 1 | 2 | 3;
+
+export type PlyoBand = "SHORT_FAST" | "MEDIUM" | "LONG";
+export type SessionTemplate = "STRENGTH_PLYO_A" | "STRENGTH_PLYO_B";
+
+export interface AthleteMeta {
+  ageYears: number;
+  trainingAgeYears: number; // years of consistent structured training
+  injuryFlags: {
+    recurrentHamstring?: boolean;
+    recurrentCalf?: boolean;
+    recurrentGroin?: boolean;
+    recentRTP?: boolean; // last 8-12 weeks
+  };
+  recentExposure: {
+    sprintExposuresLast14d: number; // count of sessions with true max velocity exposure
+    highDecelSessionsLast14d: number; // count of sessions with high decel/COD density
+    strengthSessionsLast7d: number;
+  };
+}
+
+export interface KeyTests {
+  cmjHeightCm?: number;
+  rsiDropJump?: number;
+  hopLSIPct?: number; // e.g., triple hop LSI
+  movementQualityScore?: number; // 1-5 coach/physio rating
+}
+
+export interface BeltDecision {
+  belt: Belt;
+  confidence: number; // 0-100
+  reasons: string[];
+  modifiers: {
+    needsCapacityWork: boolean;
+    capReactiveContacts: boolean;
+    capStrengthVolume: boolean;
+    needsTopUps: boolean;
+  };
+}
+
+export interface DoseBudget {
+  plyoContactsWeek: number;
+  hardLowerSetsWeek: number;
+  speedExposureTouchesWeek: number; // count, not metres
+}
+
+export interface BlockSpec {
+  name: string;
+  type: "PRIMER" | "STRENGTH" | "PLYOMETRIC" | "POSTERIOR_CHAIN" | "TRUNK" | "OPTIONAL";
+  plyoBand?: PlyoBand;
+  notes: string[];
+  dose?: {
+    sets: number;
+    reps?: number;
+    contacts?: number;
+    rpeTarget?: number; // or load intent band
+  };
+}
+
+export interface SessionPlan {
+  template: SessionTemplate;
+  durationMin: number;
+  blocks: BlockSpec[];
+}
+
+export interface WeeklyPlan {
+  phase: Phase;
+  belt: Belt;
+  waveWeek: WaveWeek;
+  budgets: DoseBudget;
+  sessions: SessionPlan[];
+  stopRules: string[];
+}
+
+Classification logic (rule-based, easy to evolve)
+// --- classification.ts ---
+import { AthleteMeta, KeyTests, BeltDecision } from "./types";
+
+export function classifyBelt(meta: AthleteMeta, tests: KeyTests): BeltDecision {
+  const reasons: string[] = [];
+  let score = 0;
+
+  // Movement quality (1-5)
+  const mq = tests.movementQualityScore ?? 3;
+  if (mq >= 4) score += 25;
+  else if (mq === 3) score += 10;
+  else score -= 10, reasons.push("Movement quality not stable at speed");
+
+  // Training age
+  if (meta.trainingAgeYears >= 3) score += 25;
+  else if (meta.trainingAgeYears >= 1) score += 10;
+  else score -= 10, reasons.push("Low training age");
+
+  // Reactive metric (RSI) if present
+  if (tests.rsiDropJump != null) {
+    if (tests.rsiDropJump >= 2.0) score += 25;
+    else if (tests.rsiDropJump >= 1.5) score += 10;
+    else score -= 5, reasons.push("Reactive strength not yet expressed");
+  }
+
+  // Hop symmetry if present
+  if (tests.hopLSIPct != null) {
+    if (tests.hopLSIPct >= 95) score += 10;
+    else if (tests.hopLSIPct >= 90) score += 5;
+    else reasons.push("Asymmetry present; progress exposure carefully");
+  }
+
+  // Injury flags and RTP
+  const flags = meta.injuryFlags;
+  if (flags.recentRTP) score -= 15, reasons.push("Recent RTP: manage reactive volume and exposures");
+  if (flags.recurrentHamstring || flags.recurrentCalf || flags.recurrentGroin) {
+    score -= 10;
+    reasons.push("Recurrent injury flags: enforce exposure progression and caps");
+  }
+
+  // Exposure tolerance (if low exposure recently, avoid jumping intensity too fast)
+  if (meta.recentExposure.sprintExposuresLast14d === 0) {
+    reasons.push("No recent sprint exposure: progressive speed reintroduction required");
+  }
+
+  // Decide belt
+  let belt: BeltDecision["belt"];
+  if (score >= 60) belt = "BLACK";
+  else if (score >= 30) belt = "BLUE";
+  else belt = "WHITE";
+
+  // Modifiers
+  const needsCapacityWork =
+    !!flags.recurrentCalf || !!flags.recurrentHamstring || !!flags.recurrentGroin || flags.recentRTP;
+
+  const capReactiveContacts = belt === "WHITE" || flags.recentRTP || mq <= 3;
+  const capStrengthVolume = flags.recentRTP;
+  const needsTopUps = meta.recentExposure.strengthSessionsLast7d < 1;
+
+  const confidence = Math.max(0, Math.min(100, 50 + score)); // simple mapping
+
+  return {
+    belt,
+    confidence,
+    reasons,
+    modifiers: { needsCapacityWork, capReactiveContacts, capStrengthVolume, needsTopUps },
+  };
+}
+
+Dose budgets by belt + phase + wave week
+// --- dosing.ts ---
+import { Belt, Phase, WaveWeek, DoseBudget } from "./types";
+
+function waveMultiplier(w: WaveWeek): number {
+  if (w === 1) return 1.0;     // build
+  if (w === 2) return 0.95;    // intensity up, volume slightly down
+  return 0.75;                 // express/deload (phase decides which)
+}
+
+export function getDoseBudget(belt: Belt, phase: Phase, week: WaveWeek): DoseBudget {
+  // Base weekly budgets (starting point)
+  const base = (() => {
+    switch (belt) {
+      case "WHITE":
+        return { plyoContactsWeek: 110, hardLowerSetsWeek: 16, speedExposureTouchesWeek: 1 };
+      case "BLUE":
+        return { plyoContactsWeek: 140, hardLowerSetsWeek: 14, speedExposureTouchesWeek: 1 };
+      case "BLACK":
+        return { plyoContactsWeek: 110, hardLowerSetsWeek: 10, speedExposureTouchesWeek: 1 };
+    }
+  })();
+
+  // Phase adjustments (intent)
+  const phaseFactor = (() => {
+    switch (phase) {
+      case "PRESEASON_A":
+        return { plyo: 1.05, sets: 1.10, speed: 1.0 };
+      case "XMAS_BLOCK":
+        return { plyo: 0.75, sets: 0.75, speed: 1.0 };
+      case "PRESEASON_B":
+        return { plyo: 1.0, sets: 0.95, speed: 1.2 };
+      case "PRECOMP":
+        return { plyo: 0.85, sets: 0.85, speed: 1.2 };
+      case "INSEASON_EARLY":
+      case "INSEASON_MID":
+        return { plyo: 0.80, sets: 0.80, speed: 1.0 };
+      case "INSEASON_LATE":
+        return { plyo: 0.70, sets: 0.70, speed: 1.0 };
+      case "BYE_WEEK":
+        return { plyo: 0.90, sets: 0.90, speed: 1.1 };
+      case "TRANSITION":
+      default:
+        return { plyo: 0.70, sets: 0.75, speed: 1.0 };
+    }
+  })();
+
+  // Wave volume change
+  const wMult = waveMultiplier(week);
+
+  const plyoContactsWeek = Math.round(base.plyoContactsWeek * phaseFactor.plyo * wMult);
+  const hardLowerSetsWeek = Math.round(base.hardLowerSetsWeek * phaseFactor.sets * wMult);
+  const speedExposureTouchesWeek = Math.max(
+    1,
+    Math.round(base.speedExposureTouchesWeek * phaseFactor.speed)
+  );
+
+  return { plyoContactsWeek, hardLowerSetsWeek, speedExposureTouchesWeek };
+}
+
+Session generation (your template + banded plyo choices)
+
+This returns a structured plan your UI can render.
+
+// --- planner.ts ---
+import { Belt, Phase, WaveWeek, WeeklyPlan, SessionPlan, BlockSpec } from "./types";
+import { getDoseBudget } from "./dosing";
+
+function stopRules(): string[] {
+  return [
+    "Plyos: downshift/stop if output drops ~10% or contacts get noisy/slow.",
+    "Strength: downshift/stop if technique compensates or intent drops.",
+    "If quality fails, reduce volume/density before reducing intensity.",
+  ];
+}
+
+function makeSession(template: "STRENGTH_PLYO_A" | "STRENGTH_PLYO_B", belt: Belt, budgetsPlyo: number, budgetsSets: number, waveWeek: WaveWeek): SessionPlan {
+  const blocks: BlockSpec[] = [];
+
+  // Allocate rough per-session budgets (2 sessions/week)
+  const plyoBudget = Math.round(budgetsPlyo / 2);
+  const setBudget = Math.round(budgetsSets / 2);
+
+  // Primer always present
+  blocks.push({
+    name: "Primer: Short-contact (low fatigue) + landing skill",
+    type: "PRIMER",
+    plyoBand: "SHORT_FAST",
+    notes: [
+      belt === "WHITE" ? "Lower amplitude, quality sticks and rhythm." : "High intent, stop early.",
+      "Aim: switch on stiffness and rhythm, not fatigue.",
+    ],
+    dose: { sets: 4, contacts: Math.min(40, Math.round(plyoBudget * 0.30)) },
+  });
+
+  // Strength A + short-contact contrast
+  blocks.push({
+    name: "Block 1: Strength A + Short-contact contrast",
+    type: "STRENGTH",
+    notes: [
+      "Primary strength pattern for the day.",
+      waveWeek === 1 ? "Build: moderate reps." : waveWeek === 2 ? "Intensify: heavier, fewer reps." : "Express: low volume, high intent.",
+    ],
+    dose: { sets: Math.max(3, Math.round(setBudget * 0.45)), reps: waveWeek === 1 ? 5 : waveWeek === 2 ? 3 : 2, rpeTarget: waveWeek === 1 ? 7 : waveWeek === 2 ? 8 : 8 },
+  });
+
+  blocks.push({
+    name: "Contrast: Short-contact jump",
+    type: "PLYOMETRIC",
+    plyoBand: "SHORT_FAST",
+    notes: [
+      belt === "WHITE" ? "Keep it controlled. No aggressive reactive work." : "Fast contacts, full recovery.",
+    ],
+    dose: { sets: 4, contacts: Math.round(plyoBudget * 0.30) },
+  });
+
+  // Strength B + longer-contact contrast
+  blocks.push({
+    name: "Block 2: Strength B (secondary) + Longer-contact contrast",
+    type: "STRENGTH",
+    notes: ["Secondary pattern (often unilateral). Keep quality high."],
+    dose: { sets: Math.max(2, Math.round(setBudget * 0.35)), reps: waveWeek === 1 ? 6 : waveWeek === 2 ? 5 : 4, rpeTarget: 7 },
+  });
+
+  blocks.push({
+    name: "Contrast: Longer-contact jump (strength-pliometric)",
+    type: "PLYOMETRIC",
+    plyoBand: "LONG",
+    notes: [
+      "Landing quality and intent.",
+      belt === "BLACK" ? "Minimal dose—keep integrity, avoid fatigue." : "Small volume, perfect reps.",
+    ],
+    dose: { sets: 3, reps: 2, contacts: Math.round(plyoBudget * 0.20) },
+  });
+
+  // Posterior chain
+  blocks.push({
+    name: "Posterior chain (hamstring dominant)",
+    type: "POSTERIOR_CHAIN",
+    notes: ["Dose depends on phase and injury flags. Keep it honest but not wrecking."],
+    dose: { sets: 3, reps: belt === "BLACK" ? 5 : 8, rpeTarget: 7 },
+  });
+
+  // Trunk
+  blocks.push({
+    name: "Trunk / robustness (multi-planar)",
+    type: "TRUNK",
+    notes: ["Anti-rotation + carry + sport-robustness theme."],
+    dose: { sets: 2, reps: 8, rpeTarget: 6 },
+  });
+
+  return { template, durationMin: belt === "BLACK" ? 55 : 65, blocks };
+}
+
+export function buildWeeklyPlan(belt: Belt, phase: Phase, waveWeek: WaveWeek): WeeklyPlan {
+  const budgets = getDoseBudget(belt, phase, waveWeek);
+
+  const sessions: SessionPlan[] = [
+    makeSession("STRENGTH_PLYO_A", belt, budgets.plyoContactsWeek, budgets.hardLowerSetsWeek, waveWeek),
+    makeSession("STRENGTH_PLYO_B", belt, budgets.plyoContactsWeek, budgets.hardLowerSetsWeek, waveWeek),
+  ];
+
+  return {
+    phase,
+    belt,
+    waveWeek,
+    budgets,
+    sessions,
+    stopRules: stopRules(),
+  };
+}
+
+
+How you use this in your app UI
+
+athlete profile → compute belt suggestion (+ override)
+
+choose phase + week (1/2/3) → generate WeeklyPlan
+
+show budgets + sessions as blocks
+
+log results (RPE + “quality flags” + output drop %)
+
+next week: auto-suggest up/downshift volume or keep steady
+
+If you want, I can also provide:
+
+Drizzle schema for Postgres tables
+
+Zod validators for API payloads
+
+Express routes (/athletes/:id/plan?phase=&week=)
