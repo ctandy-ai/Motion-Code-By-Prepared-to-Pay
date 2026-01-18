@@ -107,20 +107,46 @@ export async function setupAuth(app: Express) {
     const returnTo = req.query.returnTo as string;
     if (returnTo && (req.session as any)) {
       (req.session as any).returnTo = returnTo;
+      // Save session before redirecting to OIDC provider
+      req.session.save((err) => {
+        if (err) {
+          console.error("Failed to save session:", err);
+        }
+        ensureStrategy(req.hostname);
+        passport.authenticate(`replitauth:${req.hostname}`, {
+          prompt: "login consent",
+          scope: ["openid", "email", "profile", "offline_access"],
+        })(req, res, next);
+      });
+    } else {
+      ensureStrategy(req.hostname);
+      passport.authenticate(`replitauth:${req.hostname}`, {
+        prompt: "login consent",
+        scope: ["openid", "email", "profile", "offline_access"],
+      })(req, res, next);
     }
-    
-    ensureStrategy(req.hostname);
-    passport.authenticate(`replitauth:${req.hostname}`, {
-      prompt: "login consent",
-      scope: ["openid", "email", "profile", "offline_access"],
-    })(req, res, next);
   });
 
   app.get("/api/callback", (req, res, next) => {
     ensureStrategy(req.hostname);
     passport.authenticate(`replitauth:${req.hostname}`, {
-      successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
+    }, (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.redirect("/api/login");
+      }
+      req.logIn(user, (loginErr) => {
+        if (loginErr) {
+          return next(loginErr);
+        }
+        // Use returnTo from session if available, otherwise default to /
+        const returnTo = (req.session as any)?.returnTo || "/";
+        delete (req.session as any).returnTo;
+        return res.redirect(returnTo);
+      });
     })(req, res, next);
   });
 

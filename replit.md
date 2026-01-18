@@ -26,6 +26,16 @@ The UI features a premium dark glassmorphism theme with an "Ocean Depth" color p
 - **Coach Heuristics System**: Database-backed rule engine (coach_heuristics table) allowing coaches to define AI-triggering rules. Supports trigger types (readiness_low, soreness_high, missed_sessions, etc.), action types (reduce_volume, add_exercises, flag_review), priority levels, and active/inactive toggles. Full CRUD UI for rule management.
 - **AI Coach Assistant**: Integrates GPT-4.1 via Replit AI Integrations with full program context awareness. Builds comprehensive context from athletes, programs, blocks, exercises, wellness surveys, and coach heuristics. Features function-calling for real program modifications (add exercises, adjust volume, flag athletes, assign programs). Includes confirmation workflow: AI proposes changes -> saves to pendingAiActions table -> coach approves/rejects -> backend executes storage operations. Compliance safeguards avoid medical advice.
 - **Belt System Design**: Planned auto-promotion logic for athletes based on KPI test results.
+- **Mobile Athlete Portal**: Touch-optimized mobile experience for athletes at /m/* routes. Features:
+  - MobileHome (/m): Dashboard with greeting, today's workout, quick stats (streak, weekly workouts, PRs), wellness and messages shortcuts
+  - MobileWorkout (/m/workout): Today's workout view with touch-optimized set logging
+  - MobileWellness (/m/wellness): Daily wellness check-in with 1-10 scale ratings for readiness, sleep, soreness, energy, mood
+  - MobileMessages (/m/messages): Athlete-coach messaging with real-time conversation UI
+  - MobileProfile (/m/profile): Profile with belt classification, gamification stats, logout
+  - MobileRPE (/m/rpe): Session RPE logging after workouts
+  - Bottom tab navigation with 5 tabs: Home, Workout, Wellness, Messages, Profile
+  - Auth integration with returnTo parameter for mobile redirect after OIDC login
+  - Mobile API endpoints at /api/mobile/athlete/* for profile, wellness, messages, notifications
 - **VALD Hub Integration**: Connects to VALD Hub API for syncing athlete testing data from performance testing devices (ForceDecks, NordBord, DynaMo, SmartSpeed, AirBand, HumanTrak). Features OAuth 2.0 client credentials flow authentication, profile syncing and athlete linking, test data sync with duplicate prevention, VALD testing data display on athlete profiles, and AI Coach context integration for performance-aware recommendations. Database tables: vald_profiles, vald_tests, vald_trial_results, vald_sync_log.
 
 ### System Design Choices
