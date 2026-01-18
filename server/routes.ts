@@ -2108,7 +2108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const now = new Date();
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const workoutsThisWeek = workoutLogs.filter(w => w.loggedAt && new Date(w.loggedAt) >= weekAgo).length;
+      const workoutsThisWeek = workoutLogs.filter(w => w.completedAt && new Date(w.completedAt) >= weekAgo).length;
 
       const stats = {
         totalWorkouts: workoutLogs.length,
@@ -2217,7 +2217,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const surveys = await storage.getReadinessSurveys(athlete.id);
         const today = new Date().toISOString().split('T')[0];
         const todaySurvey = surveys.find(s => 
-          s.createdAt && new Date(s.createdAt).toISOString().split('T')[0] === today
+          s.surveyDate && new Date(s.surveyDate).toISOString().split('T')[0] === today
         );
         
         if (todaySurvey) {
@@ -2252,11 +2252,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const survey = await storage.createReadinessSurvey({
         athleteId: athlete.id,
-        readiness: readiness || 5,
+        overallReadiness: readiness || 5,
         sleepQuality: sleep || 5,
         sleepHours: 7,
-        soreness: soreness || 5,
-        energy: energy || 5,
+        muscleSoreness: soreness || 5,
+        energyLevel: energy || 5,
+        stressLevel: 5,
         mood: mood || 5,
         notes: notes || "",
       });
@@ -2276,8 +2277,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Return empty array for now - would query messages table
-      res.json([]);
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      const athlete = athletes.find(a => a.email === userEmail) || athletes[0];
+
+      if (!athlete) {
+        return res.json([]);
+      }
+
+      const messagesList = await storage.getMessages(athlete.id);
+      res.json(messagesList);
     } catch (error) {
       console.error("Failed to get messages:", error);
       res.status(500).json({ error: "Failed to get messages" });
@@ -2292,20 +2301,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      const athlete = athletes.find(a => a.email === userEmail) || athletes[0];
+
+      if (!athlete) {
+        return res.status(404).json({ error: "No athlete profile found" });
+      }
+
       const { content } = req.body;
       
-      // Would create message in database
-      const message = {
-        id: `msg-${Date.now()}`,
+      const message = await storage.createMessage({
         senderId: userId,
         senderType: "athlete",
         recipientId: "coach",
         recipientType: "coach",
-        athleteId: userId,
+        athleteId: athlete.id,
         content,
-        isRead: 0,
-        createdAt: new Date().toISOString(),
-      };
+      });
 
       res.json(message);
     } catch (error) {
@@ -2322,11 +2335,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // Return empty array for now - would query notifications table
-      res.json([]);
+      const notificationsList = await storage.getNotifications(userId);
+      res.json(notificationsList);
     } catch (error) {
       console.error("Failed to get notifications:", error);
       res.status(500).json({ error: "Failed to get notifications" });
+    }
+  });
+
+  // Mark notification as read
+  app.post("/api/mobile/athlete/notifications/:id/read", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      await storage.markNotificationAsRead(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+      res.status(500).json({ error: "Failed to mark notification as read" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.post("/api/mobile/athlete/notifications/read-all", async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      await storage.markAllNotificationsAsRead(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+      res.status(500).json({ error: "Failed to mark all notifications as read" });
     }
   });
 

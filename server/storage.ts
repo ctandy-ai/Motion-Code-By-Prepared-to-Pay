@@ -63,6 +63,10 @@ import {
   type InsertAthleteBeltClassification,
   type DoseBudget,
   type InsertDoseBudget,
+  type Message,
+  type InsertMessage,
+  type Notification,
+  type InsertNotification,
   users,
   exercises,
   athletes,
@@ -96,6 +100,8 @@ import {
   athleteTrainingProfiles,
   athleteBeltClassifications,
   doseBudgets,
+  messages,
+  notifications,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -222,6 +228,15 @@ export interface IStorage {
   getReadinessSurvey(id: string): Promise<ReadinessSurvey | undefined>;
   getTodaysSurvey(athleteId: string): Promise<ReadinessSurvey | undefined>;
   createReadinessSurvey(survey: InsertReadinessSurvey): Promise<ReadinessSurvey>;
+
+  getMessages(athleteId: string): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  markMessagesAsRead(athleteId: string, userId: string): Promise<void>;
+
+  getNotifications(userId: string): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: string): Promise<void>;
+  markAllNotificationsAsRead(userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1695,6 +1710,49 @@ export class DatabaseStorage implements IStorage {
       return updated;
     }
     return await this.createDoseBudget(budget);
+  }
+
+  // Messages
+  async getMessages(athleteId: string): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .where(eq(messages.athleteId, athleteId))
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const [newMessage] = await db.insert(messages).values(message).returning();
+    return newMessage;
+  }
+
+  async markMessagesAsRead(athleteId: string, recipientId: string): Promise<void> {
+    await db
+      .update(messages)
+      .set({ isRead: 1 })
+      .where(and(eq(messages.athleteId, athleteId), eq(messages.recipientId, recipientId)));
+  }
+
+  // Notifications
+  async getNotifications(userId: string): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db.insert(notifications).values(notification).returning();
+    return newNotification;
+  }
+
+  async markNotificationAsRead(id: string): Promise<void> {
+    await db.update(notifications).set({ isRead: 1 }).where(eq(notifications.id, id));
+  }
+
+  async markAllNotificationsAsRead(userId: string): Promise<void> {
+    await db.update(notifications).set({ isRead: 1 }).where(eq(notifications.userId, userId));
   }
 }
 
