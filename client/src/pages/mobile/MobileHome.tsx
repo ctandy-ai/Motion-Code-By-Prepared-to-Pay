@@ -60,7 +60,7 @@ export default function MobileHome() {
           <h1 className="text-2xl font-bold mb-2">MotionCode Pro</h1>
           <p className="text-slate-400 mb-8">Your elite training companion</p>
           <Button asChild size="lg" className="w-full max-w-xs" data-testid="button-login">
-            <a href="/api/login">Sign In to Continue</a>
+            <a href="/api/login?returnTo=/m">Sign In to Continue</a>
           </Button>
         </div>
       </MobileLayout>
