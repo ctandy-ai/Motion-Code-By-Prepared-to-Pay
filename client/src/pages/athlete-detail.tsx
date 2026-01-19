@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
 import {
   Dialog,
   DialogContent,
@@ -491,6 +492,14 @@ export default function AthleteDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {athleteId && (
+        <ProgramEngineGuidance 
+          athleteId={athleteId} 
+          athleteName={athlete?.name}
+          trainingDaysPerWeek={3}
+        />
+      )}
 
       <div>
         <h2 className="text-lg font-semibold mb-4">Assigned Programs</h2>

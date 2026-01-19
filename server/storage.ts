@@ -63,6 +63,8 @@ import {
   type InsertAthleteBeltClassification,
   type DoseBudget,
   type InsertDoseBudget,
+  type StageOverlay,
+  type InsertStageOverlay,
   type Message,
   type InsertMessage,
   type Notification,
@@ -100,6 +102,7 @@ import {
   athleteTrainingProfiles,
   athleteBeltClassifications,
   doseBudgets,
+  stageOverlays,
   messages,
   notifications,
 } from "@shared/schema";
@@ -238,6 +241,9 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(id: string): Promise<void>;
   markAllNotificationsAsRead(userId: string): Promise<void>;
+
+  getStageOverlays(): Promise<StageOverlay[]>;
+  getStageOverlay(name: string): Promise<StageOverlay | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1761,6 +1767,21 @@ export class DatabaseStorage implements IStorage {
 
   async markAllNotificationsAsRead(userId: string): Promise<void> {
     await db.update(notifications).set({ isRead: 1 }).where(eq(notifications.userId, userId));
+  }
+
+  async getStageOverlays(): Promise<StageOverlay[]> {
+    return await db
+      .select()
+      .from(stageOverlays)
+      .orderBy(stageOverlays.orderIndex);
+  }
+
+  async getStageOverlay(name: string): Promise<StageOverlay | undefined> {
+    const [stage] = await db
+      .select()
+      .from(stageOverlays)
+      .where(eq(stageOverlays.name, name));
+    return stage || undefined;
   }
 }
 

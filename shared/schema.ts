@@ -264,6 +264,8 @@ export const programWeeks = pgTable("program_weeks", {
   strengthTheme: text("strength_theme"),
   plyoContactsCap: integer("plyo_contacts_cap"),
   testingGateway: text("testing_gateway"),
+  waveWeek: integer("wave_week").default(1),
+  stageOverlay: text("stage_overlay"),
 }, (table) => ({
   programWeekIdx: index("program_weeks_program_week_idx").on(table.programId, table.weekNumber),
 }));
@@ -751,6 +753,34 @@ export const insertDoseBudgetSchema = createInsertSchema(doseBudgets).omit({
 });
 export type InsertDoseBudget = z.infer<typeof insertDoseBudgetSchema>;
 export type DoseBudget = typeof doseBudgets.$inferSelect;
+
+// Stage Overlays - RTP/ACL stage constraints
+export const stageOverlays = pgTable("stage_overlays", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+  
+  allowedPlyoBands: text("allowed_plyo_bands").array().default(sql`ARRAY[]::text[]`),
+  maxPlyoContactsWeek: integer("max_plyo_contacts_week"),
+  maxSpeedExposures: integer("max_speed_exposures"),
+  allowBilateralOnly: integer("allow_bilateral_only").default(0),
+  requiresGateCheck: integer("requires_gate_check").default(0),
+  gateCheckCriteria: text("gate_check_criteria"),
+  
+  stopRules: text("stop_rules").array().default(sql`ARRAY[]::text[]`),
+  requiredExerciseTypes: text("required_exercise_types").array().default(sql`ARRAY[]::text[]`),
+  forbiddenExerciseTypes: text("forbidden_exercise_types").array().default(sql`ARRAY[]::text[]`),
+  
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertStageOverlaySchema = createInsertSchema(stageOverlays).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertStageOverlay = z.infer<typeof insertStageOverlaySchema>;
+export type StageOverlay = typeof stageOverlays.$inferSelect;
 
 // Belt classification request/response schemas
 export const computeBeltRequestSchema = z.object({

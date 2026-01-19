@@ -1,0 +1,558 @@
+1) The MotionCode Pro Program Engine
+The dimensions (keep them separate on purpose)
+
+A) Belt (White / Blue / Black)
+= what intensity/complexity the athlete can express repeatedly with quality.
+Belts can stay fixed for months.
+
+B) Phase (Pre-A, Xmas, Pre-B, Pre-comp, In-season early/mid/late, Bye)
+= changes intent + budgets (volume/intensity emphasis).
+
+C) Wave week (1–2–3)
+= progression strategy (Build → Intensify → Express/Deload).
+Waves repeat indefinitely, belt doesn’t auto-change.
+
+D) Stage overlay (optional, e.g. ACL stage / RTP stage)
+= constraints + required gates.
+This is not the same as belt. Someone can be “Blue strength” but “White plyo exposure” in RTP.
+
+2) Your philosophy translated into rules (this is the heart)
+System Pillars (always true)
+
+Movement skill drives the program (accel/decel/COD/sprint mechanics)
+
+Strength = bandwidth (tolerance + forgiveness under fatigue/chaos)
+
+Exposure is the vaccine (progressive weekly dose of speed/decel/COD demands)
+
+“Capacity work” is NOT universal
+
+You don’t run blanket calf/hamstring circuits. In the engine:
+
+capacity work is a conditional modifier
+
+it appears only if meta-data/testing/history says it’s a limiter (or RTP stage requires it)
+
+Quality is protected with stop-rules
+
+If plyo output decays or contacts get “ugly”, the engine should:
+
+downshift intensity/complexity
+
+reduce volume
+
+or swap to a lower band (short-fast → medium → longer-contact)
+
+3) Define “Units of Training” (what the app actually assembles)
+
+Think LEGO pieces. Each unit has:
+
+purpose (bandwidth / elastic output / exposure / robustness)
+
+dose ranges by belt + phase + waveWeek
+
+progressions/regressions
+
+prerequisites
+
+contraindications (esp. RTP stage constraints)
+
+stop rules
+
+Core unit types (MVP)
+
+Strength+Plyo Unit A (your template)
+Primer → Strength A + short contact → Strength B + longer contact → posterior chain → trunk
+
+Strength+Plyo Unit B
+Same skeleton but swapped emphasis (hinge focus vs squat focus, unilateral emphasis etc.)
+
+Jump/Plyo/MBS Unit (field/gym)
+Short block focused on movement skill + elastic qualities + throws (if relevant)
+
+Running Unit
+
+base / tempo / aerobic
+
+speed exposure
+
+COD/decel density exposures (when appropriate)
+
+Important: treat “running unit” as part of exposure management, not conditioning punishment.
+
+4) The data model the engine needs (simple, not bloated)
+Athlete meta-data (minimum)
+
+age
+
+trainingAge (years of consistent structured training)
+
+injury flags (esp recurrent hamstring/calf/groin; recent RTP)
+
+current availability / training days
+
+recent exposure counts (last 14d speed exposures, decel-heavy sessions)
+
+movementQualityScore (coach/physio 1–5)
+
+Tests (optional but ideal)
+
+CMJ / RSImod
+
+Drop jump RSI (if you have it)
+
+hop LSI (triple hop etc.)
+
+IMTP or strength proxy
+
+5) How the engine decides what to output (selection logic)
+Step-by-step selection
+
+Classify belt (rule-based, coach override allowed)
+
+Set weekly budgets (contacts, hard sets, speed touches) from belt + phase + waveWeek
+
+Pick unit mix based on days available and sport context
+
+Example standard: 2 Strength+Plyo units + 1 Running unit + optional Jump/MBS micro
+
+Allocate budgets into units (per-session caps)
+
+Apply constraints from stage overlay (RTP stage rules)
+
+Generate plan JSON for UI rendering
+
+Log outcomes (RPE, output drop %, pain response) → informs next week’s adjustment
+
+6) Replit implementation (clean MVP structure)
+
+Suggested file structure
+
+/src
+  /engine
+    types.ts
+    classification.ts
+    dosing.ts
+    unitLibrary.ts
+    planner.ts
+    rules.ts
+  /api
+    plan.routes.ts
+  /db
+    schema.ts
+  /ui
+    PlanViewer.tsx
+    AthleteProfile.tsx
+
+7) Code skeleton (TypeScript) you can use immediately
+A) Unit definition format (library)
+// src/engine/types.ts
+export type Belt = "WHITE" | "BLUE" | "BLACK";
+export type Phase =
+  | "PRESEASON_A" | "XMAS_BLOCK" | "PRESEASON_B" | "PRECOMP"
+  | "INSEASON_EARLY" | "INSEASON_MID" | "INSEASON_LATE" | "BYE_WEEK";
+
+export type WaveWeek = 1 | 2 | 3;
+
+export type UnitType = "STRENGTH_PLYO" | "JUMP_PLYO_MBS" | "RUNNING";
+export type PlyoBand = "SHORT_FAST" | "MEDIUM" | "LONG";
+
+export interface AthleteMeta {
+  ageYears: number;
+  trainingAgeYears: number;
+  movementQualityScore: 1 | 2 | 3 | 4 | 5;
+  injuryFlags: {
+    recentRTP?: boolean;
+    recurrentHamstring?: boolean;
+    recurrentCalf?: boolean;
+    recurrentGroin?: boolean;
+  };
+  recentExposure14d: {
+    speedTouches: number;
+    highDecelSessions: number;
+  };
+  availability: { daysPerWeek: number; gymAccess: boolean };
+}
+
+export interface WeeklyBudgets {
+  plyoContacts: number;
+  hardLowerSets: number;
+  speedTouches: number; // count of exposures, not metres
+}
+
+export interface DoseRange {
+  sets?: [number, number];
+  reps?: [number, number];
+  contacts?: [number, number];
+  rpe?: [number, number];
+}
+
+export interface UnitRuleSet {
+  prerequisites: string[];
+  regressions: string[];
+  progressions: string[];
+  stopRules: string[];
+}
+
+export interface TrainingUnit {
+  id: string;
+  name: string;
+  type: UnitType;
+  tags: string[]; // e.g. ["squat-bias","contrast","unilateral"]
+  plyoBandsUsed?: PlyoBand[];
+  doseGuidelines: {
+    byBelt: Record<Belt, DoseRange>;
+    byPhase?: Partial<Record<Phase, Partial<DoseRange>>>;
+    byWaveWeek?: Partial<Record<WaveWeek, Partial<DoseRange>>>;
+  };
+  rules: UnitRuleSet;
+}
+
+B) Weekly budgets (belt + phase + waveWeek)
+// src/engine/dosing.ts
+import { Belt, Phase, WaveWeek, WeeklyBudgets } from "./types";
+
+const baseBudgets: Record<Belt, WeeklyBudgets> = {
+  WHITE: { plyoContacts: 110, hardLowerSets: 16, speedTouches: 1 },
+  BLUE:  { plyoContacts: 140, hardLowerSets: 14, speedTouches: 1 },
+  BLACK: { plyoContacts: 110, hardLowerSets: 10, speedTouches: 1 },
+};
+
+const phaseFactor: Record<Phase, { plyo: number; sets: number; speed: number }> = {
+  PRESEASON_A:    { plyo: 1.05, sets: 1.10, speed: 1.0 },
+  XMAS_BLOCK:     { plyo: 0.75, sets: 0.75, speed: 1.0 },
+  PRESEASON_B:    { plyo: 1.00, sets: 0.95, speed: 1.2 },
+  PRECOMP:        { plyo: 0.85, sets: 0.85, speed: 1.2 },
+  INSEASON_EARLY: { plyo: 0.80, sets: 0.80, speed: 1.0 },
+  INSEASON_MID:   { plyo: 0.80, sets: 0.80, speed: 1.0 },
+  INSEASON_LATE:  { plyo: 0.70, sets: 0.70, speed: 1.0 },
+  BYE_WEEK:       { plyo: 0.90, sets: 0.90, speed: 1.1 },
+};
+
+const waveFactor: Record<WaveWeek, number> = { 1: 1.0, 2: 0.95, 3: 0.75 };
+
+export function getWeeklyBudgets(belt: Belt, phase: Phase, week: WaveWeek): WeeklyBudgets {
+  const b = baseBudgets[belt];
+  const p = phaseFactor[phase];
+  const w = waveFactor[week];
+
+  return {
+    plyoContacts: Math.round(b.plyoContacts * p.plyo * w),
+    hardLowerSets: Math.round(b.hardLowerSets * p.sets * w),
+    speedTouches: Math.max(1, Math.round(b.speedTouches * p.speed)),
+  };
+}
+
+C) Belt classification (rule-based + modifiers)
+// src/engine/classification.ts
+import { AthleteMeta, Belt } from "./types";
+
+export function classifyBelt(meta: AthleteMeta): { belt: Belt; reasons: string[]; modifiers: string[] } {
+  const reasons: string[] = [];
+  const modifiers: string[] = [];
+
+  let score = 0;
+
+  // training age
+  if (meta.trainingAgeYears >= 3) score += 2;
+  else if (meta.trainingAgeYears >= 1) score += 1;
+  else reasons.push("Low training age");
+
+  // movement quality
+  if (meta.movementQualityScore >= 4) score += 2;
+  else if (meta.movementQualityScore === 3) score += 1;
+  else reasons.push("Movement quality unstable at speed");
+
+  // injury / RTP constraints
+  if (meta.injuryFlags.recentRTP) {
+    score -= 2;
+    reasons.push("Recent RTP: cap reactive intensity/volume");
+    modifiers.push("CAP_REACTIVE_CONTACTS");
+  }
+  if (meta.injuryFlags.recurrentHamstring || meta.injuryFlags.recurrentCalf || meta.injuryFlags.recurrentGroin) {
+    score -= 1;
+    modifiers.push("EXPOSURE_PROGRESSIONS_REQUIRED");
+  }
+
+  // exposure history
+  if (meta.recentExposure14d.speedTouches === 0) modifiers.push("REINTRO_SPEED_PROGRESSIVELY");
+
+  let belt: Belt = "WHITE";
+  if (score >= 3) belt = "BLACK";
+  else if (score >= 2) belt = "BLUE";
+
+  return { belt, reasons, modifiers };
+}
+
+D) Unit library placeholders (you fill exercises later)
+// src/engine/unitLibrary.ts
+import { TrainingUnit } from "./types";
+
+export const UNIT_LIBRARY: TrainingUnit[] = [
+  {
+    id: "SP_A",
+    name: "Strength + Plyo Unit A (Prime → Contrast → Contrast)",
+    type: "STRENGTH_PLYO",
+    tags: ["contrast","balanced","posterior-chain","trunk"],
+    plyoBandsUsed: ["SHORT_FAST","LONG"],
+    doseGuidelines: {
+      byBelt: {
+        WHITE: { sets: [10, 14], contacts: [40, 70], rpe: [6, 8] },
+        BLUE:  { sets: [8, 12],  contacts: [50, 85], rpe: [6, 8] },
+        BLACK: { sets: [6, 10],  contacts: [35, 70], rpe: [6, 8] },
+      },
+    },
+    rules: {
+      prerequisites: ["Able to complete primer contacts with clean mechanics"],
+      regressions: ["Reduce reactive band intensity", "Swap unilateral to bilateral", "Reduce contacts by 20–40%"],
+      progressions: ["Increase intent before volume", "Add directional constraints", "Reduce reps and increase load intent"],
+      stopRules: ["Stop/downshift if contacts become noisy/slow or quality fails", "Stop sets if intent drops or technique compensates"],
+    },
+  },
+  {
+    id: "RUN_SPEED_TOUCH",
+    name: "Running Unit: Speed Touch (progressive exposure)",
+    type: "RUNNING",
+    tags: ["speed","exposure","progressive"],
+    doseGuidelines: {
+      byBelt: {
+        WHITE: { reps: [6, 12] },
+        BLUE:  { reps: [6, 10] },
+        BLACK: { reps: [4, 8] },
+      },
+      byWaveWeek: {
+        1: { reps: [6, 12] },
+        2: { reps: [6, 10] },
+        3: { reps: [4, 8] },
+      },
+    },
+    rules: {
+      prerequisites: ["No acute pain flare", "Movement quality acceptable at submax exposures"],
+      regressions: ["Shorten distances", "Reduce reps", "Keep more submax build-ups"],
+      progressions: ["Slightly increase exposure speed OR distance (not both)"],
+      stopRules: ["Stop if technique degrades or discomfort escalates"],
+    },
+  },
+];
+
+E) Planner: assemble a weekly plan from budgets + units
+// src/engine/planner.ts
+import { AthleteMeta, Phase, WaveWeek } from "./types";
+import { classifyBelt } from "./classification";
+import { getWeeklyBudgets } from "./dosing";
+import { UNIT_LIBRARY } from "./unitLibrary";
+
+export function buildWeeklyPlan(meta: AthleteMeta, phase: Phase, waveWeek: WaveWeek) {
+  const { belt, reasons, modifiers } = classifyBelt(meta);
+  const budgets = getWeeklyBudgets(belt, phase, waveWeek);
+
+  // MVP selection: 2 strength+plyo + 1 running speed touch (if gym access)
+  const sp = UNIT_LIBRARY.find(u => u.id === "SP_A")!;
+  const run = UNIT_LIBRARY.find(u => u.id === "RUN_SPEED_TOUCH")!;
+
+  const units = meta.availability.gymAccess
+    ? [sp, sp, run]
+    : [run]; // fallback if no gym (you can add bodyweight units later)
+
+  return {
+    belt,
+    reasons,
+    modifiers,
+    phase,
+    waveWeek,
+    budgets,
+    units,
+    globalStopRules: [
+      "If quality fails: reduce volume/density before reducing intensity.",
+      "Capacity work is conditional, not blanket.",
+    ],
+  };
+}
+
+
+That’s enough to generate structured weekly outputs in your UI now — even before you add full exercise libraries.
+
+8) How to incorporate the “ACL stages document” without needing its exact text
+
+Treat ACL stages as an overlay constraint object, not as the program itself.
+
+Example overlay:
+
+allowed plyo bands (e.g., no SHORT_FAST until stage criteria met)
+
+caps on contacts/week
+
+required gate checks (tolerance/effusion/pain response, symmetry thresholds, exposure reintroduction rules)
+
+In code you’d add:
+
+stage?: "ACL_STAGE_1" | ...
+
+stageConstraints applied after budgets are calculated: budgets = applyConstraints(budgets, stageConstraints)
+
+If you upload or paste the key headings from that ACL doc, I’ll map it precisely into this overlay structure.
+
+9) Athlete education + lead magnet (ties to the app)
+
+Once the engine exists, your marketing becomes insanely easy because you can offer:
+
+“Reply BLUEPRINT” → auto-generate their Week 1 structure based on training age + break duration + injury flags
+
+“Reply BELT” → quick belt check + what they should focus on this month
+
+“Reply PRESEASON” → 7-day return-to-training ramp guide
+
+If you want, I’ll write the exact automated reply scripts (email + SMS + DM) that feed straight into the app output.
+
+Next step (so we make this perfect for your build)
+
+To map this into MotionCode Pro exactly, paste one of these (whichever is easiest):
+
+the table of contents / headings from the attached ACL stages doc, OR
+
+10–20 bullet points of the “stages + criteria” you want preserved
+
+Then I’ll:
+
+encode the stage overlay constraints cleanly,
+
+define your first v1 unit library (strength/jumps/running) with your preferred menus,
+
+and produce 3–6 full program templates (White/Blue/Black × Preseason A/B × In-season) that the engine can output immediately.
+
+P2P ACL RTP COACHING RESOURCE (2) (3).pdf
+PDF
+unsure if this document epitomises the philosophy with content and structures that we cna use and add to what yuou just created before i sned accross to replit?
+Thought for a second
+Thought for 52s
+
+Yes — this document is highly congruent with what you’re building, but you should treat it as a stage-based RTP overlay + unit library, not as “the philosophy” itself.
+
+It’s a very strong input to send to Replit after you convert it into structured units + constraints.
+
+P2P ACL RTP COACHING RESOURCE (…
+
+What in the PDF directly matches your system (and should be used)
+1) It already thinks in “units of training”
+
+The doc explicitly frames programming as Running / Lower Body Strength / Plyometrics / MBS / Reconditioning with intensity, frequency, volume, specificity, KPIs by stage (pages 3–5). That’s basically your “MotionCode Pro program engine” categories. 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+2) It’s aligned with your “movement skill → bandwidth → exposure” beliefs
+
+Skill: return-to-run drilling progressions + stepping/stopping coordination focus (pages 8–9, 12–17). 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+Bandwidth: max strength accumulation → intensification and clear strength structure (pages 4–5, 7). 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+Exposure: “periodisation congruent with running load”, plus sensible progression language (pages 4–5). 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+3) It gives you a tagged exercise library (gold for code)
+
+Plyo menu with short vs long contact and intensity/complexity ratings + variants (page 10). 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+MBS menu explicitly split into Stepping (extended) vs Stopping (hinge/flexed knee) with intensity/complexity ratings (page 11). 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+This is exactly what a program generator needs: exercises with metadata.
+
+4) It already includes a scheduling template
+
+The “Hybrid LB STR/RTR” session structure and weekly schedule (page 6) maps nicely to your session template approach. 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+Where it does not fully match your philosophy (and what to adjust before Replit)
+A) It’s ACL-specific and week-based (you want gates + belts)
+
+The doc is staged by weeks post-op (page 2) and assumes surgical realities early (ROM, oedema etc.). Your engine should store the stages, but progression should be gate-driven (quality/tolerance/stability) + belt constraints, not “Week 15–24 therefore X”. 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+B) It doesn’t encode your “no blanket tissue work” rule
+
+It’s not heavy on “tissue work”, which is good — but your engine should explicitly represent:
+
+capacity work = conditional modifier (only if deficits/history/tolerance require)
+Otherwise the generator will drift into generic rehab habits over time.
+
+C) It lacks explicit stop-rules and dose ceilings per belt
+
+It references “sound of contact” and “next day soreness” as indicators (page 4–5), which is great, but for app logic you’ll want harder rules:
+
+output drop threshold
+
+pain/effusion response threshold
+
+max contacts/week by belt + by stage
+
+
+P2P ACL RTP COACHING RESOURCE (…
+
+D) It doesn’t connect to tactical periodisation microcycles
+
+The doc is a rehab resource; it doesn’t automatically align to match-day anchored weekly rhythm, non-starter top-ups, bye weeks, etc. That needs to come from your “phase + wave + weekly morphocycle” layer.
+
+What I’d send to Replit (the right “translation”)
+
+Don’t send the PDF as a concept. Send it as structured objects:
+
+Stage overlay objects (Stage 1–5)
+
+allowed unit types
+
+allowed plyo bands
+
+weekly budgets (contacts/sets/speed touches)
+
+required tests/KPIs for progression
+
+Unit library (Strength, Plyo, MBS, Running)
+
+each exercise tagged with: contact type, intensity, complexity, stance, vector, environment (the PDF already provides most of this)
+
+Session templates
+
+“Hybrid LB STR/RTR” (page 6) becomes a template option in the generator
+
+Here’s an example of what “Stage 2 constraints + plyo library metadata” could look like for the app:
+
+{
+  "stage": "ACL_STAGE_2_TRAIN_TO_TRAIN",
+  "allowedUnits": ["RUNNING", "STRENGTH_PLYO", "MBS", "RECONDITIONING"],
+  "plyoRules": {
+    "allowedBands": ["LONG", "MEDIUM"],
+    "contactsPerWeekRange": [75, 150],
+    "contactsPerSessionRange": [25, 50],
+    "notes": ["Use accommodating surfaces early", "Progress load congruent with running load"]
+  },
+  "strengthRules": {
+    "primarySetsRange": [2, 3],
+    "repRange": [4, 8],
+    "focus": "Accumulation"
+  }
+}
+
+
+That’s the format Replit can actually use.
+
+Bottom line
+
+Yes, use it. It’s a very good “unit library + RTP overlay” foundation. 
+
+P2P ACL RTP COACHING RESOURCE (…
+
+But don’t let it become your whole engine. Your engine remains: Belts + Phases + Waves + Weekly microcycle, with the ACL stages as an optional constraint layer.
+
+If you want, I’ll do the next step in one hit: convert this PDF into a MotionCode Pro v1 “ingestion pack” (stage objects + unit library objects + 2–3 session templates), using the exact tables/lists from the document (stages on page 2–5, scheduling on page 6, strength periodisation on page 7, running sessions on pages 8–9 & 12–17, plyo/MBS libraries on pages 10–11). 
+
+P2P ACL RTP COACHING RESOURCE (…
