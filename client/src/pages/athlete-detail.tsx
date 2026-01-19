@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
+import { AthleteTrainingProfileCard } from "@/components/athlete-training-profile";
 import {
   Dialog,
   DialogContent,
@@ -494,11 +495,17 @@ export default function AthleteDetail() {
       </div>
 
       {athleteId && (
-        <ProgramEngineGuidance 
-          athleteId={athleteId} 
-          athleteName={athlete?.name}
-          trainingDaysPerWeek={3}
-        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <AthleteTrainingProfileCard 
+            athleteId={athleteId}
+            athleteName={athlete?.name}
+          />
+          <ProgramEngineGuidance 
+            athleteId={athleteId} 
+            athleteName={athlete?.name}
+            trainingDaysPerWeek={3}
+          />
+        </div>
       )}
 
       <div>
