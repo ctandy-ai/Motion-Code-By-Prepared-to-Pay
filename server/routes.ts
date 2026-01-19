@@ -679,11 +679,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const activePrograms = athletePrograms.filter(ap => ap.status === "active");
       
       if (activePrograms.length === 0) {
-        return res.json([]);
+        return res.json({ exercises: [], hasWorkout: false, message: "No active program assigned" });
       }
       
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+      
+      // Get all exercises for lookup
+      const allExercises = await storage.getExercises();
+      const exerciseMap = new Map(allExercises.map(e => [e.id, e]));
       
       const todayWorkouts = [];
       
@@ -701,25 +705,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const currentWeek = Math.floor(daysSinceStart / 7) + 1;
         const currentDay = (daysSinceStart % 7) + 1;
         
-        const programExercises = await storage.getProgramExercises(ap.programId);
-        const todayExercises = programExercises.filter(
-          pe => pe.weekNumber === currentWeek && pe.dayNumber === currentDay
-        );
+        // Get training blocks for today using the correct data model
+        const blocks = await storage.getTrainingBlocks(ap.programId, currentWeek, currentDay);
         
-        for (const pe of todayExercises) {
-          const exercise = await storage.getExercise(pe.exerciseId);
-          if (exercise) {
-            todayWorkouts.push({
-              programExercise: pe,
-              exercise: exercise,
-              program: program,
-              athleteProgramId: ap.id,
-            });
+        for (const block of blocks) {
+          const blockExercises = await storage.getBlockExercises(block.id);
+          
+          for (const be of blockExercises) {
+            const exercise = exerciseMap.get(be.exerciseId);
+            if (exercise) {
+              // Parse scheme to get sets/reps
+              const scheme = be.scheme || block.scheme || "3x10";
+              const schemeMatch = scheme.match(/(\d+)\s*[xX×]\s*(\d+)/);
+              const numSets = schemeMatch ? parseInt(schemeMatch[1]) : 3;
+              const targetReps = schemeMatch ? parseInt(schemeMatch[2]) : 10;
+
+              const sets = Array.from({ length: numSets }, (_, i) => ({
+                setNumber: i + 1,
+                targetReps,
+                targetWeight: null,
+                completed: false,
+              }));
+
+              todayWorkouts.push({
+                id: be.id,
+                exerciseId: exercise.id,
+                exerciseName: exercise.name,
+                blockId: block.id,
+                blockTitle: block.title,
+                scheme: be.scheme || block.scheme,
+                notes: be.notes,
+                sets,
+                program: program,
+                athleteProgramId: ap.id,
+                currentWeek,
+                currentDay,
+              });
+            }
           }
         }
       }
       
-      res.json(todayWorkouts);
+      res.json({
+        exercises: todayWorkouts,
+        hasWorkout: todayWorkouts.length > 0,
+        date: today.toISOString(),
+      });
     } catch (error) {
       console.error("Failed to fetch today's workout:", error);
       res.status(500).json({ error: "Failed to fetch today's workout" });
@@ -832,6 +863,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to calculate dashboard stats:", error);
       res.status(500).json({ error: "Failed to calculate dashboard stats" });
+    }
+  });
+
+  // Team Pulse - At-a-glance athlete status indicators
+  app.get("/api/team-pulse", async (req, res) => {
+    try {
+      const allAthletes = await storage.getAthletes();
+      const allWellness = await storage.getAllReadinessSurveys();
+      const allLogs = await storage.getWorkoutLogs();
+      const athletePrograms = await storage.getAthletePrograms();
+      
+      const today = new Date();
+      const sevenDaysAgo = new Date(today);
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+      
+      // Calculate status for each athlete
+      const athletePulse = allAthletes.map(athlete => {
+        // Get recent wellness data (last 3 days)
+        const recentWellness = allWellness
+          .filter(w => w.athleteId === athlete.id && new Date(w.surveyDate) >= threeDaysAgo)
+          .sort((a, b) => new Date(b.surveyDate).getTime() - new Date(a.surveyDate).getTime());
+        
+        const latestWellness = recentWellness[0];
+        
+        // Get recent workouts (last 7 days)
+        const recentWorkouts = allLogs.filter(log => 
+          log.athleteId === athlete.id && 
+          new Date(log.completedAt) >= sevenDaysAgo
+        );
+        
+        // Check if athlete has an active assigned program
+        const hasProgram = athletePrograms.some(ap => 
+          ap.athleteId === athlete.id && ap.status === 'active'
+        );
+        
+        // Calculate readiness score (average of recent wellness)
+        let readinessScore = 0;
+        let readinessStatus: 'good' | 'moderate' | 'low' | 'unknown' = 'unknown';
+        
+        if (latestWellness) {
+          readinessScore = latestWellness.readinessScore || 0;
+          if (readinessScore >= 7) {
+            readinessStatus = 'good';
+          } else if (readinessScore >= 5) {
+            readinessStatus = 'moderate';
+          } else {
+            readinessStatus = 'low';
+          }
+        }
+        
+        // Calculate compliance (workouts in last 7 days)
+        const workoutsThisWeek = recentWorkouts.length;
+        let complianceStatus: 'high' | 'moderate' | 'low' = 'low';
+        if (workoutsThisWeek >= 4) {
+          complianceStatus = 'high';
+        } else if (workoutsThisWeek >= 2) {
+          complianceStatus = 'moderate';
+        }
+        
+        // Calculate soreness alert
+        const sorenessAlert = latestWellness && (latestWellness.soreness || 0) >= 7;
+        
+        // Check for missed workouts (has program but no workout in 3+ days)
+        const threeDaysAgoTime = threeDaysAgo.getTime();
+        const hasRecentWorkout = recentWorkouts.some(log => 
+          new Date(log.completedAt).getTime() >= threeDaysAgoTime
+        );
+        const missedWorkouts = hasProgram && !hasRecentWorkout;
+        
+        // Overall status
+        let overallStatus: 'green' | 'yellow' | 'red' = 'green';
+        if (readinessStatus === 'low' || sorenessAlert || missedWorkouts) {
+          overallStatus = 'red';
+        } else if (readinessStatus === 'moderate' || complianceStatus === 'low') {
+          overallStatus = 'yellow';
+        }
+        
+        return {
+          id: athlete.id,
+          name: athlete.name,
+          team: athlete.team,
+          position: athlete.position,
+          belt: athlete.belt || 'unclassified',
+          overallStatus,
+          readinessScore,
+          readinessStatus,
+          workoutsThisWeek,
+          complianceStatus,
+          sorenessAlert,
+          missedWorkouts,
+          hasProgram,
+          lastWellnessDate: latestWellness?.surveyDate || null,
+          lastWorkoutDate: recentWorkouts[0]?.completedAt || null,
+        };
+      });
+      
+      // Summary stats
+      const athletesWithReadiness = athletePulse.filter(a => a.readinessScore > 0);
+      const avgReadiness = athletesWithReadiness.length > 0 
+        ? Math.round(athletesWithReadiness.reduce((sum, a) => sum + a.readinessScore, 0) / athletesWithReadiness.length)
+        : 0;
+      
+      const summary = {
+        total: athletePulse.length,
+        green: athletePulse.filter(a => a.overallStatus === 'green').length,
+        yellow: athletePulse.filter(a => a.overallStatus === 'yellow').length,
+        red: athletePulse.filter(a => a.overallStatus === 'red').length,
+        avgReadiness,
+        sorenessAlerts: athletePulse.filter(a => a.sorenessAlert).length,
+        missedWorkouts: athletePulse.filter(a => a.missedWorkouts).length,
+      };
+      
+      res.json({ athletes: athletePulse, summary });
+    } catch (error) {
+      console.error("Failed to calculate team pulse:", error);
+      res.status(500).json({ error: "Failed to calculate team pulse" });
     }
   });
 
@@ -2134,13 +2283,133 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      // For now, return a demo workout structure
-      // In production, this would query scheduled_workouts table
+      // Find athlete by email
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      let athlete = athletes.find(a => a.email === userEmail);
+      
+      if (!athlete && athletes.length > 0) {
+        // Demo mode: use first athlete
+        athlete = athletes[0];
+      }
+
+      if (!athlete) {
+        return res.json({
+          id: null,
+          date: new Date().toISOString(),
+          exercises: [],
+          hasWorkout: false,
+          message: "No athlete profile found",
+        });
+      }
+
+      // Get athlete's active program assignments
+      const athletePrograms = await storage.getAthletePrograms(athlete.id);
+      const activeProgram = athletePrograms.find(ap => ap.status === "active");
+
+      if (!activeProgram) {
+        return res.json({
+          id: null,
+          date: new Date().toISOString(),
+          exercises: [],
+          hasWorkout: false,
+          message: "No active program assigned",
+        });
+      }
+
+      // Calculate current week and day based on program start date
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const startDate = new Date(activeProgram.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const daysSinceStart = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysSinceStart < 0) {
+        return res.json({
+          id: null,
+          date: new Date().toISOString(),
+          exercises: [],
+          hasWorkout: false,
+          message: "Program hasn't started yet",
+          programStartDate: activeProgram.startDate,
+        });
+      }
+
+      const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+      const currentDay = (daysSinceStart % 7) + 1;
+
+      // Get training blocks for today
+      const blocks = await storage.getTrainingBlocks(activeProgram.programId, currentWeek, currentDay);
+      
+      if (blocks.length === 0) {
+        // Check if it's a rest day or no blocks scheduled
+        return res.json({
+          id: null,
+          date: new Date().toISOString(),
+          exercises: [],
+          hasWorkout: false,
+          currentWeek,
+          currentDay,
+          message: "Rest day - no workout scheduled",
+        });
+      }
+
+      // Get all exercises for lookup
+      const allExercises = await storage.getExercises();
+      const exerciseMap = new Map(allExercises.map(e => [e.id, e]));
+
+      // Build workout with exercises from all blocks
+      const workoutExercises = [];
+      for (const block of blocks) {
+        const blockExercises = await storage.getBlockExercises(block.id);
+        
+        for (const be of blockExercises) {
+          const exercise = exerciseMap.get(be.exerciseId);
+          if (exercise) {
+            // Parse scheme to get sets/reps
+            const scheme = be.scheme || block.scheme || "3x10";
+            const schemeMatch = scheme.match(/(\d+)\s*[xX×]\s*(\d+)/);
+            const numSets = schemeMatch ? parseInt(schemeMatch[1]) : 3;
+            const targetReps = schemeMatch ? parseInt(schemeMatch[2]) : 10;
+
+            const sets = Array.from({ length: numSets }, (_, i) => ({
+              setNumber: i + 1,
+              targetReps,
+              targetWeight: null,
+              completed: false,
+              actualReps: null,
+              actualWeight: null,
+            }));
+
+            workoutExercises.push({
+              id: be.id,
+              exerciseId: exercise.id,
+              exerciseName: exercise.name,
+              blockTitle: block.title,
+              scheme: be.scheme || block.scheme,
+              notes: be.notes,
+              sets,
+              completed: false,
+            });
+          }
+        }
+      }
+
+      // Get program details
+      const program = await storage.getProgram(activeProgram.programId);
+
       res.json({
-        id: "today-workout",
+        id: `workout-${activeProgram.id}-w${currentWeek}d${currentDay}`,
+        athleteProgramId: activeProgram.id,
+        programId: activeProgram.programId,
+        programName: program?.name || "Training Program",
         date: new Date().toISOString(),
-        exercises: [],
-        hasWorkout: true,
+        currentWeek,
+        currentDay,
+        exercises: workoutExercises,
+        hasWorkout: workoutExercises.length > 0,
+        blocks: blocks.map(b => ({ id: b.id, title: b.title, belt: b.belt })),
       });
     } catch (error) {
       console.error("Failed to get today's workout:", error);
@@ -2156,11 +2425,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "Not authenticated" });
       }
 
-      const { exerciseId, setNumber, reps, weight } = req.body;
+      const { exerciseId, setNumber, reps, weight, blockExerciseId, athleteProgramId } = req.body;
       
-      // Store workout log
-      // In production, this would create/update workout_logs and check for PRs
-      res.json({ success: true, setNumber, reps, weight });
+      // Find athlete by email
+      const athletes = await storage.getAthletes();
+      const userEmail = req.user?.claims?.email;
+      let athlete = athletes.find(a => a.email === userEmail) || athletes[0];
+
+      if (!athlete) {
+        return res.status(404).json({ error: "No athlete profile found" });
+      }
+
+      // Store workout log with proper structure
+      const workoutLog = await storage.createWorkoutLog({
+        athleteId: athlete.id,
+        exerciseId: exerciseId,
+        programExerciseId: blockExerciseId || null,
+        completedAt: new Date(),
+        sets: 1,
+        repsPerSet: reps?.toString() || "0",
+        weightPerSet: weight?.toString() || "0",
+        notes: `Set ${setNumber}`,
+      });
+
+      // Check if this is a potential PR (weight > any previous for this exercise)
+      const existingRecords = await storage.getPersonalRecords(athlete.id);
+      const exerciseRecords = existingRecords.filter(pr => pr.exerciseId === exerciseId);
+      const maxPrevWeight = exerciseRecords.reduce((max, pr) => Math.max(max, pr.maxWeight || 0), 0);
+      
+      let isPR = false;
+      let newPR = null;
+      
+      if (weight && weight > maxPrevWeight && weight > 0) {
+        isPR = true;
+        newPR = await storage.createPersonalRecord({
+          athleteId: athlete.id,
+          exerciseId: exerciseId,
+          maxWeight: weight,
+          reps: reps,
+        });
+      }
+
+      res.json({ 
+        success: true, 
+        setNumber, 
+        reps, 
+        weight,
+        workoutLogId: workoutLog.id,
+        isPR,
+        newPR: newPR ? { maxWeight: newPR.maxWeight, reps: newPR.reps } : null,
+      });
     } catch (error) {
       console.error("Failed to log set:", error);
       res.status(500).json({ error: "Failed to log set" });

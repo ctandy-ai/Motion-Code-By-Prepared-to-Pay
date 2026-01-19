@@ -224,6 +224,7 @@ export interface IStorage {
   copyTemplatePhasesToProgram(templateId: string, phaseIds: string[], targetProgramId: string, coachId: string): Promise<ProgramPhase[]>;
   copyTemplateWeeksToProgram(templateId: string, startWeek: number, endWeek: number, targetProgramId: string, insertAtWeek: number, coachId: string): Promise<ProgramWeek[]>;
 
+  getAllReadinessSurveys(): Promise<ReadinessSurvey[]>;
   getReadinessSurveys(athleteId: string): Promise<ReadinessSurvey[]>;
   getReadinessSurvey(id: string): Promise<ReadinessSurvey | undefined>;
   getTodaysSurvey(athleteId: string): Promise<ReadinessSurvey | undefined>;
@@ -1330,6 +1331,13 @@ export class DatabaseStorage implements IStorage {
 
       return newWeeks;
     });
+  }
+
+  async getAllReadinessSurveys(): Promise<ReadinessSurvey[]> {
+    return await db
+      .select()
+      .from(readinessSurveys)
+      .orderBy(desc(readinessSurveys.surveyDate));
   }
 
   async getReadinessSurveys(athleteId: string): Promise<ReadinessSurvey[]> {

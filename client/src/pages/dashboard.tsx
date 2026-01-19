@@ -7,6 +7,7 @@ import { XPBar } from "@/components/xp-bar";
 import { StreakCounter } from "@/components/streak-counter";
 import { AchievementBadge } from "@/components/achievement-badge";
 import { DailyChallengeCard } from "@/components/daily-challenge-card";
+import { TeamPulse } from "@/components/team-pulse";
 
 interface DashboardStats {
   totalWorkouts: number;
@@ -86,6 +87,8 @@ export default function Dashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
+          <TeamPulse />
+          
           <Card className="bglass shadow-glass border-0">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold text-slate-100">Activity Overview</CardTitle>
