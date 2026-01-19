@@ -26,7 +26,17 @@ The UI features a premium dark glassmorphism theme with an "Ocean Depth" color p
 - **Team Pulse Dashboard**: At-a-glance athlete status indicators on the coach dashboard. Shows color-coded status (green/yellow/red) based on readiness scores, workout compliance, and soreness alerts. Summary stats display average team readiness, soreness alerts, and missed workouts. Each athlete card links to their detail page for quick navigation. Uses `/api/team-pulse` endpoint that aggregates wellness surveys (last 3 days), workout logs (last 7 days), and active program assignments.
 - **Coach Heuristics System**: Database-backed rule engine (coach_heuristics table) allowing coaches to define AI-triggering rules. Supports trigger types (readiness_low, soreness_high, missed_sessions, etc.), action types (reduce_volume, add_exercises, flag_review), priority levels, and active/inactive toggles. Full CRUD UI for rule management.
 - **AI Coach Assistant**: Integrates GPT-4.1 via Replit AI Integrations with full program context awareness. Builds comprehensive context from athletes, programs, blocks, exercises, wellness surveys, and coach heuristics. Features function-calling for real program modifications (add exercises, adjust volume, flag athletes, assign programs). Includes confirmation workflow: AI proposes changes -> saves to pendingAiActions table -> coach approves/rejects -> backend executes storage operations. Compliance safeguards avoid medical advice.
-- **Belt System Design**: Planned auto-promotion logic for athletes based on KPI test results.
+- **Belt System Design**: Three-tier athlete classification (WHITE/BLUE/BLACK) based on training age, movement quality, injury history, and exposure tracking. Belt level determines weekly budgets and exercise constraints.
+- **Program Engine (Intelligent Coaching Guidance)**: Rules-based engine that provides real-time guidance to coaches during program creation. Features:
+  - Belt classification algorithm using training age, movement quality score (1-5), injury flags (recurrent hamstring/calf/groin), and recent exposure tracking
+  - Weekly budget calculator for plyo contacts, hard lower sets, and speed touches with phase/wave multipliers
+  - Phase types: PRESEASON_A, XMAS_BLOCK, PRESEASON_B, PRECOMP, INSEASON_EARLY/MID/LATE, BYE_WEEK
+  - Wave weeks: Build (baseline), Intensify (-5% volume), Express/Deload (-25% volume)
+  - Stage overlay constraints for RTP/ACL athletes (ACL_STAGE_1/2/3, RTP_HAMSTRING, RTP_CALF)
+  - Global stop rules emphasizing quality over quantity
+  - API endpoints: /api/program-engine/preview, /api/program-engine/options, /api/program-engine/stages
+  - UI component displays budget progress bars, session caps, warnings, and educational stop rules
+- **Athlete Training Profile**: Per-athlete meta-data for Program Engine input including training age, movement quality score, injury flags, and recent exposure counts. Editable UI on athlete detail page with real-time Engine guidance updates.
 - **Mobile Athlete Portal**: Touch-optimized mobile experience for athletes at /m/* routes. Features:
   - MobileHome (/m): Dashboard with greeting, today's workout, quick stats (streak, weekly workouts, PRs), wellness and messages shortcuts
   - MobileWorkout (/m/workout): Today's workout view with touch-optimized set logging
