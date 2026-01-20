@@ -37,6 +37,12 @@ The UI features a premium dark glassmorphism theme with an "Ocean Depth" color p
   - API endpoints: /api/program-engine/preview, /api/program-engine/options, /api/program-engine/stages
   - UI component displays budget progress bars, session caps, warnings, and educational stop rules
 - **Athlete Training Profile**: Per-athlete meta-data for Program Engine input including training age, movement quality score, injury flags, and recent exposure counts. Editable UI on athlete detail page with real-time Engine guidance updates.
+- **Enhanced Program Builder**: Enterprise-level visual program builder at `/programs/:programId/build` featuring:
+  - ExerciseSidebar: Searchable exercise library with category filtering and drag-to-add functionality
+  - WeekDayGrid: 7-day visual grid with week navigation, drop zones for exercises, and inline editing
+  - InlineEngineGuidance: Compact budget bars showing plyo contacts, hard lower sets, and speed touches per week with real-time Program Engine integration
+  - Routes: Enhanced builder at `/build`, legacy builder preserved at `/builder`
+  - **Future Enhancement (Phase 2)**: Belt-level exercise filtering requires adding `beltLevel` field to Exercise schema and classifying 1,769 exercises; currently out of scope per minimal changes constraint
 - **Mobile Athlete Portal**: Touch-optimized mobile experience for athletes at /m/* routes. Features:
   - MobileHome (/m): Dashboard with greeting, today's workout, quick stats (streak, weekly workouts, PRs), wellness and messages shortcuts
   - MobileWorkout (/m/workout): Today's workout view with touch-optimized set logging

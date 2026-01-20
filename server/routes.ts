@@ -2717,7 +2717,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PROGRAM ENGINE - Intelligent Coaching Guidance
   // =============================================
 
-  // Get program engine guidance for an athlete
+  // Get program engine guidance for an athlete (GET version for standard useQuery)
+  app.get("/api/program-engine/preview", async (req, res) => {
+    try {
+      const { generateEngineGuidance } = await import("./program-engine");
+      
+      const athleteId = req.query.athleteId as string;
+      const phase = (req.query.phase as string) || "PRESEASON_A";
+      const waveWeek = parseInt(req.query.waveWeek as string) || 1;
+      const trainingDaysPerWeek = parseInt(req.query.trainingDaysPerWeek as string) || 3;
+      
+      if (!athleteId) {
+        return res.status(400).json({ error: "athleteId is required" });
+      }
+      
+      const profile = await storage.getAthleteTrainingProfile(athleteId);
+      const existingClassification = await storage.getLatestBeltClassification(athleteId);
+      
+      const guidance = generateEngineGuidance(
+        profile || null,
+        existingClassification || null,
+        phase,
+        waveWeek,
+        null,
+        trainingDaysPerWeek
+      );
+      
+      res.json(guidance);
+    } catch (error) {
+      console.error("Failed to generate program engine guidance:", error);
+      res.status(500).json({ error: "Failed to generate program engine guidance" });
+    }
+  });
+
+  // Get program engine guidance for an athlete (POST version - deprecated, use GET)
   app.post("/api/program-engine/preview", async (req, res) => {
     try {
       const { generateEngineGuidance, PHASE_OPTIONS, WAVE_WEEK_OPTIONS } = await import("./program-engine");

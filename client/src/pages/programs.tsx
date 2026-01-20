@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Program, InsertProgram } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, BookOpen, Calendar } from "lucide-react";
+import { Plus, BookOpen, Calendar, Layers } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -247,6 +247,14 @@ export default function Programs() {
               <div className="space-y-2 border-t border-white/10 pt-4 mt-4">
                 <button
                   className="btn btn-pri w-full text-xs" 
+                  onClick={() => setLocation(`/programs/${program.id}/build`)}
+                  data-testid={`button-build-${program.id}`}
+                >
+                  <Layers className="h-3.5 w-3.5 mr-1.5 inline" />
+                  Open Builder
+                </button>
+                <button
+                  className="btn btn-sec w-full text-xs" 
                   onClick={() => setLocation(`/programs/${program.id}/planner`)}
                   data-testid={`button-planner-${program.id}`}
                 >
@@ -267,7 +275,7 @@ export default function Programs() {
                     onClick={() => setLocation(`/programs/${program.id}/builder`)}
                     data-testid={`button-edit-${program.id}`}
                   >
-                    Legacy Builder
+                    Legacy
                   </button>
                   <button
                     className="btn btn-sec text-xs"
