@@ -319,20 +319,87 @@ export async function getProgramSuggestions(
 
 export async function getExerciseRecommendations(
   goals: string[],
-  constraints: { injuries?: string[]; equipment?: string[]; beltLevel?: string },
+  constraints: { injuries?: string[]; equipment?: string[]; beltLevel?: string; athleteId?: string },
   storage: IStorage
 ): Promise<AIResponse> {
+  let athleteContext = "";
+  
+  if (constraints.athleteId) {
+    const athlete = await storage.getAthlete(constraints.athleteId);
+    const profile = await storage.getAthleteTrainingProfile(constraints.athleteId);
+    if (athlete && profile) {
+      athleteContext = `
+Athlete: ${athlete.name}
+Belt Level: ${profile.beltLevel || "BLUE"}
+Training Age: ${profile.trainingAge || 1} years
+Movement Quality: ${profile.movementQualityScore || 3}/5
+Injury Flags: ${profile.injuryFlags?.join(", ") || "None"}`;
+    }
+  }
+
   const query = `Recommend exercises for these goals: ${goals.join(", ")}. 
+${athleteContext}
 Constraints: ${constraints.injuries?.length ? `Avoid movements that stress: ${constraints.injuries.join(", ")}` : "No injury restrictions"}
 Equipment available: ${constraints.equipment?.join(", ") || "Full gym"}
-Athlete level: ${constraints.beltLevel || "BLUE"}`;
+Athlete level: ${constraints.beltLevel || "BLUE"}
+
+Provide:
+1. Primary exercise recommendations (3-5 exercises) with sets/reps
+2. Alternative exercises if primary aren't available
+3. Progression pathway for each exercise
+4. Safety considerations for this athlete's profile`;
 
   return processAIQuery(query, { level: "exercise" }, storage);
 }
 
 export async function getTeamInsights(storage: IStorage): Promise<AIResponse> {
+  const athletes = await storage.getAllAthletes();
+  const surveys = await storage.getAllReadinessSurveys();
+  const workoutLogs = await storage.getWorkoutLogs();
+  
+  const now = new Date();
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  
+  const athleteStats = await Promise.all(athletes.map(async (athlete) => {
+    const profile = await storage.getAthleteTrainingProfile(athlete.id);
+    const athleteSurveys = surveys.filter(s => s.athleteId === athlete.id);
+    const recentSurveys = athleteSurveys.filter(s => new Date(s.createdAt || 0) >= sevenDaysAgo);
+    const athleteWorkouts = workoutLogs.filter(w => w.athleteId === athlete.id);
+    const recentWorkouts = athleteWorkouts.filter(w => new Date(w.completedAt || 0) >= sevenDaysAgo);
+    
+    const avgReadiness = recentSurveys.length > 0 
+      ? recentSurveys.reduce((sum, s) => sum + (s.readinessScore || 0), 0) / recentSurveys.length 
+      : 0;
+    
+    const avgSoreness = recentSurveys.length > 0
+      ? recentSurveys.reduce((sum, s) => sum + (s.sorenessScore || 0), 0) / recentSurveys.length
+      : 0;
+    
+    return {
+      name: athlete.name,
+      beltLevel: profile?.beltLevel || "BLUE",
+      avgReadiness: avgReadiness.toFixed(1),
+      avgSoreness: avgSoreness.toFixed(1),
+      workoutsThisWeek: recentWorkouts.length,
+      hasSurveysThisWeek: recentSurveys.length > 0,
+      injuryFlags: profile?.injuryFlags || []
+    };
+  }));
+  
+  const teamContext = `
+TEAM ROSTER ANALYSIS (${athletes.length} athletes):
+${athleteStats.map(a => `- ${a.name} (${a.beltLevel}): Readiness ${a.avgReadiness}/10, Soreness ${a.avgSoreness}/10, Workouts: ${a.workoutsThisWeek}/week${a.injuryFlags.length ? `, Flags: ${a.injuryFlags.join(", ")}` : ""}`).join("\n")}
+`;
+  
   return processAIQuery(
-    "Provide a comprehensive team health check. Identify athletes at risk, workload imbalances, and overall team readiness trends.",
+    `${teamContext}
+
+Analyze this team and provide:
+1. Overall team health status
+2. Athletes requiring immediate attention (high soreness, low readiness, missed workouts)
+3. Workload distribution analysis
+4. Specific recommendations for this week
+5. Risk assessment for upcoming training`,
     { level: "team" },
     storage
   );
@@ -349,11 +416,43 @@ export async function getCoachingDecisionSupport(
   scenario: string,
   storage: IStorage
 ): Promise<AIResponse> {
-  return processAIQuery(
-    `Help me make a decision: ${scenario}. Consider athlete readiness, team dynamics, and best practices.`,
-    { level: "coaching" },
-    storage
-  );
+  const heuristics = await storage.getActiveHeuristics();
+  const athletes = await storage.getAllAthletes();
+  const surveys = await storage.getAllReadinessSurveys();
+  
+  const now = new Date();
+  const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+  
+  const recentSurveys = surveys.filter(s => new Date(s.createdAt || 0) >= threeDaysAgo);
+  const avgReadiness = recentSurveys.length > 0
+    ? recentSurveys.reduce((sum, s) => sum + (s.readinessScore || 0), 0) / recentSurveys.length
+    : 0;
+  const avgSoreness = recentSurveys.length > 0
+    ? recentSurveys.reduce((sum, s) => sum + (s.sorenessScore || 0), 0) / recentSurveys.length
+    : 0;
+  
+  const heuristicsContext = heuristics.length > 0
+    ? `\nACTIVE COACHING RULES:\n${heuristics.map(h => `- ${h.name}: When ${h.triggerType} triggers, ${h.actionType} (Priority: ${h.priority})`).join("\n")}`
+    : "";
+  
+  const decisionContext = `
+CURRENT TEAM STATUS:
+- Active Athletes: ${athletes.length}
+- Team Avg Readiness (3 days): ${avgReadiness.toFixed(1)}/10
+- Team Avg Soreness (3 days): ${avgSoreness.toFixed(1)}/10
+${heuristicsContext}
+
+COACHING SCENARIO:
+${scenario}
+
+Provide decision support including:
+1. Analysis of the scenario given current team status
+2. Recommended course of action with rationale
+3. Risk assessment of the recommendation
+4. Alternative approaches to consider
+5. Key metrics to monitor after decision`;
+
+  return processAIQuery(decisionContext, { level: "coaching" }, storage);
 }
 
 export async function updateAthleteWithAI(
