@@ -64,6 +64,17 @@ The UI features a premium dark glassmorphism theme with an "Ocean Depth" color p
   - API endpoints: /api/ai/onboarding/chat, /api/ai/onboarding/create-athlete, /api/ai/onboarding/suggest-programs
   - UI route: /athletes/new/ai with AIOnboardingChat component
   - Access button: "AI Add Athlete" on Athletes page
+- **AI Intelligence System (AI Command Center)**: Unified multi-level AI intelligence accessible from /ai-command-center with 6 capability levels:
+  - **Athlete Level**: Individual athlete insights, injury risk predictions, readiness assessments, belt progression recommendations, profile updates via natural language
+  - **Program Level**: Periodization optimization, volume/intensity balancing, recovery week placement, phase transition suggestions
+  - **Exercise Level**: Context-aware exercise recommendations with athlete-specific considerations, injury-safe substitutions, progression pathways
+  - **Team Level**: Comprehensive roster analysis with athlete readiness/soreness metrics, workload distribution, injury risk patterns, compliance monitoring
+  - **Analytics Level**: Natural language queries for performance data, PR summaries, trend analysis
+  - **Coaching Level**: Decision support integrating team status, active heuristics, risk assessment, and actionable recommendations
+  - Features structured JSON responses with insights (categorized with severity levels), suggestions (actionable items), and predictions (with confidence scores)
+  - API endpoints: POST /api/ai/query (main), GET /api/ai/athlete/:id/insights, GET /api/ai/program/:id/suggestions, POST /api/ai/exercises/recommend, GET /api/ai/team/insights, POST /api/ai/analytics/query, POST /api/ai/coaching/decision, POST /api/ai/athlete/:id/update
+  - Uses response_format: { type: "json_object" } for reliable structured responses
+  - Maintains "AI proposes, coach disposes" philosophy - all updates require coach confirmation
 
 ### System Design Choices
 - **Tech Stack**: React 18 with TypeScript and Wouter for frontend; Express.js with TypeScript for backend; PostgreSQL with Drizzle ORM for the database; Shadcn UI with Tailwind CSS for UI; Recharts for charting; React Hook Form with Zod for forms.
