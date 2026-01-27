@@ -2802,6 +2802,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // =============================================
+  // AI INTELLIGENCE SYSTEM - Multi-Level AI
+  // =============================================
+  const { 
+    processAIQuery, 
+    getAthleteInsights, 
+    getProgramSuggestions, 
+    getExerciseRecommendations,
+    getTeamInsights,
+    queryAnalytics,
+    getCoachingDecisionSupport,
+    updateAthleteWithAI
+  } = await import("./ai-intelligence");
+
+  app.post("/api/ai/query", async (req, res) => {
+    try {
+      const { query, level, entityId } = req.body;
+      
+      if (!query || !level) {
+        return res.status(400).json({ error: "Query and level are required" });
+      }
+      
+      const result = await processAIQuery(query, { level, entityId }, storage);
+      res.json(result);
+    } catch (error) {
+      console.error("AI query failed:", error);
+      res.status(500).json({ error: "Failed to process AI query" });
+    }
+  });
+
+  app.get("/api/ai/athlete/:athleteId/insights", async (req, res) => {
+    try {
+      const { athleteId } = req.params;
+      const insights = await getAthleteInsights(athleteId, storage);
+      res.json(insights);
+    } catch (error) {
+      console.error("Failed to get athlete insights:", error);
+      res.status(500).json({ error: "Failed to get insights" });
+    }
+  });
+
+  app.get("/api/ai/program/:programId/suggestions", async (req, res) => {
+    try {
+      const { programId } = req.params;
+      const suggestions = await getProgramSuggestions(programId, storage);
+      res.json(suggestions);
+    } catch (error) {
+      console.error("Failed to get program suggestions:", error);
+      res.status(500).json({ error: "Failed to get suggestions" });
+    }
+  });
+
+  app.post("/api/ai/exercises/recommend", async (req, res) => {
+    try {
+      const { goals, constraints } = req.body;
+      const recommendations = await getExerciseRecommendations(goals || [], constraints || {}, storage);
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Failed to get exercise recommendations:", error);
+      res.status(500).json({ error: "Failed to get recommendations" });
+    }
+  });
+
+  app.get("/api/ai/team/insights", async (req, res) => {
+    try {
+      const insights = await getTeamInsights(storage);
+      res.json(insights);
+    } catch (error) {
+      console.error("Failed to get team insights:", error);
+      res.status(500).json({ error: "Failed to get team insights" });
+    }
+  });
+
+  app.post("/api/ai/analytics/query", async (req, res) => {
+    try {
+      const { query } = req.body;
+      
+      if (!query) {
+        return res.status(400).json({ error: "Query is required" });
+      }
+      
+      const result = await queryAnalytics(query, storage);
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to query analytics:", error);
+      res.status(500).json({ error: "Failed to query analytics" });
+    }
+  });
+
+  app.post("/api/ai/coaching/decision", async (req, res) => {
+    try {
+      const { scenario } = req.body;
+      
+      if (!scenario) {
+        return res.status(400).json({ error: "Scenario is required" });
+      }
+      
+      const support = await getCoachingDecisionSupport(scenario, storage);
+      res.json(support);
+    } catch (error) {
+      console.error("Failed to get coaching decision support:", error);
+      res.status(500).json({ error: "Failed to get decision support" });
+    }
+  });
+
+  app.post("/api/ai/athlete/:athleteId/update", async (req, res) => {
+    try {
+      const { athleteId } = req.params;
+      const { updateDescription } = req.body;
+      
+      if (!updateDescription) {
+        return res.status(400).json({ error: "Update description is required" });
+      }
+      
+      const result = await updateAthleteWithAI(athleteId, updateDescription, storage);
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to process athlete update:", error);
+      res.status(500).json({ error: "Failed to process update" });
+    }
+  });
+
+  // =============================================
   // AI ONBOARDING CHAT - Natural Language Athlete Creation
   // =============================================
   const { processOnboardingMessage, createAthleteFromOnboarding, suggestProgramsForAthlete } = await import("./ai-onboarding");

@@ -60,6 +60,11 @@ const mainMenuItems = [
     url: "/analytics",
     icon: BarChart3,
   },
+  {
+    title: "AI Command Center",
+    url: "/ai-command-center",
+    icon: Brain,
+  },
 ];
 
 const coachToolsItems = [
