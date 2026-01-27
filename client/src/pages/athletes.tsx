@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Athlete, InsertAthlete } from "@shared/schema";
+import { Athlete, InsertAthlete, Program } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Mail, Users as UsersIcon, Upload, Eye, Sparkles } from "lucide-react";
+import { Plus, Search, Mail, Users as UsersIcon, Upload, Eye, Sparkles, CheckSquare, Target, MessageSquare, X } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -22,24 +23,41 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertAthleteSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Athletes() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
+  const [isBulkMessageOpen, setIsBulkMessageOpen] = useState(false);
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [importProgress, setImportProgress] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedAthletes, setSelectedAthletes] = useState<Set<string>>(new Set());
+  const [selectedProgram, setSelectedProgram] = useState<string>("");
+  const [bulkMessage, setBulkMessage] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
   const { data: athletes, isLoading } = useQuery<Athlete[]>({
     queryKey: ["/api/athletes"],
+  });
+
+  const { data: programs } = useQuery<Program[]>({
+    queryKey: ["/api/programs"],
   });
 
   const form = useForm<InsertAthlete>({
@@ -111,8 +129,96 @@ export default function Athletes() {
     },
   });
 
+  const bulkAssignMutation = useMutation({
+    mutationFn: async ({ athleteIds, programId }: { athleteIds: string[]; programId: string }) => {
+      const results = [];
+      for (const athleteId of athleteIds) {
+        const result = await apiRequest("POST", `/api/athletes/${athleteId}/assign-program`, { programId });
+        results.push(result);
+      }
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes"] });
+      setIsBulkAssignOpen(false);
+      setSelectedAthletes(new Set());
+      setSelectedProgram("");
+      toast({
+        title: "Programs Assigned",
+        description: `Successfully assigned program to ${selectedAthletes.size} athletes.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Assignment Failed",
+        description: "Failed to assign program to some athletes.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkMessageMutation = useMutation({
+    mutationFn: async ({ athleteIds, content }: { athleteIds: string[]; content: string }) => {
+      return apiRequest("POST", "/api/messages/broadcast", { athleteIds, content });
+    },
+    onSuccess: (data: any) => {
+      setIsBulkMessageOpen(false);
+      setBulkMessage("");
+      setSelectedAthletes(new Set());
+      toast({
+        title: "Messages Sent",
+        description: `Sent message to ${data.sent} athletes.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Send Failed",
+        description: "Failed to send messages.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: InsertAthlete) => {
     createMutation.mutate(data);
+  };
+
+  const toggleAthleteSelection = (athleteId: string) => {
+    setSelectedAthletes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(athleteId)) {
+        newSet.delete(athleteId);
+      } else {
+        newSet.add(athleteId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllAthletes = () => {
+    if (selectedAthletes.size === filteredAthletes?.length) {
+      setSelectedAthletes(new Set());
+    } else {
+      setSelectedAthletes(new Set(filteredAthletes?.map(a => a.id) || []));
+    }
+  };
+
+  const handleBulkAssign = () => {
+    if (selectedProgram && selectedAthletes.size > 0) {
+      bulkAssignMutation.mutate({
+        athleteIds: Array.from(selectedAthletes),
+        programId: selectedProgram,
+      });
+    }
+  };
+
+  const handleBulkMessage = () => {
+    if (bulkMessage.trim() && selectedAthletes.size > 0) {
+      bulkMessageMutation.mutate({
+        athleteIds: Array.from(selectedAthletes),
+        content: bulkMessage.trim(),
+      });
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -342,15 +448,150 @@ export default function Athletes() {
         </div>
       </div>
 
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-        <Input
-          placeholder="Search athletes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 bg-white/5 border-white/10 text-slate-100 placeholder:text-slate-500"
-          data-testid="input-search-athletes"
-        />
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="relative max-w-md w-full md:flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Input
+            placeholder="Search athletes..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-white/5 border-white/10 text-slate-100 placeholder:text-slate-500"
+            data-testid="input-search-athletes"
+          />
+        </div>
+
+        {filteredAthletes && filteredAthletes.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={selectAllAthletes}
+              data-testid="button-select-all"
+            >
+              <CheckSquare className="h-4 w-4 mr-1" />
+              {selectedAthletes.size === filteredAthletes.length ? "Deselect All" : "Select All"}
+            </Button>
+            
+            {selectedAthletes.size > 0 && (
+              <>
+                <Badge variant="secondary" className="px-3 py-1">
+                  {selectedAthletes.size} selected
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedAthletes(new Set())}
+                  data-testid="button-clear-selection"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+                <Dialog open={isBulkAssignOpen} onOpenChange={setIsBulkAssignOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="default" data-testid="button-bulk-assign">
+                      <Target className="h-4 w-4 mr-1" />
+                      Assign Program
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Bulk Program Assignment</DialogTitle>
+                      <DialogDescription>
+                        Assign a training program to {selectedAthletes.size} selected athletes
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Select Program</label>
+                        <Select value={selectedProgram} onValueChange={setSelectedProgram}>
+                          <SelectTrigger data-testid="select-program">
+                            <SelectValue placeholder="Choose a program..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {programs?.map(program => (
+                              <SelectItem key={program.id} value={program.id}>
+                                {program.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="rounded-lg bglass p-3">
+                        <p className="text-sm text-slate-300">
+                          Athletes to assign:
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {Array.from(selectedAthletes).slice(0, 5).map(id => {
+                            const athlete = athletes?.find(a => a.id === id);
+                            return athlete ? (
+                              <Badge key={id} variant="outline" className="text-xs">
+                                {athlete.name}
+                              </Badge>
+                            ) : null;
+                          })}
+                          {selectedAthletes.size > 5 && (
+                            <Badge variant="secondary" className="text-xs">
+                              +{selectedAthletes.size - 5} more
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsBulkAssignOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleBulkAssign}
+                        disabled={!selectedProgram || bulkAssignMutation.isPending}
+                        data-testid="button-confirm-assign"
+                      >
+                        {bulkAssignMutation.isPending ? "Assigning..." : "Assign to All"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={isBulkMessageOpen} onOpenChange={setIsBulkMessageOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="secondary" data-testid="button-bulk-message">
+                      <MessageSquare className="h-4 w-4 mr-1" />
+                      Message
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Message Selected Athletes</DialogTitle>
+                      <DialogDescription>
+                        Send a message to {selectedAthletes.size} selected athletes
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <textarea
+                        className="w-full h-32 rounded-lg bglass border border-white/10 p-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        placeholder="Type your message..."
+                        value={bulkMessage}
+                        onChange={(e) => setBulkMessage(e.target.value)}
+                        data-testid="textarea-bulk-message"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setIsBulkMessageOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button 
+                        onClick={handleBulkMessage}
+                        disabled={!bulkMessage.trim() || bulkMessageMutation.isPending}
+                        data-testid="button-confirm-message"
+                      >
+                        {bulkMessageMutation.isPending ? "Sending..." : "Send Message"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -362,11 +603,23 @@ export default function Athletes() {
       ) : filteredAthletes && filteredAthletes.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredAthletes.map((athlete) => (
-            <Card key={athlete.id} className="bglass shadow-glass border-0 hover-elevate transition-all duration-200" data-testid={`athlete-card-${athlete.id}`}>
+            <Card 
+              key={athlete.id} 
+              className={`bglass shadow-glass border-0 hover-elevate transition-all duration-200 ${selectedAthletes.has(athlete.id) ? 'ring-2 ring-brand-500' : ''}`} 
+              data-testid={`athlete-card-${athlete.id}`}
+            >
               <CardHeader className="space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-white text-xl font-bold">
-                    {athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                  <div className="relative">
+                    <Checkbox
+                      checked={selectedAthletes.has(athlete.id)}
+                      onCheckedChange={() => toggleAthleteSelection(athlete.id)}
+                      className="absolute -top-1 -left-1 z-10 h-5 w-5"
+                      data-testid={`checkbox-athlete-${athlete.id}`}
+                    />
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-white text-xl font-bold">
+                      {athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-heading text-lg font-semibold text-slate-100 truncate">

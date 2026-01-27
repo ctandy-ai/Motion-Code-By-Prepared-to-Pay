@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator, BarChart3, Brain, Zap } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator, BarChart3, Brain, Zap, MessageSquare, Shield } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -64,6 +64,17 @@ const mainMenuItems = [
     title: "AI Command Center",
     url: "/ai-command-center",
     icon: Brain,
+  },
+  {
+    title: "Messages",
+    url: "/coach/messages",
+    icon: MessageSquare,
+  },
+  {
+    title: "Audit Logs",
+    url: "/audit-logs",
+    icon: Shield,
+    isPro: true,
   },
 ];
 

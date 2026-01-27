@@ -917,3 +917,33 @@ export const insertScheduledWorkoutSchema = createInsertSchema(scheduledWorkouts
 });
 export type InsertScheduledWorkout = z.infer<typeof insertScheduledWorkoutSchema>;
 export type ScheduledWorkout = typeof scheduledWorkouts.$inferSelect;
+
+// Audit Logs - Enterprise compliance tracking
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id"),
+  userEmail: varchar("user_email"),
+  userRole: varchar("user_role"),
+  action: text("action").notNull(),
+  resourceType: text("resource_type").notNull(),
+  resourceId: varchar("resource_id"),
+  resourceName: text("resource_name"),
+  details: text("details"),
+  ipAddress: varchar("ip_address"),
+  userAgent: text("user_agent"),
+  success: integer("success").default(1),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  userIdIdx: index("audit_logs_user_id_idx").on(table.userId),
+  actionIdx: index("audit_logs_action_idx").on(table.action),
+  resourceTypeIdx: index("audit_logs_resource_type_idx").on(table.resourceType),
+  createdAtIdx: index("audit_logs_created_at_idx").on(table.createdAt),
+}));
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;

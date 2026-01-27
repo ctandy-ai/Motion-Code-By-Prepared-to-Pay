@@ -29,6 +29,8 @@ import ValdIntegration from "@/pages/vald-integration";
 import AthleteReport from "@/pages/athlete-report";
 import AIOnboardingPage from "@/pages/ai-onboarding";
 import AICommandCenterPage from "@/pages/ai-command-center";
+import CoachMessages from "@/pages/coach-messages";
+import AuditLogs from "@/pages/audit-logs";
 import NotFound from "@/pages/not-found";
 import { AICoachChat } from "@/components/ai-coach-chat";
 import MobileHome from "@/pages/mobile/MobileHome";
@@ -65,6 +67,8 @@ function DesktopRouter() {
       <Route path="/rm-calculator" component={RMCalculatorPage} />
       <Route path="/vald" component={ValdIntegration} />
       <Route path="/ai-command-center" component={AICommandCenterPage} />
+      <Route path="/coach/messages" component={CoachMessages} />
+      <Route path="/audit-logs" component={AuditLogs} />
       <Route component={NotFound} />
     </Switch>
   );

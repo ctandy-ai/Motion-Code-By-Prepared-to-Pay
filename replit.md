@@ -1,7 +1,7 @@
 # MotionCode Pro - Elite Strength & Conditioning Platform
 
 ## Overview
-**MotionCode Pro** is the premium B2B strength and conditioning platform designed for elite performance organizations. It empowers strength coaches to manage exercise libraries, create sophisticated training programs, track athlete progress, and monitor performance metrics through an intuitive, modern interface. Part of the **Prepared to Play** ecosystem, this platform delivers a highly visual, gamified, and AI-powered coaching experience. The business vision is to become the dominant B2B S&C platform by combining 52-week periodization, belt progression mastery, and engagement-grade athlete experiences.
+MotionCode Pro is a premium B2B strength and conditioning platform for elite performance organizations. It enables strength coaches to manage exercise libraries, create advanced training programs, track athlete progress, and monitor performance via an intuitive, modern interface. The platform is part of the Prepared to Play ecosystem, offering a highly visual, gamified, and AI-powered coaching experience. The business aims to dominate the B2B S&C market by integrating 52-week periodization, belt progression, and engaging athlete experiences.
 
 ## User Preferences
 - **Design Philosophy**: Premium dark glassmorphism theme with professional gold accents for Pro tier
@@ -10,77 +10,41 @@
 - **Branding**: Powered by Prepared to Play with MotionCode Pro premium tier identity
 
 ## System Architecture
-The platform is built with a modern web stack, prioritizing a seamless and engaging user experience.
+The platform utilizes a modern web stack, focusing on an engaging user experience.
 
 ### UI/UX Decisions & Design System
-The UI features a premium dark glassmorphism theme with an "Ocean Depth" color palette, incorporating deep ocean blue, professional teal, coral energy, and professional gold. Typography uses Rajdhani, Orbitron, and Inter. Interactive elements include magnetic interactions, breathing animations, reveal effects, gradient text, ripple feedback, and glow effects. Gamification is integrated with XP, levels, streaks, and achievements. The ultra-minimal, responsive layout includes a collapsible Shadcn sidebar with professional gold accents and dark glassmorphism styling, and a TeamBuildr-inspired navigation hierarchy for coach tools. Consistent spacing is maintained throughout.
+The UI features a premium dark glassmorphism theme with an "Ocean Depth" color palette (deep ocean blue, professional teal, coral energy, professional gold). Typography includes Rajdhani, Orbitron, and Inter. Interactive elements like magnetic interactions, breathing animations, reveal effects, gradient text, ripple feedback, and glow effects enhance engagement. Gamification includes XP, levels, streaks, and achievements. The ultra-minimal, responsive layout features a collapsible Shadcn sidebar with professional gold accents and dark glassmorphism, and TeamBuildr-inspired navigation. Consistent spacing is maintained.
 
 ### Technical Implementations & Feature Specifications
-- **Program Templates System**: Features a library of 30 templates, including 24 "plug and play" pathway templates (ACL, Hamstring, Performance) with pre-populated, clinically-vetted exercises. Includes a 52-week athletic performance program. Templates can be searched, filtered, and copied to create editable programs. A `template-seeder` module generates pathway templates, and a `CSV-importer` handles external program imports.
-- **Program Management (Elite Periodization System)**: Offers a tri-pane workspace with a 52-week macro periodization timeline (`PhaseTimeline`), a drag-and-drop weekly planner (`WeeklyPlanner`) for training blocks, and a sophisticated block composer (`BlockComposer`). The system supports CRUD operations for phases, weeks, blocks, and block exercises, with performance optimizations for fast loading and an optimized database schema.
-- **Athlete Management**: Comprehensive profiles, team/position tracking, and program assignment. Supports CSV import for athlete data.
-- **Exercise System**: Includes a read-only Master Exercise Database (1,769 exercises) with advanced filtering, a custom Exercise Library with full CRUD operations, an AI Exercise Classifier (GPT-4.1) for categorizing exercises by belt level and risk, and an RM Calculator using 7 validated formulas.
-- **Workout Logging**: Intuitive interface for athletes to log workouts, track sets/reps/weights, and auto-detect Personal Records (PRs).
-- **Progress Tracking & Analytics**: Features a real data dashboard, XP and level system, calendar integration, and charts for strength progression and PR history.
-- **Coach Analytics Dashboard**: Comprehensive analytics page with 5 Recharts visualizations: strength progression trends (30-day), PR timeline history, team wellness metrics (14-day readiness/sleep/energy), weekly training volume (sets/workouts), and top exercises by PR count.
-- **Team Pulse Dashboard**: At-a-glance athlete status indicators on the coach dashboard. Shows color-coded status (green/yellow/red) based on readiness scores, workout compliance, and soreness alerts. Summary stats display average team readiness, soreness alerts, and missed workouts. Each athlete card links to their detail page for quick navigation. Uses `/api/team-pulse` endpoint that aggregates wellness surveys (last 3 days), workout logs (last 7 days), and active program assignments.
-- **Coach Heuristics System**: Database-backed rule engine (coach_heuristics table) allowing coaches to define AI-triggering rules. Supports trigger types (readiness_low, soreness_high, missed_sessions, etc.), action types (reduce_volume, add_exercises, flag_review), priority levels, and active/inactive toggles. Full CRUD UI for rule management.
-- **AI Coach Assistant**: Integrates GPT-4.1 via Replit AI Integrations with full program context awareness. Builds comprehensive context from athletes, programs, blocks, exercises, wellness surveys, and coach heuristics. Features function-calling for real program modifications (add exercises, adjust volume, flag athletes, assign programs). Includes confirmation workflow: AI proposes changes -> saves to pendingAiActions table -> coach approves/rejects -> backend executes storage operations. Compliance safeguards avoid medical advice.
-- **Belt System Design**: Three-tier athlete classification (WHITE/BLUE/BLACK) based on training age, movement quality, injury history, and exposure tracking. Belt level determines weekly budgets and exercise constraints.
-- **Program Engine (Intelligent Coaching Guidance)**: Rules-based engine that provides real-time guidance to coaches during program creation. Features:
-  - Belt classification algorithm using training age, movement quality score (1-5), injury flags (recurrent hamstring/calf/groin), and recent exposure tracking
-  - Weekly budget calculator for plyo contacts, hard lower sets, and speed touches with phase/wave multipliers
-  - Phase types: PRESEASON_A, XMAS_BLOCK, PRESEASON_B, PRECOMP, INSEASON_EARLY/MID/LATE, BYE_WEEK
-  - Wave weeks: Build (baseline), Intensify (-5% volume), Express/Deload (-25% volume)
-  - Stage overlay constraints for RTP/ACL athletes (ACL_STAGE_1/2/3, RTP_HAMSTRING, RTP_CALF)
-  - Global stop rules emphasizing quality over quantity
-  - API endpoints: /api/program-engine/preview, /api/program-engine/options, /api/program-engine/stages
-  - UI component displays budget progress bars, session caps, warnings, and educational stop rules
-- **Athlete Training Profile**: Per-athlete meta-data for Program Engine input including training age, movement quality score, injury flags, and recent exposure counts. Editable UI on athlete detail page with real-time Engine guidance updates.
-- **Enhanced Program Builder**: Enterprise-level visual program builder at `/programs/:programId/build` featuring:
-  - ExerciseSidebar: Searchable exercise library with category filtering and drag-to-add functionality
-  - WeekDayGrid: 7-day visual grid with week navigation, drop zones for exercises, and inline editing
-  - InlineEngineGuidance: Compact budget bars showing plyo contacts, hard lower sets, and speed touches per week with real-time Program Engine integration
-  - Routes: Enhanced builder at `/build`, legacy builder preserved at `/builder`
-  - **Future Enhancement (Phase 2)**: Belt-level exercise filtering requires adding `beltLevel` field to Exercise schema and classifying 1,769 exercises; currently out of scope per minimal changes constraint
-- **Mobile Athlete Portal**: Touch-optimized mobile experience for athletes at /m/* routes. Features:
-  - MobileHome (/m): Dashboard with greeting, today's workout, quick stats (streak, weekly workouts, PRs), wellness and messages shortcuts
-  - MobileWorkout (/m/workout): Today's workout view with touch-optimized set logging
-  - MobileWellness (/m/wellness): Daily wellness check-in with 1-10 scale ratings for readiness, sleep, soreness, energy, mood
-  - MobileMessages (/m/messages): Athlete-coach messaging with real-time conversation UI
-  - MobileProfile (/m/profile): Profile with belt classification, gamification stats, logout
-  - MobileRPE (/m/rpe): Session RPE logging after workouts
-  - Bottom tab navigation with 5 tabs: Home, Workout, Wellness, Messages, Profile
-  - Auth integration with returnTo parameter for mobile redirect after OIDC login
-  - Mobile API endpoints at /api/mobile/athlete/* for profile, wellness, messages, notifications
-- **VALD Hub Integration**: Connects to VALD Hub API for syncing athlete testing data from performance testing devices (ForceDecks, NordBord, DynaMo, SmartSpeed, AirBand, HumanTrak). Features OAuth 2.0 client credentials flow authentication, profile syncing and athlete linking, test data sync with duplicate prevention, VALD testing data display on athlete profiles, and AI Coach context integration for performance-aware recommendations. Database tables: vald_profiles, vald_tests, vald_trial_results, vald_sync_log.
-- **AI-Powered Athlete Onboarding**: Conversational interface using GPT-4.1 to streamline athlete creation from natural language descriptions. Features:
-  - Natural language input parsing: coaches describe athletes conversationally (name, team, position, training age, movement quality, injuries, goals)
-  - Real-time data extraction: displays captured fields as badges during conversation
-  - Automatic belt classification prediction based on extracted training profile
-  - Program recommendations: suggests templates matching athlete goals and injury history
-  - "AI proposes, coach disposes" philosophy: coach reviews and confirms before creation
-  - Auto-generates placeholder email if not provided to handle database constraints
-  - API endpoints: /api/ai/onboarding/chat, /api/ai/onboarding/create-athlete, /api/ai/onboarding/suggest-programs
-  - UI route: /athletes/new/ai with AIOnboardingChat component
-  - Access button: "AI Add Athlete" on Athletes page
-- **AI Intelligence System (AI Command Center)**: Unified multi-level AI intelligence accessible from /ai-command-center with 6 capability levels:
-  - **Athlete Level**: Individual athlete insights, injury risk predictions, readiness assessments, belt progression recommendations, profile updates via natural language
-  - **Program Level**: Periodization optimization, volume/intensity balancing, recovery week placement, phase transition suggestions
-  - **Exercise Level**: Context-aware exercise recommendations with athlete-specific considerations, injury-safe substitutions, progression pathways
-  - **Team Level**: Comprehensive roster analysis with athlete readiness/soreness metrics, workload distribution, injury risk patterns, compliance monitoring
-  - **Analytics Level**: Natural language queries for performance data, PR summaries, trend analysis
-  - **Coaching Level**: Decision support integrating team status, active heuristics, risk assessment, and actionable recommendations
-  - Features structured JSON responses with insights (categorized with severity levels), suggestions (actionable items), and predictions (with confidence scores)
-  - API endpoints: POST /api/ai/query (main), GET /api/ai/athlete/:id/insights, GET /api/ai/program/:id/suggestions, POST /api/ai/exercises/recommend, GET /api/ai/team/insights, POST /api/ai/analytics/query, POST /api/ai/coaching/decision, POST /api/ai/athlete/:id/update
-  - Uses response_format: { type: "json_object" } for reliable structured responses
-  - Maintains "AI proposes, coach disposes" philosophy - all updates require coach confirmation
+- **Program Templates System**: A library of 30 templates, including 24 "plug and play" pathway templates (e.g., ACL, Hamstring) with clinically-vetted exercises and a 52-week athletic performance program. Templates are searchable, filterable, and copyable for program creation.
+- **Program Management (Elite Periodization System)**: A tri-pane workspace with a 52-week macro periodization timeline, a drag-and-drop weekly planner, and a sophisticated block composer. Supports CRUD operations for program elements with performance optimizations.
+- **Athlete Management**: Comprehensive profiles, team/position tracking, program assignment, and CSV import.
+- **Exercise System**: Includes a read-only Master Exercise Database (1,769 exercises), a custom Exercise Library with CRUD, an AI Exercise Classifier (GPT-4.1) for categorization by belt level and risk, and an RM Calculator.
+- **Workout Logging**: Intuitive athlete interface for logging workouts, tracking sets/reps/weights, and auto-detecting Personal Records (PRs).
+- **Progress Tracking & Analytics**: Real data dashboard, XP/level system, calendar integration, and charts for strength progression and PR history.
+- **Coach Analytics Dashboard**: Comprehensive page with 5 Recharts visualizations: strength trends, PR timeline, team wellness, weekly training volume, and top exercises by PR count.
+- **Team Pulse Dashboard**: At-a-glance athlete status (readiness, workout compliance, soreness) on the coach dashboard, with summary stats and quick navigation to athlete details.
+- **Coach Heuristics System**: A database-backed rule engine allowing coaches to define AI-triggering rules based on athlete data (e.g., low readiness, high soreness) to prompt actions like volume reduction or exercise adjustments.
+- **AI Coach Assistant**: Integrates GPT-4.1 with full program context awareness (athletes, programs, exercises, wellness, heuristics). Supports function-calling for real program modifications (e.g., adding exercises, adjusting volume) with a confirmation workflow (AI proposes -> coach approves/rejects).
+- **Belt System Design**: Three-tier athlete classification (WHITE/BLUE/BLACK) based on training age, movement quality, injury history, and exposure tracking, influencing weekly budgets and exercise constraints.
+- **Program Engine (Intelligent Coaching Guidance)**: A rules-based engine providing real-time guidance during program creation, including belt classification, weekly budget calculation for plyo contacts, hard lower sets, and speed touches, phase types, wave weeks, stage overlay constraints for RTP/ACL athletes, and global stop rules.
+- **Athlete Training Profile**: Per-athlete meta-data (training age, movement quality, injury flags, exposure counts) for Program Engine input, editable on the athlete detail page.
+- **Enhanced Program Builder**: An enterprise-level visual program builder at `/programs/:programId/build` featuring an Exercise Sidebar, a 7-day WeekDayGrid with drag-and-drop, and Inline Engine Guidance displaying budget bars.
+- **Mobile Athlete Portal**: Touch-optimized mobile experience for athletes at `/m/*` routes, including a dashboard, workout logging, daily wellness check-ins, athlete-coach messaging, profile view, and RPE logging, with bottom tab navigation.
+- **VALD Hub Integration**: Connects to the VALD Hub API for syncing athlete testing data (ForceDecks, NordBord, etc.), including OAuth 2.0 authentication, profile syncing, test data synchronization, display on athlete profiles, and AI Coach context integration.
+- **AI-Powered Athlete Onboarding**: A conversational interface using GPT-4.1 for creating athletes from natural language descriptions, extracting data, predicting belt classification, and suggesting programs, with coach review and confirmation.
+- **AI Intelligence System (AI Command Center)**: A unified multi-level AI intelligence accessible from `/ai-command-center` offering insights, suggestions, and predictions at athlete, program, exercise, team, analytics, and coaching levels. It provides structured JSON responses and maintains the "AI proposes, coach disposes" philosophy.
+- **Enhanced Coach Dashboard**: Enterprise-grade dashboard with interactive Recharts visualizations (Team Pulse, Weekly Activity Trends, Belt Distribution), quick actions, recent message previews, and program status cards.
+- **Coach Messaging Center**: A thread-based conversation system at `/coach/messages` with a searchable athlete list, full conversation history, broadcast messaging, read receipts, and real-time updates.
+- **Bulk Operations System**: Enterprise efficiency features on the Athletes page, including multi-select for bulk program assignment and bulk messaging.
+- **Role-Based Access Control (RBAC)**: Enterprise security framework with user roles (ADMIN, HEAD_COACH, ASSISTANT_COACH, ATHLETE) and associated permission sets, utilizing authorization middleware and client-side hooks.
+- **Audit Logging System**: Enterprise compliance tracking with a `audit_logs` database table, recording action types, resource types, user information, and timestamps, accessible via an Audit Logs page.
 
 ### System Design Choices
-- **Tech Stack**: React 18 with TypeScript and Wouter for frontend; Express.js with TypeScript for backend; PostgreSQL with Drizzle ORM for the database; Shadcn UI with Tailwind CSS for UI; Recharts for charting; React Hook Form with Zod for forms.
+- **Tech Stack**: React 18 (TypeScript, Wouter) for frontend; Express.js (TypeScript) for backend; PostgreSQL with Drizzle ORM; Shadcn UI with Tailwind CSS for UI; Recharts for charting; React Hook Form with Zod for forms.
 - **Data Models**: Core entities include Exercises, Athletes, Programs, Workout Logs, Program Phases, Weeks, Training Blocks, and Block Exercises.
-- **Project Structure**: Organized `client/`, `server/`, and `shared/` directories, emphasizing a schema-first development approach.
-- **API Design**: RESTful endpoints with Zod validation and composite queries for performance.
+- **Project Structure**: Organized `client/`, `server/`, and `shared/` directories, emphasizing schema-first development.
+- **API Design**: RESTful endpoints with Zod validation and composite queries.
 
 ## External Dependencies
 - **PostgreSQL**: Primary database.

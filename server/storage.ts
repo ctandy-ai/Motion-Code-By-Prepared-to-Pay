@@ -69,6 +69,8 @@ import {
   type InsertMessage,
   type Notification,
   type InsertNotification,
+  type AuditLog,
+  type InsertAuditLog,
   users,
   exercises,
   athletes,
@@ -105,6 +107,7 @@ import {
   stageOverlays,
   messages,
   notifications,
+  auditLogs,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -234,6 +237,8 @@ export interface IStorage {
   createReadinessSurvey(survey: InsertReadinessSurvey): Promise<ReadinessSurvey>;
 
   getMessages(athleteId: string): Promise<Message[]>;
+  getAllMessages(): Promise<Message[]>;
+  getRecentMessages(limit?: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessagesAsRead(athleteId: string, userId: string): Promise<void>;
 
@@ -247,6 +252,22 @@ export interface IStorage {
   
   getAthleteTrainingProfile(athleteId: string): Promise<AthleteTrainingProfile | undefined>;
   upsertAthleteTrainingProfile(profile: InsertAthleteTrainingProfile): Promise<AthleteTrainingProfile>;
+
+  getAuditLogs(params: {
+    limit?: number;
+    offset?: number;
+    action?: string;
+    resourceType?: string;
+    userId?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<AuditLog[]>;
+  getAuditLogSummary(days: number): Promise<{
+    totalActions: number;
+    byAction: Record<string, number>;
+    byResourceType: Record<string, number>;
+    recentActivity: AuditLog[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1738,6 +1759,21 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(messages.createdAt));
   }
 
+  async getAllMessages(): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async getRecentMessages(limit: number = 50): Promise<Message[]> {
+    return await db
+      .select()
+      .from(messages)
+      .orderBy(desc(messages.createdAt))
+      .limit(limit);
+  }
+
   async createMessage(message: InsertMessage): Promise<Message> {
     const [newMessage] = await db.insert(messages).values(message).returning();
     return newMessage;
@@ -1785,6 +1821,78 @@ export class DatabaseStorage implements IStorage {
       .from(stageOverlays)
       .where(eq(stageOverlays.name, name));
     return stage || undefined;
+  }
+
+  async getAuditLogs(params: {
+    limit?: number;
+    offset?: number;
+    action?: string;
+    resourceType?: string;
+    userId?: string;
+    startDate?: Date;
+    endDate?: Date;
+  }): Promise<AuditLog[]> {
+    const conditions = [];
+    
+    if (params.action) {
+      conditions.push(eq(auditLogs.action, params.action));
+    }
+    if (params.resourceType) {
+      conditions.push(eq(auditLogs.resourceType, params.resourceType));
+    }
+    if (params.userId) {
+      conditions.push(eq(auditLogs.userId, params.userId));
+    }
+    if (params.startDate) {
+      conditions.push(gte(auditLogs.createdAt, params.startDate));
+    }
+    if (params.endDate) {
+      conditions.push(lt(auditLogs.createdAt, params.endDate));
+    }
+
+    const query = db
+      .select()
+      .from(auditLogs)
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(params.limit || 100)
+      .offset(params.offset || 0);
+
+    if (conditions.length > 0) {
+      return await query.where(and(...conditions));
+    }
+    
+    return await query;
+  }
+
+  async getAuditLogSummary(days: number): Promise<{
+    totalActions: number;
+    byAction: Record<string, number>;
+    byResourceType: Record<string, number>;
+    recentActivity: AuditLog[];
+  }> {
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const logs = await db
+      .select()
+      .from(auditLogs)
+      .where(gte(auditLogs.createdAt, startDate))
+      .orderBy(desc(auditLogs.createdAt));
+
+    const byAction: Record<string, number> = {};
+    const byResourceType: Record<string, number> = {};
+    
+    logs.forEach(log => {
+      byAction[log.action] = (byAction[log.action] || 0) + 1;
+      byResourceType[log.resourceType] = (byResourceType[log.resourceType] || 0) + 1;
+    });
+
+    return {
+      totalActions: logs.length,
+      byAction,
+      byResourceType,
+      recentActivity: logs.slice(0, 20),
+    };
   }
 }
 

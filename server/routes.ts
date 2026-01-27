@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { getPermissions, USER_ROLES, requireHeadCoach, requireCoach } from "./auth";
 import {
   insertExerciseSchema,
   insertAthleteSchema,
@@ -28,6 +29,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication BEFORE registering other routes
   await setupAuth(app);
   registerAuthRoutes(app);
+  
+  // User permissions and roles API
+  app.get("/api/user/permissions", (req, res) => {
+    const user = (req as any).user;
+    // Default to ATHLETE (least-privileged) for unauthenticated users
+    const userRole = user?.role || USER_ROLES.ATHLETE;
+    const permissions = getPermissions(userRole);
+    
+    res.json({
+      role: userRole,
+      permissions,
+      availableRoles: Object.values(USER_ROLES),
+      isAuthenticated: !!user,
+    });
+  });
+
+  app.get("/api/user/role", (req, res) => {
+    const user = (req as any).user;
+    // Default to ATHLETE (least-privileged) for unauthenticated users
+    res.json({
+      role: user?.role || USER_ROLES.ATHLETE,
+      user: user ? {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      } : null,
+      isAuthenticated: !!user,
+    });
+  });
+
+  // Audit logs API (Admin/Head Coach only)
+  app.get("/api/audit-logs", requireHeadCoach, async (req, res) => {
+    try {
+      const { limit = 100, offset = 0, action, resourceType, userId, startDate, endDate } = req.query;
+      const logs = await storage.getAuditLogs({
+        limit: Math.min(Number(limit), 500),
+        offset: Number(offset),
+        action: action as string,
+        resourceType: resourceType as string,
+        userId: userId as string,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+      });
+      res.json(logs);
+    } catch (error) {
+      console.error("Failed to fetch audit logs:", error);
+      res.status(500).json({ error: "Failed to fetch audit logs" });
+    }
+  });
+
+  app.get("/api/audit-logs/summary", requireHeadCoach, async (req, res) => {
+    try {
+      const { days = 7 } = req.query;
+      const summary = await storage.getAuditLogSummary(Number(days));
+      res.json(summary);
+    } catch (error) {
+      console.error("Failed to fetch audit summary:", error);
+      res.status(500).json({ error: "Failed to fetch audit summary" });
+    }
+  });
+
   // Exercise routes
   app.get("/api/exercises", async (req, res) => {
     try {
@@ -50,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/exercises", async (req, res) => {
+  app.post("/api/exercises", requireCoach, async (req, res) => {
     try {
       const validated = insertExerciseSchema.parse(req.body);
       const exercise = await storage.createExercise(validated);
@@ -73,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/exercises/:id", async (req, res) => {
+  app.delete("/api/exercises/:id", requireHeadCoach, async (req, res) => {
     try {
       const deleted = await storage.deleteExercise(req.params.id);
       if (!deleted) {
@@ -141,7 +204,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/athletes", async (req, res) => {
+  app.post("/api/athletes", requireCoach, async (req, res) => {
     try {
       const validated = insertAthleteSchema.parse(req.body);
       const athlete = await storage.createAthlete(validated);
@@ -164,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/athletes/:id", async (req, res) => {
+  app.delete("/api/athletes/:id", requireHeadCoach, async (req, res) => {
     try {
       const deleted = await storage.deleteAthlete(req.params.id);
       if (!deleted) {
@@ -177,7 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk import athletes from CSV
-  app.post("/api/athletes/import", async (req, res) => {
+  app.post("/api/athletes/import", requireHeadCoach, async (req, res) => {
     try {
       const { parseTeamBuildrCSV, extractUniqueTeams } = await import("./csv-parser");
       const { csvContent } = req.body;
@@ -390,7 +453,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/programs", async (req, res) => {
+  app.post("/api/programs", requireCoach, async (req, res) => {
     try {
       const validated = insertProgramSchema.parse(req.body);
       const program = await storage.createProgram(validated);
@@ -413,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/programs/:id", async (req, res) => {
+  app.delete("/api/programs/:id", requireHeadCoach, async (req, res) => {
     try {
       const deleted = await storage.deleteProgram(req.params.id);
       if (!deleted) {
@@ -640,7 +703,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/athlete-programs", async (req, res) => {
+  app.post("/api/athlete-programs", requireCoach, async (req, res) => {
     try {
       const body = {
         ...req.body,
@@ -2638,6 +2701,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to send message:", error);
       res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // ===== COACH MESSAGING ENDPOINTS =====
+
+  // Get all messages (for coach inbox)
+  app.get("/api/messages", async (req: any, res) => {
+    try {
+      const allMessages = await storage.getAllMessages();
+      res.json(allMessages);
+    } catch (error) {
+      console.error("Failed to get all messages:", error);
+      res.status(500).json({ error: "Failed to get messages" });
+    }
+  });
+
+  // Get recent messages (for dashboard preview)
+  app.get("/api/messages/recent", async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const recentMessages = await storage.getRecentMessages(limit);
+      res.json(recentMessages);
+    } catch (error) {
+      console.error("Failed to get recent messages:", error);
+      res.status(500).json({ error: "Failed to get messages" });
+    }
+  });
+
+  // Get messages for a specific athlete (coach view)
+  app.get("/api/messages/athlete/:athleteId", async (req: any, res) => {
+    try {
+      const { athleteId } = req.params;
+      const athleteMessages = await storage.getMessages(athleteId);
+      res.json(athleteMessages);
+    } catch (error) {
+      console.error("Failed to get athlete messages:", error);
+      res.status(500).json({ error: "Failed to get messages" });
+    }
+  });
+
+  // Send a message to an athlete (coach sending)
+  app.post("/api/messages/athlete/:athleteId", async (req: any, res) => {
+    try {
+      const { athleteId } = req.params;
+      const { content } = req.body;
+      const userId = req.user?.claims?.sub || "coach";
+
+      const message = await storage.createMessage({
+        senderId: userId,
+        senderType: "coach",
+        recipientId: athleteId,
+        recipientType: "athlete",
+        athleteId,
+        content,
+      });
+
+      res.json(message);
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      res.status(500).json({ error: "Failed to send message" });
+    }
+  });
+
+  // Broadcast message to multiple athletes (Head Coach only)
+  app.post("/api/messages/broadcast", requireHeadCoach, async (req: any, res) => {
+    try {
+      const { athleteIds, content } = req.body;
+      const userId = req.user?.claims?.sub || "coach";
+
+      if (!athleteIds || !Array.isArray(athleteIds) || athleteIds.length === 0) {
+        return res.status(400).json({ error: "athleteIds array required" });
+      }
+
+      const sentMessages = [];
+      for (const athleteId of athleteIds) {
+        const message = await storage.createMessage({
+          senderId: userId,
+          senderType: "coach",
+          recipientId: athleteId,
+          recipientType: "athlete",
+          athleteId,
+          content,
+        });
+        sentMessages.push(message);
+      }
+
+      res.json({ sent: sentMessages.length, messages: sentMessages });
+    } catch (error) {
+      console.error("Failed to broadcast message:", error);
+      res.status(500).json({ error: "Failed to broadcast message" });
+    }
+  });
+
+  // Mark messages as read
+  app.post("/api/messages/athlete/:athleteId/read", async (req: any, res) => {
+    try {
+      const { athleteId } = req.params;
+      const userId = req.user?.claims?.sub || "coach";
+      await storage.markMessagesAsRead(athleteId, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Failed to mark messages as read:", error);
+      res.status(500).json({ error: "Failed to mark as read" });
     }
   });
 
