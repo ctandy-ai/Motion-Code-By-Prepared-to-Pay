@@ -279,16 +279,22 @@ export async function processAIQuery(
       messages,
       temperature: 0.7,
       max_tokens: 1500,
+      response_format: { type: "json_object" }
     });
 
-    const content = response.choices[0]?.message?.content || "";
+    const content = response.choices[0]?.message?.content || "{}";
     
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]) as AIResponse;
+    try {
+      const parsed = JSON.parse(content);
+      return {
+        message: parsed.message || "Analysis complete",
+        insights: Array.isArray(parsed.insights) ? parsed.insights : [],
+        suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
+        predictions: Array.isArray(parsed.predictions) ? parsed.predictions : []
+      };
+    } catch {
+      return { message: content, insights: [], suggestions: [], predictions: [] };
     }
-    
-    return { message: content };
   } catch (error) {
     console.error("AI Intelligence query failed:", error);
     return { message: "I'm having trouble processing that request. Please try again." };
