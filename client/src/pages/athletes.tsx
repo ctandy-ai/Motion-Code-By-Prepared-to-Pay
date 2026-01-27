@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Athlete, InsertAthlete } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Mail, Users as UsersIcon, Upload, Eye } from "lucide-react";
+import { Plus, Search, Mail, Users as UsersIcon, Upload, Eye, Sparkles } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -162,6 +162,15 @@ export default function Athletes() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setLocation("/athletes/new/ai")}
+            className="bg-brand-600/20 border-brand-500/50 hover:bg-brand-600/30"
+            data-testid="button-ai-onboarding"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            AI Add Athlete
+          </Button>
           <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" data-testid="button-import-athletes">

@@ -2801,6 +2801,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =============================================
+  // AI ONBOARDING CHAT - Natural Language Athlete Creation
+  // =============================================
+  const { processOnboardingMessage, createAthleteFromOnboarding, suggestProgramsForAthlete } = await import("./ai-onboarding");
+
+  app.post("/api/ai/onboarding/chat", async (req, res) => {
+    try {
+      const { message, conversationHistory = [] } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ error: "Message is required" });
+      }
+      
+      const response = await processOnboardingMessage(message, conversationHistory, storage);
+      res.json(response);
+    } catch (error) {
+      console.error("Failed to process onboarding chat:", error);
+      res.status(500).json({ error: "Failed to process message" });
+    }
+  });
+
+  app.post("/api/ai/onboarding/create-athlete", async (req, res) => {
+    try {
+      const { athleteData } = req.body;
+      
+      console.log("[AI Onboarding] Create athlete request:", JSON.stringify(athleteData));
+      
+      if (!athleteData || !athleteData.name) {
+        console.log("[AI Onboarding] Missing athlete data or name");
+        return res.status(400).json({ error: "Athlete data with name is required" });
+      }
+      
+      const result = await createAthleteFromOnboarding(athleteData, storage);
+      console.log("[AI Onboarding] Create result:", JSON.stringify(result));
+      
+      if (result.success && result.athleteId) {
+        const suggestions = await suggestProgramsForAthlete(athleteData, storage);
+        console.log("[AI Onboarding] Suggestions:", suggestions.length);
+        res.json({ ...result, suggestedPrograms: suggestions });
+      } else {
+        console.log("[AI Onboarding] Creation failed:", result.error);
+        res.status(400).json(result);
+      }
+    } catch (error) {
+      console.error("[AI Onboarding] Exception:", error);
+      res.status(500).json({ error: "Failed to create athlete" });
+    }
+  });
+
+  app.post("/api/ai/onboarding/suggest-programs", async (req, res) => {
+    try {
+      const { athleteData } = req.body;
+      
+      if (!athleteData) {
+        return res.status(400).json({ error: "Athlete data is required" });
+      }
+      
+      const suggestions = await suggestProgramsForAthlete(athleteData, storage);
+      res.json({ programs: suggestions });
+    } catch (error) {
+      console.error("Failed to suggest programs:", error);
+      res.status(500).json({ error: "Failed to suggest programs" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

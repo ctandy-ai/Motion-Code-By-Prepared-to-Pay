@@ -244,6 +244,9 @@ export interface IStorage {
 
   getStageOverlays(): Promise<StageOverlay[]>;
   getStageOverlay(name: string): Promise<StageOverlay | undefined>;
+  
+  getAthleteTrainingProfile(athleteId: string): Promise<AthleteTrainingProfile | undefined>;
+  upsertAthleteTrainingProfile(profile: InsertAthleteTrainingProfile): Promise<AthleteTrainingProfile>;
 }
 
 export class DatabaseStorage implements IStorage {

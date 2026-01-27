@@ -5,6 +5,8 @@ import { z } from "zod";
 
 // Re-export auth models
 export * from "./models/auth";
+// Re-export AI chat models  
+export * from "./models/chat";
 
 export const exercises = pgTable("exercises", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

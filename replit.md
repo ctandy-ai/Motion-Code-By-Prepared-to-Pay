@@ -54,6 +54,16 @@ The UI features a premium dark glassmorphism theme with an "Ocean Depth" color p
   - Auth integration with returnTo parameter for mobile redirect after OIDC login
   - Mobile API endpoints at /api/mobile/athlete/* for profile, wellness, messages, notifications
 - **VALD Hub Integration**: Connects to VALD Hub API for syncing athlete testing data from performance testing devices (ForceDecks, NordBord, DynaMo, SmartSpeed, AirBand, HumanTrak). Features OAuth 2.0 client credentials flow authentication, profile syncing and athlete linking, test data sync with duplicate prevention, VALD testing data display on athlete profiles, and AI Coach context integration for performance-aware recommendations. Database tables: vald_profiles, vald_tests, vald_trial_results, vald_sync_log.
+- **AI-Powered Athlete Onboarding**: Conversational interface using GPT-4.1 to streamline athlete creation from natural language descriptions. Features:
+  - Natural language input parsing: coaches describe athletes conversationally (name, team, position, training age, movement quality, injuries, goals)
+  - Real-time data extraction: displays captured fields as badges during conversation
+  - Automatic belt classification prediction based on extracted training profile
+  - Program recommendations: suggests templates matching athlete goals and injury history
+  - "AI proposes, coach disposes" philosophy: coach reviews and confirms before creation
+  - Auto-generates placeholder email if not provided to handle database constraints
+  - API endpoints: /api/ai/onboarding/chat, /api/ai/onboarding/create-athlete, /api/ai/onboarding/suggest-programs
+  - UI route: /athletes/new/ai with AIOnboardingChat component
+  - Access button: "AI Add Athlete" on Athletes page
 
 ### System Design Choices
 - **Tech Stack**: React 18 with TypeScript and Wouter for frontend; Express.js with TypeScript for backend; PostgreSQL with Drizzle ORM for the database; Shadcn UI with Tailwind CSS for UI; Recharts for charting; React Hook Form with Zod for forms.
