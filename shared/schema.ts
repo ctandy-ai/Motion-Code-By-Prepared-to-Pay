@@ -676,11 +676,21 @@ export const athleteTrainingProfiles = pgTable("athlete_training_profiles", {
   dateOfBirth: timestamp("date_of_birth"),
   trainingAgeYears: real("training_age_years").default(0),
   
-  // Injury flags
+  // Injury flags - Soft tissue
   recurrentHamstring: integer("recurrent_hamstring").default(0),
   recurrentCalf: integer("recurrent_calf").default(0),
   recurrentGroin: integer("recurrent_groin").default(0),
   recentRTP: integer("recent_rtp").default(0),
+  
+  // Injury flags - Joint/Ligament
+  aclHistory: integer("acl_history").default(0),
+  ankleInjury: integer("ankle_injury").default(0),
+  kneeIssues: integer("knee_issues").default(0),
+  shoulderInjury: integer("shoulder_injury").default(0),
+  lowerBackIssues: integer("lower_back_issues").default(0),
+  
+  // Concussion protocol
+  concussionProtocol: integer("concussion_protocol").default(0),
   
   // Recent exposure tracking (updated periodically)
   sprintExposuresLast14d: integer("sprint_exposures_last_14d").default(0),

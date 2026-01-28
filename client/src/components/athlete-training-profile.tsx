@@ -41,6 +41,12 @@ export function AthleteTrainingProfileCard({ athleteId, athleteName }: AthleteTr
     recurrentCalf: 0,
     recurrentGroin: 0,
     recentRTP: 0,
+    aclHistory: 0,
+    ankleInjury: 0,
+    kneeIssues: 0,
+    shoulderInjury: 0,
+    lowerBackIssues: 0,
+    concussionProtocol: 0,
     sprintExposuresLast14d: 0,
     highDecelSessionsLast14d: 0,
     strengthSessionsLast7d: 0,
@@ -55,6 +61,12 @@ export function AthleteTrainingProfileCard({ athleteId, athleteName }: AthleteTr
         recurrentCalf: profile.recurrentCalf || 0,
         recurrentGroin: profile.recurrentGroin || 0,
         recentRTP: profile.recentRTP || 0,
+        aclHistory: profile.aclHistory || 0,
+        ankleInjury: profile.ankleInjury || 0,
+        kneeIssues: profile.kneeIssues || 0,
+        shoulderInjury: profile.shoulderInjury || 0,
+        lowerBackIssues: profile.lowerBackIssues || 0,
+        concussionProtocol: profile.concussionProtocol || 0,
         sprintExposuresLast14d: profile.sprintExposuresLast14d || 0,
         highDecelSessionsLast14d: profile.highDecelSessionsLast14d || 0,
         strengthSessionsLast7d: profile.strengthSessionsLast7d || 0,
@@ -178,9 +190,9 @@ export function AthleteTrainingProfileCard({ athleteId, athleteName }: AthleteTr
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label className="text-xs text-slate-400 flex items-center gap-1">
-                <AlertTriangle className="h-3 w-3" /> Injury Flags
+                <AlertTriangle className="h-3 w-3" /> Soft Tissue Injuries
               </Label>
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex items-center justify-between p-2 rounded bg-slate-800/30">
@@ -213,6 +225,62 @@ export function AthleteTrainingProfileCard({ athleteId, athleteName }: AthleteTr
                     checked={formData.recentRTP === 1}
                     onCheckedChange={(c) => setFormData({ ...formData, recentRTP: c ? 1 : 0 })}
                     data-testid="switch-recent-rtp"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-xs text-slate-400 flex items-center gap-1">
+                <AlertTriangle className="h-3 w-3" /> Joint/Ligament Issues
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex items-center justify-between p-2 rounded bg-slate-800/30">
+                  <span className="text-xs text-slate-300">ACL History</span>
+                  <Switch
+                    checked={formData.aclHistory === 1}
+                    onCheckedChange={(c) => setFormData({ ...formData, aclHistory: c ? 1 : 0 })}
+                    data-testid="switch-acl-history"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-2 rounded bg-slate-800/30">
+                  <span className="text-xs text-slate-300">Ankle Injury</span>
+                  <Switch
+                    checked={formData.ankleInjury === 1}
+                    onCheckedChange={(c) => setFormData({ ...formData, ankleInjury: c ? 1 : 0 })}
+                    data-testid="switch-ankle-injury"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-2 rounded bg-slate-800/30">
+                  <span className="text-xs text-slate-300">Knee Issues</span>
+                  <Switch
+                    checked={formData.kneeIssues === 1}
+                    onCheckedChange={(c) => setFormData({ ...formData, kneeIssues: c ? 1 : 0 })}
+                    data-testid="switch-knee-issues"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-2 rounded bg-slate-800/30">
+                  <span className="text-xs text-slate-300">Shoulder Injury</span>
+                  <Switch
+                    checked={formData.shoulderInjury === 1}
+                    onCheckedChange={(c) => setFormData({ ...formData, shoulderInjury: c ? 1 : 0 })}
+                    data-testid="switch-shoulder-injury"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-2 rounded bg-slate-800/30">
+                  <span className="text-xs text-slate-300">Lower Back Issues</span>
+                  <Switch
+                    checked={formData.lowerBackIssues === 1}
+                    onCheckedChange={(c) => setFormData({ ...formData, lowerBackIssues: c ? 1 : 0 })}
+                    data-testid="switch-lower-back-issues"
+                  />
+                </div>
+                <div className="flex items-center justify-between p-2 rounded bg-red-900/30 border border-red-600/30">
+                  <span className="text-xs text-red-300">Concussion Protocol</span>
+                  <Switch
+                    checked={formData.concussionProtocol === 1}
+                    onCheckedChange={(c) => setFormData({ ...formData, concussionProtocol: c ? 1 : 0 })}
+                    data-testid="switch-concussion-protocol"
                   />
                 </div>
               </div>
@@ -291,7 +359,27 @@ export function AthleteTrainingProfileCard({ athleteId, athleteName }: AthleteTr
                 {profile.recentRTP ? (
                   <Badge variant="outline" className="text-xs border-amber-500 text-amber-400">RTP</Badge>
                 ) : null}
-                {!profile.recurrentHamstring && !profile.recurrentCalf && !profile.recurrentGroin && !profile.recentRTP && (
+                {profile.aclHistory ? (
+                  <Badge variant="destructive" className="text-xs">ACL</Badge>
+                ) : null}
+                {profile.ankleInjury ? (
+                  <Badge variant="destructive" className="text-xs">Ankle</Badge>
+                ) : null}
+                {profile.kneeIssues ? (
+                  <Badge variant="destructive" className="text-xs">Knee</Badge>
+                ) : null}
+                {profile.shoulderInjury ? (
+                  <Badge variant="destructive" className="text-xs">Shoulder</Badge>
+                ) : null}
+                {profile.lowerBackIssues ? (
+                  <Badge variant="destructive" className="text-xs">Lower Back</Badge>
+                ) : null}
+                {profile.concussionProtocol ? (
+                  <Badge className="text-xs bg-red-700 text-white">Concussion</Badge>
+                ) : null}
+                {!profile.recurrentHamstring && !profile.recurrentCalf && !profile.recurrentGroin && !profile.recentRTP && 
+                 !profile.aclHistory && !profile.ankleInjury && !profile.kneeIssues && !profile.shoulderInjury && 
+                 !profile.lowerBackIssues && !profile.concussionProtocol && (
                   <span className="text-xs text-slate-500">None</span>
                 )}
               </div>
