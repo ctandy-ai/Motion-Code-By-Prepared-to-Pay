@@ -2175,7 +2175,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/athletes/:athleteId/belt", async (req, res) => {
     try {
-      const classification = await storage.getLatestBeltClassification(req.params.athleteId);
+      const athleteId = req.params.athleteId;
+      let classification = await storage.getLatestBeltClassification(athleteId);
+      
+      // Auto-compute belt if missing but training profile exists
+      if (!classification) {
+        const trainingProfile = await storage.getAthleteTrainingProfile(athleteId);
+        if (trainingProfile) {
+          const valdData = await storage.getAthleteValdData(athleteId);
+          const meta = profileToMeta(trainingProfile);
+          
+          const testsWithResults = valdData.tests.map(test => ({
+            testType: test.testType || '',
+            results: (valdData.latestResults.get(test.id) || []).map(r => ({
+              metricName: r.metricName,
+              metricValue: r.metricValue,
+            })),
+          }));
+          
+          const keyTests = extractTestMetrics(testsWithResults);
+          if (trainingProfile.movementQualityScore) {
+            keyTests.movementQualityScore = trainingProfile.movementQualityScore;
+          }
+          
+          const decision = classifyBelt(meta, keyTests);
+          const insertData = decisionToInsert(athleteId, decision);
+          classification = await storage.createBeltClassification(insertData);
+        }
+      }
+      
       res.json(classification || null);
     } catch (error) {
       console.error("Failed to fetch belt classification:", error);
