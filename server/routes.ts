@@ -239,6 +239,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Teams CRUD routes
+  app.get("/api/teams", async (req, res) => {
+    try {
+      const allTeams = await storage.getTeams();
+      res.json(allTeams);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get teams" });
+    }
+  });
+
+  app.get("/api/teams/:id", async (req, res) => {
+    try {
+      const team = await storage.getTeam(req.params.id);
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      res.json(team);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get team" });
+    }
+  });
+
+  app.post("/api/teams", requireCoach, async (req, res) => {
+    try {
+      const { name, description } = req.body;
+      if (!name) {
+        return res.status(400).json({ error: "Team name is required" });
+      }
+      const existingTeam = await storage.getTeamByName(name);
+      if (existingTeam) {
+        return res.status(409).json({ error: "Team with this name already exists" });
+      }
+      const newTeam = await storage.createTeam({ name, description });
+      res.status(201).json(newTeam);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create team" });
+    }
+  });
+
+  // Athlete-Team assignment routes
+  app.get("/api/athletes/:athleteId/teams", async (req, res) => {
+    try {
+      const athleteTeams = await storage.getAthleteTeams(req.params.athleteId);
+      res.json(athleteTeams);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get athlete teams" });
+    }
+  });
+
+  app.post("/api/athletes/:athleteId/teams/:teamId", requireCoach, async (req, res) => {
+    try {
+      await storage.addAthleteToTeam(req.params.athleteId, req.params.teamId);
+      res.status(201).json({ success: true });
+    } catch (error: any) {
+      if (error?.code === '23505') {
+        return res.status(409).json({ error: "Athlete already in team" });
+      }
+      res.status(500).json({ error: "Failed to add athlete to team" });
+    }
+  });
+
+  app.delete("/api/athletes/:athleteId/teams/:teamId", requireCoach, async (req, res) => {
+    try {
+      await storage.removeAthleteFromTeam(req.params.athleteId, req.params.teamId);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to remove athlete from team" });
+    }
+  });
+
   // Bulk import athletes from CSV
   app.post("/api/athletes/import", requireHeadCoach, async (req, res) => {
     try {

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt } from "@shared/schema";
+import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt, Team } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
 import { AthleteTrainingProfileCard } from "@/components/athlete-training-profile";
@@ -149,6 +149,57 @@ export default function AthleteDetail() {
       });
     },
   });
+
+  const { data: athleteTeams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/athletes", athleteId, "teams"],
+    queryFn: async () => {
+      const response = await fetch(`/api/athletes/${athleteId}/teams`);
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!athleteId,
+  });
+
+  const { data: allTeams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  const addTeamMutation = useMutation({
+    mutationFn: async (teamId: string) => {
+      const response = await apiRequest("POST", `/api/athletes/${athleteId}/teams/${teamId}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes", athleteId, "teams"] });
+      toast({ title: "Team added", description: "Athlete has been added to the team." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add team",
+        description: error.message || "Athlete may already be in this team.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const removeTeamMutation = useMutation({
+    mutationFn: async (teamId: string) => {
+      await apiRequest("DELETE", `/api/athletes/${athleteId}/teams/${teamId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes", athleteId, "teams"] });
+      toast({ title: "Team removed", description: "Athlete has been removed from the team." });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to remove team",
+        description: error.message || "An error occurred.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const availableTeamsToAdd = allTeams.filter(t => !athleteTeams.find(at => at.id === t.id));
 
   const getBeltColor = (belt: string | undefined) => {
     switch (belt) {
@@ -493,6 +544,58 @@ export default function AthleteDetail() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bglass shadow-glass border-0">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="text-lg font-medium text-slate-100 flex items-center gap-2">
+              <Users className="h-5 w-5 text-brand-500" />
+              Team Memberships
+            </CardTitle>
+            {availableTeamsToAdd.length > 0 && (
+              <Select
+                onValueChange={(teamId) => addTeamMutation.mutate(teamId)}
+              >
+                <SelectTrigger className="w-[180px]" data-testid="select-add-team">
+                  <SelectValue placeholder="Add to team..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableTeamsToAdd.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {athleteTeams.length === 0 ? (
+            <p className="text-sm text-slate-400">Not assigned to any teams yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {athleteTeams.map((team) => (
+                <Badge
+                  key={team.id}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                  data-testid={`team-badge-${team.id}`}
+                >
+                  {team.name}
+                  <button
+                    onClick={() => removeTeamMutation.mutate(team.id)}
+                    className="ml-1 rounded-full p-0.5 hover-elevate"
+                    data-testid={`button-remove-team-${team.id}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {athleteId && (
         <div className="grid gap-4 md:grid-cols-2">
