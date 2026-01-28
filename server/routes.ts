@@ -703,6 +703,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all athlete-program assignments with joined details for dashboard
+  app.get("/api/athlete-programs/summary", async (req, res) => {
+    try {
+      const allAthletes = await storage.getAthletes();
+      const allPrograms = await storage.getPrograms();
+      
+      const assignments = [];
+      for (const athlete of allAthletes) {
+        const athletePrograms = await storage.getAthletePrograms(athlete.id);
+        const activePrograms = athletePrograms.filter(ap => ap.status === "active");
+        
+        for (const ap of activePrograms) {
+          const program = allPrograms.find(p => p.id === ap.programId);
+          assignments.push({
+            id: ap.id,
+            athleteId: athlete.id,
+            athleteName: athlete.name,
+            programId: ap.programId,
+            programName: program?.name || "Unknown Program",
+            programDuration: program?.duration || 0,
+            startDate: ap.startDate,
+            status: ap.status,
+          });
+        }
+      }
+      
+      res.json(assignments);
+    } catch (error) {
+      console.error("Failed to fetch athlete program summary:", error);
+      res.status(500).json({ error: "Failed to fetch athlete program summary" });
+    }
+  });
+
   app.post("/api/athlete-programs", requireCoach, async (req, res) => {
     try {
       const body = {
