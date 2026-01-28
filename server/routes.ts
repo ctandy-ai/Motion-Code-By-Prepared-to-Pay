@@ -1252,6 +1252,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all training blocks for calendar view (all active programs)
+  app.get("/api/calendar/training-blocks", async (req, res) => {
+    try {
+      const allAthletes = await storage.getAthletes();
+      const allPrograms = await storage.getPrograms();
+      const calendarBlocks: Array<{
+        athleteId: string;
+        athleteName: string;
+        programId: string;
+        programName: string;
+        startDate: Date;
+        blockId: string;
+        blockTitle: string;
+        weekNumber: number;
+        dayNumber: number;
+        belt: string | null;
+        focus: string[];
+      }> = [];
+      
+      for (const athlete of allAthletes) {
+        const athletePrograms = await storage.getAthletePrograms(athlete.id);
+        const activePrograms = athletePrograms.filter(ap => ap.status === "active");
+        
+        for (const ap of activePrograms) {
+          const program = allPrograms.find(p => p.id === ap.programId);
+          if (!program || !ap.startDate) continue;
+          
+          const blocks = await storage.getTrainingBlocks(ap.programId);
+          for (const block of blocks) {
+            calendarBlocks.push({
+              athleteId: athlete.id,
+              athleteName: athlete.name,
+              programId: ap.programId,
+              programName: program.name,
+              startDate: ap.startDate,
+              blockId: block.id,
+              blockTitle: block.title,
+              weekNumber: block.weekNumber,
+              dayNumber: block.dayNumber,
+              belt: block.belt,
+              focus: block.focus || [],
+            });
+          }
+        }
+      }
+      
+      res.json(calendarBlocks);
+    } catch (error) {
+      console.error("Failed to fetch calendar training blocks:", error);
+      res.status(500).json({ error: "Failed to fetch calendar training blocks" });
+    }
+  });
+
   app.get("/api/blocks/:id", async (req, res) => {
     try {
       const block = await storage.getTrainingBlock(req.params.id);

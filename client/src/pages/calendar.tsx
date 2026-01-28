@@ -9,6 +9,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import type { Athlete, AthleteProgram, WorkoutLog, Exercise, ProgramExercise } from "@shared/schema";
 import { format, isSameDay, startOfMonth, endOfMonth, parseISO, isWithinInterval, isBefore, isAfter } from "date-fns";
 
+interface CalendarTrainingBlock {
+  athleteId: string;
+  athleteName: string;
+  programId: string;
+  programName: string;
+  startDate: Date;
+  blockId: string;
+  blockTitle: string;
+  weekNumber: number;
+  dayNumber: number;
+  belt: string | null;
+  focus: string[];
+}
+
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>("all");
@@ -60,6 +74,10 @@ export default function Calendar() {
 
   const { data: allProgramExercises = [] } = useQuery<ProgramExercise[]>({
     queryKey: ['/api/program-exercises'],
+  });
+
+  const { data: calendarBlocks = [] } = useQuery<CalendarTrainingBlock[]>({
+    queryKey: ['/api/calendar/training-blocks'],
   });
 
   const filteredPrograms = selectedAthleteId === "all" 
@@ -122,8 +140,32 @@ export default function Calendar() {
     return scheduledExercises;
   };
 
+  // Get training blocks scheduled for a specific day
+  const getScheduledBlocksForDay = (day: number) => {
+    const targetDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+    targetDate.setHours(0, 0, 0, 0);
+    
+    const filteredBlocks = selectedAthleteId === "all" 
+      ? calendarBlocks 
+      : calendarBlocks.filter(b => b.athleteId === selectedAthleteId);
+    
+    return filteredBlocks.filter(block => {
+      const startDate = new Date(block.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const weekOffset = (block.weekNumber - 1) * 7;
+      const dayOffset = block.dayNumber - 1;
+      const scheduledDate = new Date(startDate);
+      scheduledDate.setDate(scheduledDate.getDate() + weekOffset + dayOffset);
+      
+      return isSameDay(scheduledDate, targetDate);
+    });
+  };
+
   const getScheduledWorkoutsCountForDay = (day: number) => {
-    return getScheduledExercisesForDay(day).length;
+    const exercises = getScheduledExercisesForDay(day).length;
+    const blocks = getScheduledBlocksForDay(day).length;
+    return exercises + blocks;
   };
 
   const getUpcomingWorkouts = () => {
@@ -151,6 +193,7 @@ export default function Calendar() {
   const selectedDayData = selectedDay ? {
     completed: getCompletedWorkoutsForDay(selectedDay),
     scheduledExercises: getScheduledExercisesForDay(selectedDay),
+    scheduledBlocks: getScheduledBlocksForDay(selectedDay),
   } : null;
 
   return (
@@ -429,7 +472,53 @@ export default function Calendar() {
                 </div>
               )}
 
-              {selectedDayData.completed.length === 0 && selectedDayData.scheduledExercises.length === 0 && (
+              {selectedDayData.scheduledBlocks.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-brand-500" />
+                    Training Blocks ({selectedDayData.scheduledBlocks.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedDayData.scheduledBlocks.map((block, idx) => (
+                      <Card key={`${block.blockId}-${idx}`} className="bglass shadow-glass border-0">
+                        <CardContent className="p-4">
+                          <div className="space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-base text-slate-100">{block.blockTitle}</p>
+                                <p className="text-sm text-slate-400">{block.athleteName}</p>
+                              </div>
+                              {block.belt && (
+                                <Badge variant="outline" className="shrink-0">
+                                  {block.belt}
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-slate-400">
+                              <span>Week {block.weekNumber}</span>
+                              <span>•</span>
+                              <span>Day {block.dayNumber}</span>
+                              <span>•</span>
+                              <span>{block.programName}</span>
+                            </div>
+                            {block.focus.length > 0 && (
+                              <div className="flex gap-1 flex-wrap mt-1">
+                                {block.focus.slice(0, 3).map((f, i) => (
+                                  <Badge key={i} variant="secondary" className="text-xs">
+                                    {f}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedDayData.completed.length === 0 && selectedDayData.scheduledExercises.length === 0 && selectedDayData.scheduledBlocks.length === 0 && (
                 <p className="text-center text-slate-400 py-8">
                   No workouts scheduled or completed on this day
                 </p>
