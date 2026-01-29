@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, Clock, X } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Check, Clock, X, Layers } from "lucide-react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -24,6 +25,7 @@ interface CalendarTrainingBlock {
 }
 
 export default function Calendar() {
+  const [, setLocation] = useLocation();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAthleteId, setSelectedAthleteId] = useState<string>("all");
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -463,6 +465,18 @@ export default function Calendar() {
                                   {item.programExercise.notes}
                                 </p>
                               )}
+                              <Button
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => {
+                                  setSelectedDay(null);
+                                  setLocation(`/programs/${item.athleteProgram.programId}`);
+                                }}
+                                data-testid={`button-open-program-${item.athleteProgram.programId}`}
+                              >
+                                <Layers className="h-3.5 w-3.5 mr-1.5" />
+                                Open Program
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -510,6 +524,18 @@ export default function Calendar() {
                                 ))}
                               </div>
                             )}
+                            <Button
+                              size="sm"
+                              className="mt-2"
+                              onClick={() => {
+                                setSelectedDay(null);
+                                setLocation(`/programs/${block.programId}`);
+                              }}
+                              data-testid={`button-open-block-program-${block.programId}`}
+                            >
+                              <Layers className="h-3.5 w-3.5 mr-1.5" />
+                              Open Program
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>

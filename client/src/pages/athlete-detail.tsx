@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt, Team } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
 import { AthleteTrainingProfileCard } from "@/components/athlete-training-profile";
@@ -642,7 +642,15 @@ export default function AthleteDetail() {
                     <Trophy className="h-4 w-4" />
                     <span>{getProgramDuration(ap.programId)} weeks</span>
                   </div>
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setLocation(`/programs/${ap.programId}`)}
+                      data-testid={`button-open-program-${ap.id}`}
+                    >
+                      <Layers className="h-3.5 w-3.5 mr-1.5" />
+                      Open Program
+                    </Button>
                     {ap.status === "active" && (
                       <>
                         <Button
