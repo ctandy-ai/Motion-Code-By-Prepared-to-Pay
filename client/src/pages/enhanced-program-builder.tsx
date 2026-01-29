@@ -263,9 +263,8 @@ export default function EnhancedProgramBuilder() {
       )}
 
       <div className="flex-1 flex min-h-0">
-        <div className="w-64 shrink-0">
+        <div className="w-72 shrink-0">
           <ExerciseSidebar
-            beltLevel="WHITE"
             onExerciseSelect={(exercise) => {
               addExerciseMutation.mutate({ exercise, day: 1 });
             }}
