@@ -4,9 +4,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, Settings, Layers } from "lucide-react";
+import { ArrowLeft, Users, Settings, Layers, LayoutGrid, Calendar } from "lucide-react";
 import { ExerciseSidebar } from "@/components/builder/exercise-sidebar";
 import { WeekDayGrid } from "@/components/builder/week-day-grid";
+import { ProgramTimeline } from "@/components/builder/program-timeline";
 import { InlineEngineGuidance } from "@/components/builder/inline-engine-guidance";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +38,7 @@ export default function EnhancedProgramBuilder() {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | undefined>();
   const [phase, setPhase] = useState("PRESEASON_A");
   const [waveWeek, setWaveWeek] = useState(1);
+  const [showTimeline, setShowTimeline] = useState(true);
 
   const { data: program, isLoading: loadingProgram } = useQuery<Program>({
     queryKey: ["/api/programs", programId],
@@ -209,6 +211,17 @@ export default function EnhancedProgramBuilder() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant={showTimeline ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowTimeline(!showTimeline)}
+            className="gap-1.5"
+            data-testid="toggle-timeline"
+          >
+            <Calendar className="h-4 w-4" />
+            Timeline
+          </Button>
+          
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-slate-500" />
             <Select value={selectedAthleteId || "none"} onValueChange={(v) => setSelectedAthleteId(v === "none" ? undefined : v)}>
@@ -260,6 +273,17 @@ export default function EnhancedProgramBuilder() {
           currentHardSets={weeklyStats.hardLowerSets}
           currentSpeedTouches={weeklyStats.speedTouches}
         />
+      )}
+
+      {showTimeline && program && (
+        <div className="px-4 py-2 border-b border-slate-700/50">
+          <ProgramTimeline
+            program={program}
+            programExercises={programExercises}
+            selectedWeek={selectedWeek}
+            onWeekSelect={setSelectedWeek}
+          />
+        </div>
       )}
 
       <div className="flex-1 flex min-h-0">
