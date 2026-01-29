@@ -283,6 +283,85 @@ const FUNCTION_DEFINITIONS: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         required: []
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'analyze_program',
+      description: 'Analyze and explain the contents of an athlete\'s program, including exercise breakdown, volume distribution, and periodization structure.',
+      parameters: {
+        type: 'object',
+        properties: {
+          athleteId: {
+            type: 'string',
+            description: 'The athlete ID whose program to analyze'
+          },
+          athleteName: {
+            type: 'string',
+            description: 'The name of the athlete'
+          },
+          programId: {
+            type: 'string',
+            description: 'The specific program ID to analyze'
+          },
+          analysisType: {
+            type: 'string',
+            enum: ['overview', 'volume_breakdown', 'exercise_categories', 'periodization', 'plyo_jump_analysis', 'full'],
+            description: 'Type of analysis to provide'
+          }
+        },
+        required: ['analysisType']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'suggest_exercises',
+      description: 'Suggest exercises to add to a program based on category, training goals, or gaps in current programming. Particularly useful for plyometrics, jumps, power development, and speed work.',
+      parameters: {
+        type: 'object',
+        properties: {
+          athleteId: {
+            type: 'string',
+            description: 'The athlete ID to suggest exercises for'
+          },
+          athleteName: {
+            type: 'string',
+            description: 'The name of the athlete'
+          },
+          category: {
+            type: 'string',
+            enum: ['Power', 'Plyometric', 'Speed', 'Strength', 'Core', 'Mobility', 'Conditioning', 'Jump'],
+            description: 'Category of exercises to suggest'
+          },
+          beltLevel: {
+            type: 'string',
+            enum: ['WHITE', 'BLUE', 'BLACK'],
+            description: 'Belt level to filter exercises by (affects intensity and complexity)'
+          },
+          weeklyBudget: {
+            type: 'object',
+            properties: {
+              plyoContacts: { type: 'number', description: 'Weekly plyo contact budget' },
+              jumpVolume: { type: 'number', description: 'Weekly jump volume budget' },
+              speedTouches: { type: 'number', description: 'Weekly speed touches budget' }
+            },
+            description: 'Weekly training budgets to consider'
+          },
+          goals: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Training goals (e.g., ["vertical_jump", "acceleration", "power_development"])'
+          },
+          count: {
+            type: 'number',
+            description: 'Number of exercises to suggest (default: 3)'
+          }
+        },
+        required: ['category']
+      }
+    }
   }
 ];
 
@@ -611,10 +690,101 @@ function processToolCalls(
           status: 'pending'
         });
         break;
+
+      case 'analyze_program':
+        // Analysis is informational - no pending action needed
+        // The AI will respond with the analysis directly
+        break;
+
+      case 'suggest_exercises':
+        // When suggesting exercises, create a pending action to add them if coach approves
+        const categoryLabel = args.category || 'recommended';
+        const suggestedExercises = getSuggestedExercisesForCategory(args.category, args.beltLevel, args.count || 3, context);
+        if (suggestedExercises.length > 0) {
+          actions.push({
+            id: generateActionId(),
+            type: 'add_exercise',
+            description: `Add ${suggestedExercises.length} ${categoryLabel} exercise(s) to ${args.athleteName || 'athlete'}'s program`,
+            details: {
+              athleteId: args.athleteId,
+              athleteName: args.athleteName,
+              exercises: suggestedExercises, // Use 'exercises' to match executeApprovedAction expectations
+              frequency: 'twice_weekly',
+              reason: `AI-suggested ${categoryLabel} exercises based on training goals`
+            },
+            athleteId: args.athleteId,
+            status: 'pending'
+          });
+        }
+        break;
     }
   }
 
   return actions;
+}
+
+function getSuggestedExercisesForCategory(
+  category: string,
+  beltLevel: string | undefined,
+  count: number,
+  context: FullCoachingContext
+): Array<{ exerciseId: string; exerciseName: string; sets: number; reps: string; notes: string }> {
+  // Filter exercises by category
+  const categoryExercises = context.exercises.filter(ex => {
+    const exCategory = (ex.category || '').toLowerCase();
+    const searchCategory = (category || '').toLowerCase();
+    
+    // Match Power, Plyometric, Jump categories
+    if (['power', 'plyometric', 'jump'].includes(searchCategory)) {
+      return ['power', 'plyometric', 'plyo', 'jump', 'explosive'].some(term => 
+        exCategory.includes(term) || (ex.name || '').toLowerCase().includes(term)
+      );
+    }
+    
+    // Match Speed category
+    if (searchCategory === 'speed') {
+      return ['speed', 'sprint', 'agility', 'acceleration'].some(term => 
+        exCategory.includes(term) || (ex.name || '').toLowerCase().includes(term)
+      );
+    }
+    
+    return exCategory.includes(searchCategory);
+  });
+
+  // Shuffle and take requested count
+  const shuffled = categoryExercises.sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, count);
+
+  // Map to exercise format with appropriate sets/reps based on belt level
+  return selected.map(ex => {
+    let sets = 3;
+    let reps = '8-10';
+    
+    if (['power', 'plyometric', 'jump'].includes((category || '').toLowerCase())) {
+      // Plyo/power exercises have lower reps, higher quality
+      switch (beltLevel) {
+        case 'WHITE':
+          sets = 2;
+          reps = '5-6';
+          break;
+        case 'BLACK':
+          sets = 4;
+          reps = '6-8';
+          break;
+        default: // BLUE
+          sets = 3;
+          reps = '6-8';
+      }
+    }
+    
+    return {
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      sets,
+      reps,
+      notes: `AI suggested - ${category} exercise for ${beltLevel || 'BLUE'} level athlete`
+    };
+  });
 }
 
 export async function chatWithCoachEnhanced(
@@ -632,14 +802,35 @@ You have FULL ACCESS to the coaching dashboard and can:
 3. Apply coach-defined heuristic rules automatically
 4. Flag athletes for review based on data patterns
 5. Assign programs to athletes
+6. Analyze and explain program contents, volume distribution, and periodization
+7. Suggest exercises including plyometrics, jumps, power, and speed work
 
 ${contextSummary}
+
+EXERCISE CATEGORIES YOU UNDERSTAND:
+- **Power/Plyometric**: Box jumps, depth jumps, bounding, reactive drills, medicine ball throws
+- **Speed/Agility**: Sprint variations, cone drills, acceleration work, change of direction
+- **Strength**: Compound lifts (squat, deadlift, bench, rows), accessory work
+- **Core**: Anti-rotation, stability, bracing exercises
+- **Mobility/Recovery**: Dynamic stretching, foam rolling, activation drills
+
+BELT SYSTEM (Training Age Classification):
+- WHITE: Beginners (0-1 years) - Low intensity plyos, basic movements
+- BLUE: Intermediate (1-3 years) - Moderate plyos, standard jumping
+- BLACK: Advanced (3+ years) - High intensity plyos, complex combinations
+
+WEEKLY BUDGETS TO MONITOR:
+- Plyo Contacts: Ground contacts from jumping exercises
+- Speed Touches: High-velocity sprint/agility touches
+- Hard Lower Sets: Heavy lower body training sets
 
 CAPABILITIES:
 - When the coach asks to modify programs, add exercises, or make adjustments, use the appropriate function
 - You can reference specific athletes, programs, and exercises by name or ID
 - You understand the coach's heuristic rules and can apply them
 - You can analyze wellness trends and training data to make recommendations
+- Use analyze_program to explain what's in a program before suggesting changes
+- Use suggest_exercises to recommend plyos, jumps, power, or other exercises based on goals
 
 CRITICAL COMPLIANCE RULES:
 - You are NOT a medical professional
