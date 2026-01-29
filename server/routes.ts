@@ -751,6 +751,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/program-exercises/:id", async (req, res) => {
+    try {
+      const updated = await storage.updateProgramExercise(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ error: "Program exercise not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update program exercise" });
+    }
+  });
+
   app.delete("/api/program-exercises/:id", async (req, res) => {
     try {
       const deleted = await storage.deleteProgramExercise(req.params.id);

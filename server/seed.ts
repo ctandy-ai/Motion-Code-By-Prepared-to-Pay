@@ -1,5 +1,6 @@
 import { db } from "./db";
-import { exercises, athletes } from "@shared/schema";
+import { exercises, athletes, programs, athletePrograms, programExercises } from "@shared/schema";
+import { eq } from "drizzle-orm";
 
 async function seed() {
   console.log("Seeding database...");
@@ -89,6 +90,95 @@ async function seed() {
       },
     ]);
     console.log("✓ Athletes added");
+  }
+
+  // Add Jake Smith as sample athlete with full program
+  const existingJake = await db.select().from(athletes).where(eq(athletes.name, 'Jake Smith'));
+  let jakeId = existingJake[0]?.id;
+  if (!jakeId) {
+    console.log("Adding Jake Smith athlete...");
+    const [jake] = await db.insert(athletes).values({
+      name: "Jake Smith",
+      email: "jake.smith@example.com",
+      team: "Varsity Football",
+      position: "Wide Receiver",
+      avatarUrl: "",
+      beltLevel: "BLUE",
+      trainingAge: 3,
+    }).returning();
+    jakeId = jake.id;
+    console.log("✓ Jake Smith added");
+  }
+
+  // Add Jake's program
+  const existingJakeProgram = await db.select().from(programs).where(eq(programs.name, 'Jake Smith - Preseason Strength Block'));
+  let jakeProgramId = existingJakeProgram[0]?.id;
+  if (!jakeProgramId) {
+    console.log("Adding Jake Smith's program...");
+    const [program] = await db.insert(programs).values({
+      name: "Jake Smith - Preseason Strength Block",
+      description: "4-week preseason strength program with periodization",
+      duration: 4,
+      difficulty: "Intermediate",
+      createdBy: "Coach Wilson",
+    }).returning();
+    jakeProgramId = program.id;
+
+    // Assign program to Jake
+    await db.insert(athletePrograms).values({
+      athleteId: jakeId,
+      programId: jakeProgramId,
+      startDate: new Date().toISOString().split('T')[0],
+      status: 'active',
+    });
+    console.log("✓ Jake's program created and assigned");
+  }
+
+  // Add program exercises for Jake's program (if not already present)
+  if (jakeProgramId) {
+    const existingProgramExercises = await db.select().from(programExercises).where(eq(programExercises.programId, jakeProgramId));
+    if (existingProgramExercises.length === 0) {
+      console.log("Adding exercises to Jake's program...");
+      
+      const allExercises = await db.select().from(exercises);
+      const getExerciseId = (name: string) => allExercises.find(e => e.name === name)?.id;
+      
+      const squatId = getExerciseId('Barbell Squat');
+      const benchId = getExerciseId('Bench Press');
+      const deadliftId = getExerciseId('Deadlift');
+      const pullupId = getExerciseId('Pull-ups');
+      const pushupId = getExerciseId('Push-ups');
+
+      if (squatId && benchId && deadliftId && pullupId && pushupId) {
+        const programExerciseData = [
+          // Week 1
+          { programId: jakeProgramId, exerciseId: squatId, weekNumber: 1, dayNumber: 1, sets: 4, reps: 8, restSeconds: 120, notes: 'Focus on depth and control', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: deadliftId, weekNumber: 1, dayNumber: 1, sets: 3, reps: 6, restSeconds: 150, notes: 'Hip hinge emphasis', orderIndex: 1 },
+          { programId: jakeProgramId, exerciseId: benchId, weekNumber: 1, dayNumber: 2, sets: 4, reps: 8, restSeconds: 120, notes: 'Full ROM, controlled tempo', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: pushupId, weekNumber: 1, dayNumber: 2, sets: 3, reps: 15, restSeconds: 60, notes: 'Chest to floor', orderIndex: 1 },
+          { programId: jakeProgramId, exerciseId: pullupId, weekNumber: 1, dayNumber: 4, sets: 4, reps: 6, restSeconds: 120, notes: 'Full extension at bottom', orderIndex: 0 },
+          // Week 2
+          { programId: jakeProgramId, exerciseId: squatId, weekNumber: 2, dayNumber: 1, sets: 4, reps: 10, restSeconds: 120, notes: 'Add 5-10lbs from last week', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: deadliftId, weekNumber: 2, dayNumber: 1, sets: 4, reps: 6, restSeconds: 150, notes: 'Progressive overload', orderIndex: 1 },
+          { programId: jakeProgramId, exerciseId: benchId, weekNumber: 2, dayNumber: 2, sets: 4, reps: 10, restSeconds: 120, notes: 'Increase weight 5lbs', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: pushupId, weekNumber: 2, dayNumber: 2, sets: 3, reps: 20, restSeconds: 60, notes: 'Max effort', orderIndex: 1 },
+          { programId: jakeProgramId, exerciseId: pullupId, weekNumber: 2, dayNumber: 4, sets: 4, reps: 8, restSeconds: 120, notes: 'Add weight if possible', orderIndex: 0 },
+          // Week 3
+          { programId: jakeProgramId, exerciseId: squatId, weekNumber: 3, dayNumber: 1, sets: 5, reps: 6, restSeconds: 150, notes: 'Heavy day - 85% 1RM', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: deadliftId, weekNumber: 3, dayNumber: 1, sets: 4, reps: 5, restSeconds: 180, notes: 'Heavy singles', orderIndex: 1 },
+          { programId: jakeProgramId, exerciseId: benchId, weekNumber: 3, dayNumber: 2, sets: 5, reps: 6, restSeconds: 150, notes: 'Peak weight', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: pushupId, weekNumber: 3, dayNumber: 2, sets: 4, reps: 15, restSeconds: 60, notes: 'Explosive tempo', orderIndex: 1 },
+          { programId: jakeProgramId, exerciseId: pullupId, weekNumber: 3, dayNumber: 4, sets: 5, reps: 6, restSeconds: 120, notes: 'Weighted pull-ups', orderIndex: 0 },
+          // Week 4 - Deload
+          { programId: jakeProgramId, exerciseId: squatId, weekNumber: 4, dayNumber: 1, sets: 3, reps: 8, restSeconds: 120, notes: 'Deload - 70% intensity', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: benchId, weekNumber: 4, dayNumber: 2, sets: 3, reps: 8, restSeconds: 120, notes: 'Recovery focus', orderIndex: 0 },
+          { programId: jakeProgramId, exerciseId: pullupId, weekNumber: 4, dayNumber: 4, sets: 3, reps: 6, restSeconds: 120, notes: 'Bodyweight only', orderIndex: 0 },
+        ];
+
+        await db.insert(programExercises).values(programExerciseData);
+        console.log("✓ Program exercises added");
+      }
+    }
   }
 
   console.log("✓ Database seeded successfully");

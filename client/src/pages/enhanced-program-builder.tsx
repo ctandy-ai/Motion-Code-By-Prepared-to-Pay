@@ -147,6 +147,21 @@ export default function EnhancedProgramBuilder() {
     },
   });
 
+  const swapExerciseMutation = useMutation({
+    mutationFn: async ({ programExerciseId, newExerciseId }: { programExerciseId: string; newExerciseId: string }) => {
+      return apiRequest("PATCH", `/api/program-exercises/${programExerciseId}`, {
+        exerciseId: newExerciseId,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs", programId, "exercises"] });
+      toast({ title: "Exercise swapped" });
+    },
+    onError: () => {
+      toast({ title: "Failed to swap exercise", variant: "destructive" });
+    },
+  });
+
   const handleExerciseDrop = (exercise: Exercise, day: number) => {
     addExerciseMutation.mutate({ exercise, day });
   };
@@ -157,6 +172,10 @@ export default function EnhancedProgramBuilder() {
 
   const handleExerciseDelete = (id: string) => {
     deleteExerciseMutation.mutate(id);
+  };
+
+  const handleExerciseSwap = (programExerciseId: string, newExerciseId: string) => {
+    swapExerciseMutation.mutate({ programExerciseId, newExerciseId });
   };
 
   if (loadingProgram) {
@@ -262,10 +281,12 @@ export default function EnhancedProgramBuilder() {
             weekNumber={selectedWeek}
             totalWeeks={program?.duration || 12}
             exercises={exercisesWithDetails}
+            allExercises={allExercises}
             onWeekChange={setSelectedWeek}
             onExerciseDrop={handleExerciseDrop}
             onExerciseUpdate={handleExerciseUpdate}
             onExerciseDelete={handleExerciseDelete}
+            onExerciseSwap={handleExerciseSwap}
             trainingDays={4}
           />
         </div>

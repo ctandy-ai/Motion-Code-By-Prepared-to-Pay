@@ -148,6 +148,7 @@ export interface IStorage {
 
   getProgramExercises(programId?: string): Promise<ProgramExercise[]>;
   createProgramExercise(programExercise: InsertProgramExercise): Promise<ProgramExercise>;
+  updateProgramExercise(id: string, updates: Partial<InsertProgramExercise>): Promise<ProgramExercise | undefined>;
   deleteProgramExercise(id: string): Promise<boolean>;
 
   getProgramTemplates(): Promise<ProgramTemplate[]>;
@@ -435,6 +436,14 @@ export class DatabaseStorage implements IStorage {
   async createProgramExercise(programExercise: InsertProgramExercise): Promise<ProgramExercise> {
     const [newProgramExercise] = await db.insert(programExercises).values(programExercise).returning();
     return newProgramExercise;
+  }
+
+  async updateProgramExercise(id: string, updates: Partial<InsertProgramExercise>): Promise<ProgramExercise | undefined> {
+    const [updated] = await db.update(programExercises)
+      .set(updates)
+      .where(eq(programExercises.id, id))
+      .returning();
+    return updated || undefined;
   }
 
   async deleteProgramExercise(id: string): Promise<boolean> {

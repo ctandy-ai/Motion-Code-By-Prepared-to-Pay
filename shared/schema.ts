@@ -226,6 +226,7 @@ export const programExercises = pgTable("program_exercises", {
   sets: integer("sets").notNull(),
   reps: integer("reps").notNull(),
   restSeconds: integer("rest_seconds"),
+  targetWeight: varchar("target_weight"),
   notes: text("notes"),
   orderIndex: integer("order_index").notNull(),
 });
