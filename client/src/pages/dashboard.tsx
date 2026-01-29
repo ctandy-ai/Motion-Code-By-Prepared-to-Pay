@@ -332,20 +332,24 @@ export default function Dashboard() {
               {athletePrograms && athletePrograms.length > 0 ? (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {athletePrograms.slice(0, 5).map((ap) => (
-                    <Link key={ap.id} href={`/athletes/${ap.athleteId}`}>
-                      <div className="flex items-center justify-between p-3 rounded-xl ringify hover-elevate cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-brand-500/20 flex items-center justify-center">
+                    <div key={ap.id} className="flex items-center justify-between p-3 rounded-xl ringify">
+                      <div className="flex items-center gap-3">
+                        <Link href={`/athletes/${ap.athleteId}`}>
+                          <div className="h-8 w-8 rounded-full bg-brand-500/20 flex items-center justify-center hover-elevate cursor-pointer">
                             <Users className="h-4 w-4 text-brand-400" />
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-200">{ap.athleteName}</p>
-                            <p className="text-xs text-slate-400">{ap.programName}</p>
-                          </div>
+                        </Link>
+                        <div>
+                          <Link href={`/athletes/${ap.athleteId}`}>
+                            <p className="text-sm font-medium text-slate-200 hover:text-brand-400 cursor-pointer" data-testid={`link-athlete-${ap.athleteId}`}>{ap.athleteName}</p>
+                          </Link>
+                          <Link href={`/programs/${ap.programId}`}>
+                            <p className="text-xs text-slate-400 hover:text-brand-300 cursor-pointer" data-testid={`link-program-${ap.programId}`}>{ap.programName}</p>
+                          </Link>
                         </div>
-                        <Badge variant="outline" className="text-xs">{ap.programDuration}w</Badge>
                       </div>
-                    </Link>
+                      <Badge variant="outline" className="text-xs">{ap.programDuration}w</Badge>
+                    </div>
                   ))}
                 </div>
               ) : (
