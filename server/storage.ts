@@ -71,6 +71,8 @@ import {
   type InsertNotification,
   type AuditLog,
   type InsertAuditLog,
+  type AthleteTarget,
+  type InsertAthleteTarget,
   users,
   exercises,
   athletes,
@@ -269,6 +271,12 @@ export interface IStorage {
     byResourceType: Record<string, number>;
     recentActivity: AuditLog[];
   }>;
+
+  getAthleteTargets(athleteId: string): Promise<AthleteTarget[]>;
+  getAthleteTarget(id: string): Promise<AthleteTarget | undefined>;
+  createAthleteTarget(target: InsertAthleteTarget): Promise<AthleteTarget>;
+  updateAthleteTarget(id: string, target: Partial<InsertAthleteTarget>): Promise<AthleteTarget | undefined>;
+  deleteAthleteTarget(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {

@@ -958,3 +958,32 @@ export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
 });
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
+
+// Athlete Targets - 1RM goals and performance targets
+export const athleteTargets = pgTable("athlete_targets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  exerciseId: varchar("exercise_id").notNull(),
+  targetType: text("target_type").notNull(), // '1rm', 'volume', 'reps'
+  targetValue: real("target_value").notNull(),
+  currentValue: real("current_value"),
+  unit: text("unit").notNull().default('kg'), // 'kg', 'lbs', 'reps'
+  deadline: timestamp("deadline"),
+  notes: text("notes"),
+  status: text("status").notNull().default('active'), // 'active', 'achieved', 'archived'
+  achievedAt: timestamp("achieved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  athleteIdx: index("athlete_targets_athlete_idx").on(table.athleteId),
+  exerciseIdx: index("athlete_targets_exercise_idx").on(table.exerciseId),
+}));
+
+export const insertAthleteTargetSchema = createInsertSchema(athleteTargets).omit({
+  id: true,
+  achievedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAthleteTarget = z.infer<typeof insertAthleteTargetSchema>;
+export type AthleteTarget = typeof athleteTargets.$inferSelect;
