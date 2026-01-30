@@ -182,6 +182,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Leaderboard routes
+  app.get("/api/leaderboards", async (req, res) => {
+    try {
+      const { category = "prs" } = req.query;
+      const athletes = await storage.getAthletes();
+      const workoutLogs = await storage.getWorkoutLogs();
+      
+      const leaderboardData = await Promise.all(athletes.map(async (athlete) => {
+        const personalRecords = await storage.getPersonalRecords(athlete.id);
+        const athleteWorkouts = workoutLogs.filter(w => w.athleteId === athlete.id);
+        const totalSets = athleteWorkouts.reduce((sum, w) => sum + (w.sets || 0), 0);
+        const totalVolume = athleteWorkouts.reduce((sum, w) => {
+          try {
+            const weights = w.weightPerSet ? (Array.isArray(JSON.parse(w.weightPerSet)) ? JSON.parse(w.weightPerSet) : []) : [];
+            const reps = w.repsPerSet ? (Array.isArray(JSON.parse(w.repsPerSet)) ? JSON.parse(w.repsPerSet) : []) : [];
+            if (!Array.isArray(weights) || !Array.isArray(reps)) return sum;
+            return sum + weights.reduce((vol: number, weight: number, i: number) => vol + (weight * (reps[i] || 0)), 0);
+          } catch {
+            return sum;
+          }
+        }, 0);
+        
+        const topPR = personalRecords.length > 0 
+          ? personalRecords.reduce((max, pr) => pr.maxWeight > max.maxWeight ? pr : max, personalRecords[0])
+          : null;
+        
+        return {
+          athleteId: athlete.id,
+          athleteName: athlete.name,
+          team: athlete.team,
+          position: athlete.position,
+          totalPRs: personalRecords.length,
+          topPRWeight: topPR?.maxWeight || 0,
+          topPRExerciseId: topPR?.exerciseId || null,
+          totalWorkouts: athleteWorkouts.length,
+          totalSets,
+          totalVolume: Math.round(totalVolume),
+          complianceRate: athlete.stats?.complianceRate || 0,
+          lastWorkout: athleteWorkouts.length > 0 
+            ? athleteWorkouts.sort((a, b) => new Date(b.completedAt || 0).getTime() - new Date(a.completedAt || 0).getTime())[0].completedAt 
+            : null,
+        };
+      }));
+      
+      let sortedData = [...leaderboardData];
+      switch(category) {
+        case "prs":
+          sortedData.sort((a, b) => b.totalPRs - a.totalPRs);
+          break;
+        case "volume":
+          sortedData.sort((a, b) => b.totalVolume - a.totalVolume);
+          break;
+        case "workouts":
+          sortedData.sort((a, b) => b.totalWorkouts - a.totalWorkouts);
+          break;
+        case "compliance":
+          sortedData.sort((a, b) => b.complianceRate - a.complianceRate);
+          break;
+        case "strongest":
+          sortedData.sort((a, b) => b.topPRWeight - a.topPRWeight);
+          break;
+        default:
+          sortedData.sort((a, b) => b.totalPRs - a.totalPRs);
+      }
+      
+      res.json({
+        category,
+        leaderboard: sortedData.map((item, index) => ({ ...item, rank: index + 1 })),
+      });
+    } catch (error) {
+      console.error("Leaderboard error:", error);
+      res.status(500).json({ error: "Failed to fetch leaderboard" });
+    }
+  });
+
   // Athlete routes
   app.get("/api/athletes", async (req, res) => {
     try {
@@ -479,15 +554,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const athlete = await storage.getAthlete(athleteId);
         if (athlete) {
           const personalRecords = await storage.getPersonalRecords(athleteId);
-          const athleteStats = await storage.getAthleteStatsOrCreate(athleteId);
+          const workoutLogs = await storage.getWorkoutLogs();
+          const athleteWorkouts = workoutLogs.filter(w => w.athleteId === athleteId);
+          const totalSets = athleteWorkouts.reduce((sum, w) => sum + (w.setsCompleted || 0), 0);
+          
           athleteContext = {
             athlete,
             personalRecords,
             recentActivity: {
-              totalWorkouts: athleteStats.totalWorkouts,
-              totalSets: athleteStats.totalSetsCompleted,
+              totalWorkouts: athleteWorkouts.length,
+              totalSets: totalSets,
               totalPRs: personalRecords.length,
-              streak: athleteStats.currentStreak,
+              streak: 0,
             }
           };
         }
