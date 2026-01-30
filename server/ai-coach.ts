@@ -2,9 +2,10 @@ import OpenAI from 'openai';
 import type { Athlete, WorkoutLog, PersonalRecord, AthleteProgram, Program, TrainingBlock, BlockExercise, Exercise, ReadinessSurvey, CoachHeuristic } from '@shared/schema';
 import { storage } from './storage';
 
+// Use Replit AI Integrations for OpenAI access (no API key required)
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL,
+  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY,
+  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || process.env.OPENAI_BASE_URL,
 });
 
 export interface AthleteContext {
