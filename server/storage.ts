@@ -75,6 +75,14 @@ import {
   type InsertAthleteTarget,
   type Announcement,
   type InsertAnnouncement,
+  type BodyCompositionLog,
+  type InsertBodyCompositionLog,
+  type CustomSurvey,
+  type InsertCustomSurvey,
+  type TeamSession,
+  type InsertTeamSession,
+  type SessionParticipant,
+  type InsertSessionParticipant,
   users,
   exercises,
   athletes,
@@ -114,6 +122,10 @@ import {
   auditLogs,
   athleteTargets,
   announcements,
+  bodyCompositionLogs,
+  customSurveys,
+  teamSessions,
+  sessionParticipants,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -288,6 +300,33 @@ export interface IStorage {
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
   updateAnnouncement(id: string, announcement: Partial<InsertAnnouncement>): Promise<Announcement | undefined>;
   deleteAnnouncement(id: string): Promise<boolean>;
+
+  // Body Composition
+  getBodyCompositionLogs(athleteId: string): Promise<BodyCompositionLog[]>;
+  getBodyCompositionLog(id: string): Promise<BodyCompositionLog | undefined>;
+  createBodyCompositionLog(log: InsertBodyCompositionLog): Promise<BodyCompositionLog>;
+  deleteBodyCompositionLog(id: string): Promise<boolean>;
+
+  // Custom Surveys
+  getCustomSurveys(): Promise<CustomSurvey[]>;
+  getCustomSurvey(id: string): Promise<CustomSurvey | undefined>;
+  createCustomSurvey(survey: InsertCustomSurvey): Promise<CustomSurvey>;
+  updateCustomSurvey(id: string, survey: Partial<InsertCustomSurvey>): Promise<CustomSurvey | undefined>;
+  deleteCustomSurvey(id: string): Promise<boolean>;
+
+  // Team Sessions
+  getTeamSessions(): Promise<TeamSession[]>;
+  getTeamSession(id: string): Promise<TeamSession | undefined>;
+  createTeamSession(session: InsertTeamSession): Promise<TeamSession>;
+  updateTeamSession(id: string, session: Partial<InsertTeamSession>): Promise<TeamSession | undefined>;
+  deleteTeamSession(id: string): Promise<boolean>;
+
+  // Session Participants
+  getSessionParticipants(sessionId: string): Promise<SessionParticipant[]>;
+  addSessionParticipant(participant: InsertSessionParticipant): Promise<SessionParticipant>;
+  updateSessionParticipant(id: string, participant: Partial<InsertSessionParticipant>): Promise<SessionParticipant | undefined>;
+  removeSessionParticipant(sessionId: string, athleteId: string): Promise<boolean>;
+  checkInParticipant(sessionId: string, athleteId: string): Promise<SessionParticipant | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1985,6 +2024,128 @@ export class DatabaseStorage implements IStorage {
   async deleteAnnouncement(id: string): Promise<boolean> {
     const result = await db.delete(announcements).where(eq(announcements.id, id)).returning();
     return result.length > 0;
+  }
+
+  // Body Composition
+  async getBodyCompositionLogs(athleteId: string): Promise<BodyCompositionLog[]> {
+    return await db
+      .select()
+      .from(bodyCompositionLogs)
+      .where(eq(bodyCompositionLogs.athleteId, athleteId))
+      .orderBy(desc(bodyCompositionLogs.loggedAt));
+  }
+
+  async getBodyCompositionLog(id: string): Promise<BodyCompositionLog | undefined> {
+    const [log] = await db.select().from(bodyCompositionLogs).where(eq(bodyCompositionLogs.id, id));
+    return log || undefined;
+  }
+
+  async createBodyCompositionLog(log: InsertBodyCompositionLog): Promise<BodyCompositionLog> {
+    const [newLog] = await db.insert(bodyCompositionLogs).values(log).returning();
+    return newLog;
+  }
+
+  async deleteBodyCompositionLog(id: string): Promise<boolean> {
+    const result = await db.delete(bodyCompositionLogs).where(eq(bodyCompositionLogs.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Custom Surveys
+  async getCustomSurveys(): Promise<CustomSurvey[]> {
+    return await db
+      .select()
+      .from(customSurveys)
+      .orderBy(desc(customSurveys.createdAt));
+  }
+
+  async getCustomSurvey(id: string): Promise<CustomSurvey | undefined> {
+    const [survey] = await db.select().from(customSurveys).where(eq(customSurveys.id, id));
+    return survey || undefined;
+  }
+
+  async createCustomSurvey(survey: InsertCustomSurvey): Promise<CustomSurvey> {
+    const [newSurvey] = await db.insert(customSurveys).values(survey).returning();
+    return newSurvey;
+  }
+
+  async updateCustomSurvey(id: string, survey: Partial<InsertCustomSurvey>): Promise<CustomSurvey | undefined> {
+    const [updated] = await db
+      .update(customSurveys)
+      .set({ ...survey, updatedAt: new Date() })
+      .where(eq(customSurveys.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteCustomSurvey(id: string): Promise<boolean> {
+    const result = await db.delete(customSurveys).where(eq(customSurveys.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Team Sessions
+  async getTeamSessions(): Promise<TeamSession[]> {
+    return await db.select().from(teamSessions).orderBy(desc(teamSessions.scheduledAt));
+  }
+
+  async getTeamSession(id: string): Promise<TeamSession | undefined> {
+    const [session] = await db.select().from(teamSessions).where(eq(teamSessions.id, id));
+    return session || undefined;
+  }
+
+  async createTeamSession(session: InsertTeamSession): Promise<TeamSession> {
+    const [newSession] = await db.insert(teamSessions).values(session).returning();
+    return newSession;
+  }
+
+  async updateTeamSession(id: string, session: Partial<InsertTeamSession>): Promise<TeamSession | undefined> {
+    const [updated] = await db
+      .update(teamSessions)
+      .set({ ...session, updatedAt: new Date() })
+      .where(eq(teamSessions.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteTeamSession(id: string): Promise<boolean> {
+    await db.delete(sessionParticipants).where(eq(sessionParticipants.sessionId, id));
+    const result = await db.delete(teamSessions).where(eq(teamSessions.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Session Participants
+  async getSessionParticipants(sessionId: string): Promise<SessionParticipant[]> {
+    return await db.select().from(sessionParticipants).where(eq(sessionParticipants.sessionId, sessionId));
+  }
+
+  async addSessionParticipant(participant: InsertSessionParticipant): Promise<SessionParticipant> {
+    const [newParticipant] = await db.insert(sessionParticipants).values(participant).returning();
+    return newParticipant;
+  }
+
+  async updateSessionParticipant(id: string, participant: Partial<InsertSessionParticipant>): Promise<SessionParticipant | undefined> {
+    const [updated] = await db
+      .update(sessionParticipants)
+      .set(participant)
+      .where(eq(sessionParticipants.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async removeSessionParticipant(sessionId: string, athleteId: string): Promise<boolean> {
+    const result = await db
+      .delete(sessionParticipants)
+      .where(and(eq(sessionParticipants.sessionId, sessionId), eq(sessionParticipants.athleteId, athleteId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async checkInParticipant(sessionId: string, athleteId: string): Promise<SessionParticipant | undefined> {
+    const [updated] = await db
+      .update(sessionParticipants)
+      .set({ status: 'attended', checkedInAt: new Date() })
+      .where(and(eq(sessionParticipants.sessionId, sessionId), eq(sessionParticipants.athleteId, athleteId)))
+      .returning();
+    return updated || undefined;
   }
 }
 

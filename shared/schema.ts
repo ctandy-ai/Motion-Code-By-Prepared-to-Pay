@@ -1013,3 +1013,118 @@ export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
 });
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
 export type Announcement = typeof announcements.$inferSelect;
+
+// Body Composition Tracking
+export const bodyCompositionLogs = pgTable("body_composition_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  athleteId: varchar("athlete_id").notNull(),
+  weight: real("weight"), // in kg
+  bodyFat: real("body_fat"), // percentage
+  muscleMass: real("muscle_mass"), // in kg
+  bmi: real("bmi"),
+  waist: real("waist"), // in cm
+  chest: real("chest"), // in cm
+  hips: real("hips"), // in cm
+  arms: real("arms"), // in cm
+  thighs: real("thighs"), // in cm
+  notes: text("notes"),
+  loggedAt: timestamp("logged_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  athleteIdx: index("body_composition_athlete_idx").on(table.athleteId),
+  loggedAtIdx: index("body_composition_logged_at_idx").on(table.loggedAt),
+}));
+
+export const insertBodyCompositionLogSchema = createInsertSchema(bodyCompositionLogs).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertBodyCompositionLog = z.infer<typeof insertBodyCompositionLogSchema>;
+export type BodyCompositionLog = typeof bodyCompositionLogs.$inferSelect;
+
+// Custom Survey Builder
+export const customSurveys = pgTable("custom_surveys", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coachId: varchar("coach_id").notNull().default('default-coach'),
+  name: text("name").notNull(),
+  description: text("description"),
+  questions: text("questions").notNull(), // JSON array of questions
+  isActive: integer("is_active").notNull().default(1),
+  frequency: text("frequency").notNull().default('daily'), // 'daily', 'weekly', 'pre_workout', 'post_workout'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  coachIdx: index("custom_surveys_coach_idx").on(table.coachId),
+  activeIdx: index("custom_surveys_active_idx").on(table.isActive),
+}));
+
+export const insertCustomSurveySchema = createInsertSchema(customSurveys).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertCustomSurvey = z.infer<typeof insertCustomSurveySchema>;
+export type CustomSurvey = typeof customSurveys.$inferSelect;
+
+// Survey question types for the builder
+export type SurveyQuestion = {
+  id: string;
+  type: 'scale' | 'text' | 'multiChoice' | 'yesNo';
+  label: string;
+  required: boolean;
+  options?: string[]; // for multiChoice
+  min?: number; // for scale
+  max?: number; // for scale
+};
+
+// Team Training Sessions (Group Workouts)
+export const teamSessions = pgTable("team_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coachId: varchar("coach_id").notNull().default('default-coach'),
+  name: text("name").notNull(),
+  description: text("description"),
+  programId: varchar("program_id"), // optional program reference
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  duration: integer("duration").notNull().default(60), // in minutes
+  location: text("location"),
+  maxAthletes: integer("max_athletes"),
+  status: text("status").notNull().default('scheduled'), // 'scheduled', 'in_progress', 'completed', 'cancelled'
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  coachIdx: index("team_sessions_coach_idx").on(table.coachId),
+  scheduledAtIdx: index("team_sessions_scheduled_at_idx").on(table.scheduledAt),
+  statusIdx: index("team_sessions_status_idx").on(table.status),
+}));
+
+export const insertTeamSessionSchema = createInsertSchema(teamSessions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertTeamSession = z.infer<typeof insertTeamSessionSchema>;
+export type TeamSession = typeof teamSessions.$inferSelect;
+
+// Athlete participation in team sessions
+export const sessionParticipants = pgTable("session_participants", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sessionId: varchar("session_id").notNull(),
+  athleteId: varchar("athlete_id").notNull(),
+  status: text("status").notNull().default('registered'), // 'registered', 'attended', 'missed', 'cancelled'
+  checkedInAt: timestamp("checked_in_at"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  sessionIdx: index("session_participants_session_idx").on(table.sessionId),
+  athleteIdx: index("session_participants_athlete_idx").on(table.athleteId),
+  uniqueParticipant: unique().on(table.sessionId, table.athleteId),
+}));
+
+export const insertSessionParticipantSchema = createInsertSchema(sessionParticipants).omit({
+  id: true,
+  checkedInAt: true,
+  createdAt: true,
+});
+export type InsertSessionParticipant = z.infer<typeof insertSessionParticipantSchema>;
+export type SessionParticipant = typeof sessionParticipants.$inferSelect;

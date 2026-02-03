@@ -1,4 +1,4 @@
-import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator, BarChart3, Brain, Zap, MessageSquare, Shield, Trophy, Megaphone } from "lucide-react";
+import { Home, Dumbbell, Users, Calendar, TrendingUp, BookOpen, ClipboardCheck, FileText, Wrench, Database, Library, ChevronRight, Wand2, Calculator, BarChart3, Brain, Zap, MessageSquare, Shield, Trophy, Megaphone, Video, ClipboardList, Users2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -69,6 +69,21 @@ const mainMenuItems = [
     title: "Noticeboard",
     url: "/noticeboard",
     icon: Megaphone,
+  },
+  {
+    title: "Video Library",
+    url: "/video-library",
+    icon: Video,
+  },
+  {
+    title: "Survey Builder",
+    url: "/survey-builder",
+    icon: ClipboardList,
+  },
+  {
+    title: "Team Training",
+    url: "/team-training",
+    icon: Users2,
   },
   {
     title: "AI Command Center",

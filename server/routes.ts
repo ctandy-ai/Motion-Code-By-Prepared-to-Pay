@@ -24,6 +24,10 @@ import {
   insertMessageSchema,
   insertNotificationSchema,
   insertAthleteTargetSchema,
+  insertBodyCompositionLogSchema,
+  insertCustomSurveySchema,
+  insertTeamSessionSchema,
+  insertSessionParticipantSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -214,6 +218,221 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to delete announcement:", error);
       res.status(500).json({ error: "Failed to delete announcement" });
+    }
+  });
+
+  // Body Composition routes
+  app.get("/api/athletes/:athleteId/body-composition", async (req, res) => {
+    try {
+      const logs = await storage.getBodyCompositionLogs(req.params.athleteId);
+      res.json(logs);
+    } catch (error) {
+      console.error("Failed to fetch body composition logs:", error);
+      res.status(500).json({ error: "Failed to fetch body composition logs" });
+    }
+  });
+
+  app.post("/api/athletes/:athleteId/body-composition", requireCoach, async (req, res) => {
+    try {
+      const validated = insertBodyCompositionLogSchema.parse({
+        ...req.body,
+        athleteId: req.params.athleteId,
+      });
+      const log = await storage.createBodyCompositionLog(validated);
+      res.status(201).json(log);
+    } catch (error) {
+      console.error("Failed to create body composition log:", error);
+      res.status(400).json({ error: "Invalid body composition data" });
+    }
+  });
+
+  app.delete("/api/body-composition/:id", requireCoach, async (req, res) => {
+    try {
+      const success = await storage.deleteBodyCompositionLog(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Body composition log not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete body composition log:", error);
+      res.status(500).json({ error: "Failed to delete body composition log" });
+    }
+  });
+
+  // Custom Surveys routes
+  app.get("/api/custom-surveys", async (req, res) => {
+    try {
+      const surveys = await storage.getCustomSurveys();
+      res.json(surveys);
+    } catch (error) {
+      console.error("Failed to fetch custom surveys:", error);
+      res.status(500).json({ error: "Failed to fetch custom surveys" });
+    }
+  });
+
+  app.get("/api/custom-surveys/:id", async (req, res) => {
+    try {
+      const survey = await storage.getCustomSurvey(req.params.id);
+      if (!survey) {
+        return res.status(404).json({ error: "Survey not found" });
+      }
+      res.json(survey);
+    } catch (error) {
+      console.error("Failed to fetch custom survey:", error);
+      res.status(500).json({ error: "Failed to fetch custom survey" });
+    }
+  });
+
+  app.post("/api/custom-surveys", requireCoach, async (req, res) => {
+    try {
+      const validated = insertCustomSurveySchema.parse(req.body);
+      const survey = await storage.createCustomSurvey(validated);
+      res.status(201).json(survey);
+    } catch (error) {
+      console.error("Failed to create custom survey:", error);
+      res.status(400).json({ error: "Invalid survey data" });
+    }
+  });
+
+  app.patch("/api/custom-surveys/:id", requireCoach, async (req, res) => {
+    try {
+      const validated = insertCustomSurveySchema.partial().parse(req.body);
+      const survey = await storage.updateCustomSurvey(req.params.id, validated);
+      if (!survey) {
+        return res.status(404).json({ error: "Survey not found" });
+      }
+      res.json(survey);
+    } catch (error) {
+      console.error("Failed to update custom survey:", error);
+      res.status(400).json({ error: "Invalid survey data" });
+    }
+  });
+
+  app.delete("/api/custom-surveys/:id", requireCoach, async (req, res) => {
+    try {
+      const success = await storage.deleteCustomSurvey(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Survey not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete custom survey:", error);
+      res.status(500).json({ error: "Failed to delete custom survey" });
+    }
+  });
+
+  // Team Sessions routes
+  app.get("/api/team-sessions", async (req, res) => {
+    try {
+      const sessions = await storage.getTeamSessions();
+      res.json(sessions);
+    } catch (error) {
+      console.error("Failed to fetch team sessions:", error);
+      res.status(500).json({ error: "Failed to fetch team sessions" });
+    }
+  });
+
+  app.get("/api/team-sessions/:id", async (req, res) => {
+    try {
+      const session = await storage.getTeamSession(req.params.id);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      res.json(session);
+    } catch (error) {
+      console.error("Failed to fetch team session:", error);
+      res.status(500).json({ error: "Failed to fetch team session" });
+    }
+  });
+
+  app.post("/api/team-sessions", requireCoach, async (req, res) => {
+    try {
+      const validated = insertTeamSessionSchema.parse(req.body);
+      const session = await storage.createTeamSession(validated);
+      res.status(201).json(session);
+    } catch (error) {
+      console.error("Failed to create team session:", error);
+      res.status(400).json({ error: "Invalid team session data" });
+    }
+  });
+
+  app.patch("/api/team-sessions/:id", requireCoach, async (req, res) => {
+    try {
+      const validated = insertTeamSessionSchema.partial().parse(req.body);
+      const session = await storage.updateTeamSession(req.params.id, validated);
+      if (!session) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      res.json(session);
+    } catch (error) {
+      console.error("Failed to update team session:", error);
+      res.status(400).json({ error: "Invalid team session data" });
+    }
+  });
+
+  app.delete("/api/team-sessions/:id", requireCoach, async (req, res) => {
+    try {
+      const success = await storage.deleteTeamSession(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Session not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete team session:", error);
+      res.status(500).json({ error: "Failed to delete team session" });
+    }
+  });
+
+  // Session Participants routes
+  app.get("/api/team-sessions/:sessionId/participants", async (req, res) => {
+    try {
+      const participants = await storage.getSessionParticipants(req.params.sessionId);
+      res.json(participants);
+    } catch (error) {
+      console.error("Failed to fetch participants:", error);
+      res.status(500).json({ error: "Failed to fetch participants" });
+    }
+  });
+
+  app.post("/api/team-sessions/:sessionId/participants", requireCoach, async (req, res) => {
+    try {
+      const validated = insertSessionParticipantSchema.parse({
+        sessionId: req.params.sessionId,
+        athleteId: req.body.athleteId,
+        status: req.body.status || 'registered',
+        notes: req.body.notes,
+      });
+      const participant = await storage.addSessionParticipant(validated);
+      res.status(201).json(participant);
+    } catch (error) {
+      console.error("Failed to add participant:", error);
+      res.status(400).json({ error: "Invalid participant data" });
+    }
+  });
+
+  app.post("/api/team-sessions/:sessionId/participants/:athleteId/check-in", async (req, res) => {
+    try {
+      const participant = await storage.checkInParticipant(req.params.sessionId, req.params.athleteId);
+      if (!participant) {
+        return res.status(404).json({ error: "Participant not found" });
+      }
+      res.json(participant);
+    } catch (error) {
+      console.error("Failed to check in participant:", error);
+      res.status(500).json({ error: "Failed to check in participant" });
+    }
+  });
+
+  app.delete("/api/team-sessions/:sessionId/participants/:athleteId", requireCoach, async (req, res) => {
+    try {
+      const success = await storage.removeSessionParticipant(req.params.sessionId, req.params.athleteId);
+      if (!success) {
+        return res.status(404).json({ error: "Participant not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to remove participant:", error);
+      res.status(500).json({ error: "Failed to remove participant" });
     }
   });
 

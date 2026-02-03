@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
 import { AthleteTrainingProfileCard } from "@/components/athlete-training-profile";
 import { AthleteTargets } from "@/components/athlete-targets";
+import { BodyComposition } from "@/components/body-composition";
 import {
   Dialog,
   DialogContent,
@@ -612,6 +613,7 @@ export default function AthleteDetail() {
             />
           </div>
           <AthleteTargets athleteId={athleteId} />
+          <BodyComposition athleteId={athleteId} />
         </>
       )}
 
