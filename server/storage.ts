@@ -73,6 +73,8 @@ import {
   type InsertAuditLog,
   type AthleteTarget,
   type InsertAthleteTarget,
+  type Announcement,
+  type InsertAnnouncement,
   users,
   exercises,
   athletes,
@@ -110,6 +112,8 @@ import {
   messages,
   notifications,
   auditLogs,
+  athleteTargets,
+  announcements,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -277,6 +281,13 @@ export interface IStorage {
   createAthleteTarget(target: InsertAthleteTarget): Promise<AthleteTarget>;
   updateAthleteTarget(id: string, target: Partial<InsertAthleteTarget>): Promise<AthleteTarget | undefined>;
   deleteAthleteTarget(id: string): Promise<boolean>;
+
+  // Announcements / Noticeboard
+  getAnnouncements(): Promise<Announcement[]>;
+  getAnnouncement(id: string): Promise<Announcement | undefined>;
+  createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
+  updateAnnouncement(id: string, announcement: Partial<InsertAnnouncement>): Promise<Announcement | undefined>;
+  deleteAnnouncement(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1910,6 +1921,70 @@ export class DatabaseStorage implements IStorage {
       byResourceType,
       recentActivity: logs.slice(0, 20),
     };
+  }
+
+  async getAthleteTargets(athleteId: string): Promise<AthleteTarget[]> {
+    return await db
+      .select()
+      .from(athleteTargets)
+      .where(eq(athleteTargets.athleteId, athleteId))
+      .orderBy(desc(athleteTargets.createdAt));
+  }
+
+  async getAthleteTarget(id: string): Promise<AthleteTarget | undefined> {
+    const [target] = await db.select().from(athleteTargets).where(eq(athleteTargets.id, id));
+    return target || undefined;
+  }
+
+  async createAthleteTarget(target: InsertAthleteTarget): Promise<AthleteTarget> {
+    const [newTarget] = await db.insert(athleteTargets).values(target).returning();
+    return newTarget;
+  }
+
+  async updateAthleteTarget(id: string, target: Partial<InsertAthleteTarget>): Promise<AthleteTarget | undefined> {
+    const [updated] = await db
+      .update(athleteTargets)
+      .set({ ...target, updatedAt: new Date() })
+      .where(eq(athleteTargets.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteAthleteTarget(id: string): Promise<boolean> {
+    const result = await db.delete(athleteTargets).where(eq(athleteTargets.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Announcements / Noticeboard
+  async getAnnouncements(): Promise<Announcement[]> {
+    return await db
+      .select()
+      .from(announcements)
+      .orderBy(desc(announcements.isPinned), desc(announcements.createdAt));
+  }
+
+  async getAnnouncement(id: string): Promise<Announcement | undefined> {
+    const [announcement] = await db.select().from(announcements).where(eq(announcements.id, id));
+    return announcement || undefined;
+  }
+
+  async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
+    const [newAnnouncement] = await db.insert(announcements).values(announcement).returning();
+    return newAnnouncement;
+  }
+
+  async updateAnnouncement(id: string, announcement: Partial<InsertAnnouncement>): Promise<Announcement | undefined> {
+    const [updated] = await db
+      .update(announcements)
+      .set({ ...announcement, updatedAt: new Date() })
+      .where(eq(announcements.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deleteAnnouncement(id: string): Promise<boolean> {
+    const result = await db.delete(announcements).where(eq(announcements.id, id)).returning();
+    return result.length > 0;
   }
 }
 

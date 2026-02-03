@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, Settings, Layers, LayoutGrid, Calendar } from "lucide-react";
+import { ArrowLeft, Users, Settings, Layers, LayoutGrid, Calendar, Sparkles, Loader2 } from "lucide-react";
 import { ExerciseSidebar } from "@/components/builder/exercise-sidebar";
 import { WeekDayGrid } from "@/components/builder/week-day-grid";
 import { ProgramTimeline } from "@/components/builder/program-timeline";
@@ -164,6 +164,50 @@ export default function EnhancedProgramBuilder() {
     },
   });
 
+  const autofillMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/ai/autofill-week", {
+        programId,
+        weekNumber: selectedWeek,
+        athleteId: selectedAthleteId,
+        phase,
+        targetDays: [1, 2, 3, 4, 5],
+      });
+      return response.json();
+    },
+    onSuccess: async (result) => {
+      if (result.success && result.exercises?.length > 0) {
+        for (const ex of result.exercises) {
+          await apiRequest("POST", "/api/program-exercises", {
+            programId,
+            exerciseId: ex.exerciseId,
+            weekNumber: selectedWeek,
+            dayNumber: ex.dayNumber,
+            sets: ex.sets,
+            reps: ex.reps,
+            restSeconds: ex.restSeconds,
+            notes: ex.notes,
+            orderIndex: ex.orderIndex,
+          });
+        }
+        queryClient.invalidateQueries({ queryKey: ["/api/programs", programId, "exercises"] });
+        toast({ 
+          title: "AI Autofill Complete", 
+          description: `Added ${result.exercises.length} exercises to week ${selectedWeek}`,
+        });
+      } else {
+        toast({ 
+          title: "Autofill Notice", 
+          description: result.message || "No exercises were generated",
+          variant: "destructive",
+        });
+      }
+    },
+    onError: () => {
+      toast({ title: "Autofill failed", description: "Failed to generate exercises", variant: "destructive" });
+    },
+  });
+
   const handleExerciseDrop = (exercise: Exercise, day: number) => {
     addExerciseMutation.mutate({ exercise, day });
   };
@@ -220,6 +264,28 @@ export default function EnhancedProgramBuilder() {
           >
             <Calendar className="h-4 w-4" />
             Timeline
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              if (!programId) {
+                toast({ title: "No program selected", variant: "destructive" });
+                return;
+              }
+              autofillMutation.mutate();
+            }}
+            disabled={autofillMutation.isPending || !programId}
+            className="gap-1.5 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30"
+            data-testid="button-ai-autofill"
+          >
+            {autofillMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4 text-purple-400" />
+            )}
+            AI Autofill Week {selectedWeek}
           </Button>
           
           <div className="flex items-center gap-2">

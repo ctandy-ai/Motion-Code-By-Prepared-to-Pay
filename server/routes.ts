@@ -23,6 +23,7 @@ import {
   insertSessionRpeSchema,
   insertMessageSchema,
   insertNotificationSchema,
+  insertAthleteTargetSchema,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -88,6 +89,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Failed to fetch audit summary:", error);
       res.status(500).json({ error: "Failed to fetch audit summary" });
+    }
+  });
+
+  // Athlete Targets routes - 1RM goals and performance targets
+  app.get("/api/athletes/:athleteId/targets", async (req, res) => {
+    try {
+      const targets = await storage.getAthleteTargets(req.params.athleteId);
+      res.json(targets);
+    } catch (error) {
+      console.error("Failed to fetch athlete targets:", error);
+      res.status(500).json({ error: "Failed to fetch athlete targets" });
+    }
+  });
+
+  app.get("/api/athlete-targets/:id", async (req, res) => {
+    try {
+      const target = await storage.getAthleteTarget(req.params.id);
+      if (!target) {
+        return res.status(404).json({ error: "Target not found" });
+      }
+      res.json(target);
+    } catch (error) {
+      console.error("Failed to fetch athlete target:", error);
+      res.status(500).json({ error: "Failed to fetch athlete target" });
+    }
+  });
+
+  app.post("/api/athletes/:athleteId/targets", requireCoach, async (req, res) => {
+    try {
+      const validated = insertAthleteTargetSchema.parse({
+        ...req.body,
+        athleteId: req.params.athleteId,
+      });
+      const target = await storage.createAthleteTarget(validated);
+      res.status(201).json(target);
+    } catch (error) {
+      console.error("Failed to create athlete target:", error);
+      res.status(400).json({ error: "Invalid target data" });
+    }
+  });
+
+  app.patch("/api/athlete-targets/:id", requireCoach, async (req, res) => {
+    try {
+      const validated = insertAthleteTargetSchema.partial().parse(req.body);
+      const target = await storage.updateAthleteTarget(req.params.id, validated);
+      if (!target) {
+        return res.status(404).json({ error: "Target not found" });
+      }
+      res.json(target);
+    } catch (error) {
+      console.error("Failed to update athlete target:", error);
+      res.status(400).json({ error: "Failed to update target" });
+    }
+  });
+
+  app.delete("/api/athlete-targets/:id", requireCoach, async (req, res) => {
+    try {
+      const success = await storage.deleteAthleteTarget(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Target not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete athlete target:", error);
+      res.status(500).json({ error: "Failed to delete target" });
+    }
+  });
+
+  // Announcements / Noticeboard routes
+  app.get("/api/announcements", async (req, res) => {
+    try {
+      const allAnnouncements = await storage.getAnnouncements();
+      res.json(allAnnouncements);
+    } catch (error) {
+      console.error("Failed to fetch announcements:", error);
+      res.status(500).json({ error: "Failed to fetch announcements" });
+    }
+  });
+
+  app.get("/api/announcements/:id", async (req, res) => {
+    try {
+      const announcement = await storage.getAnnouncement(req.params.id);
+      if (!announcement) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+      res.json(announcement);
+    } catch (error) {
+      console.error("Failed to fetch announcement:", error);
+      res.status(500).json({ error: "Failed to fetch announcement" });
+    }
+  });
+
+  app.post("/api/announcements", requireCoach, async (req, res) => {
+    try {
+      const announcement = await storage.createAnnouncement(req.body);
+      res.status(201).json(announcement);
+    } catch (error) {
+      console.error("Failed to create announcement:", error);
+      res.status(500).json({ error: "Failed to create announcement" });
+    }
+  });
+
+  app.patch("/api/announcements/:id", requireCoach, async (req, res) => {
+    try {
+      const announcement = await storage.updateAnnouncement(req.params.id, req.body);
+      if (!announcement) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+      res.json(announcement);
+    } catch (error) {
+      console.error("Failed to update announcement:", error);
+      res.status(500).json({ error: "Failed to update announcement" });
+    }
+  });
+
+  app.delete("/api/announcements/:id", requireCoach, async (req, res) => {
+    try {
+      const success = await storage.deleteAnnouncement(req.params.id);
+      if (!success) {
+        return res.status(404).json({ error: "Announcement not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Failed to delete announcement:", error);
+      res.status(500).json({ error: "Failed to delete announcement" });
     }
   });
 
@@ -576,6 +702,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Chat error:", error);
       res.status(500).json({ error: "Failed to process chat" });
+    }
+  });
+
+  // AI Autofill - Generate exercise suggestions for a week
+  app.post("/api/ai/autofill-week", requireCoach, async (req, res) => {
+    try {
+      const { generateWeekAutofill } = await import("./ai-coach");
+      const { programId, weekNumber, athleteId, phase, focus, targetDays } = req.body;
+
+      if (!programId || !weekNumber) {
+        return res.status(400).json({ error: "programId and weekNumber are required" });
+      }
+
+      const result = await generateWeekAutofill({
+        programId,
+        weekNumber,
+        athleteId,
+        phase,
+        focus,
+        targetDays,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("AI Autofill error:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to generate autofill suggestions",
+        exercises: [],
+      });
     }
   });
 

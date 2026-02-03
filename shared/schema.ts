@@ -987,3 +987,29 @@ export const insertAthleteTargetSchema = createInsertSchema(athleteTargets).omit
 });
 export type InsertAthleteTarget = z.infer<typeof insertAthleteTargetSchema>;
 export type AthleteTarget = typeof athleteTargets.$inferSelect;
+
+// Team Announcements / Noticeboard
+export const announcements = pgTable("announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  coachId: varchar("coach_id").notNull().default('default-coach'),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  priority: text("priority").notNull().default('normal'), // 'low', 'normal', 'high', 'urgent'
+  targetTeams: text("target_teams").array().default(sql`ARRAY[]::text[]`), // empty = all teams
+  isPinned: integer("is_pinned").notNull().default(0),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  coachIdx: index("announcements_coach_idx").on(table.coachId),
+  priorityIdx: index("announcements_priority_idx").on(table.priority),
+  createdAtIdx: index("announcements_created_at_idx").on(table.createdAt),
+}));
+
+export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
+export type Announcement = typeof announcements.$inferSelect;

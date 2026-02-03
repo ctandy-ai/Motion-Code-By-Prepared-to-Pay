@@ -1148,3 +1148,160 @@ export async function executeApprovedAction(action: PendingAction): Promise<{ su
     };
   }
 }
+
+// AI Autofill - Generate exercise suggestions for a week
+export interface AutofillRequest {
+  programId: string;
+  weekNumber: number;
+  athleteId?: string;
+  phase?: string;
+  focus?: string[];
+  targetDays?: number[];
+}
+
+export interface AutofillExercise {
+  exerciseId: string;
+  exerciseName: string;
+  dayNumber: number;
+  sets: number;
+  reps: string;
+  restSeconds: number;
+  notes: string;
+  orderIndex: number;
+}
+
+export interface AutofillResponse {
+  success: boolean;
+  exercises: AutofillExercise[];
+  message: string;
+  reasoning?: string;
+}
+
+export async function generateWeekAutofill(request: AutofillRequest): Promise<AutofillResponse> {
+  try {
+    // Fetch available exercises
+    const exercises = await storage.getExercises();
+    
+    // Get athlete context if provided
+    let athleteContext = '';
+    if (request.athleteId) {
+      const athlete = await storage.getAthlete(request.athleteId);
+      const profile = await storage.getAthleteTrainingProfile(request.athleteId);
+      if (athlete) {
+        athleteContext = `
+Athlete: ${athlete.name}
+Position: ${athlete.position || 'Not specified'}
+Belt Level: ${profile?.beltLevel || 'WHITE'}
+Training Age: ${profile?.trainingAge || 0} years
+`;
+      }
+    }
+
+    // Build exercise database summary (limited to avoid token limits)
+    const exerciseSummary = exercises.slice(0, 100).map(e => ({
+      id: e.id,
+      name: e.name,
+      category: e.category,
+      difficulty: e.beltLevel || 'beginner',
+    }));
+
+    const systemPrompt = `You are an elite strength and conditioning coach AI assistant. Generate a balanced training week based on the context provided.
+
+RULES:
+1. Select exercises from the provided exercise database ONLY
+2. Use exact exercise IDs from the database
+3. Balance push/pull/legs throughout the week
+4. Consider athlete belt level for exercise complexity
+5. Include proper progression and recovery
+6. Typical sets: 3-5, Reps: vary by goal (strength: 3-6, hypertrophy: 8-12, endurance: 15-20)
+7. Include warmup/mobility work at the start of each day
+8. Don't overload any single day - aim for 4-8 exercises per day
+
+PHASE GUIDELINES:
+- PRESEASON: Higher volume, general preparation
+- IN_SEASON: Maintenance focus, lower volume
+- OFF_SEASON: Peak intensity, specialized training
+- TRANSITION: Active recovery, varied stimulus`;
+
+    const userPrompt = `Generate a week of training exercises for the following context:
+
+${athleteContext}
+Program Phase: ${request.phase || 'PRESEASON'}
+Week Number: ${request.weekNumber}
+Focus Areas: ${request.focus?.join(', ') || 'General strength and conditioning'}
+Target Days: ${request.targetDays?.join(', ') || '1, 2, 3, 4, 5 (Mon-Fri)'}
+
+AVAILABLE EXERCISES (use these exact IDs):
+${JSON.stringify(exerciseSummary, null, 2)}
+
+Respond with a JSON object in this exact format:
+{
+  "exercises": [
+    {
+      "exerciseId": "actual-exercise-id-from-database",
+      "exerciseName": "Exercise Name",
+      "dayNumber": 1,
+      "sets": 3,
+      "reps": "10",
+      "restSeconds": 90,
+      "notes": "Brief coaching cue",
+      "orderIndex": 0
+    }
+  ],
+  "reasoning": "Brief explanation of program design choices"
+}`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.7,
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      return {
+        success: false,
+        exercises: [],
+        message: 'AI did not return a response',
+      };
+    }
+
+    const parsed = JSON.parse(content);
+    
+    // Validate that exercises exist in database
+    const validExercises: AutofillExercise[] = [];
+    for (const ex of parsed.exercises || []) {
+      const dbExercise = exercises.find(e => e.id === ex.exerciseId);
+      if (dbExercise) {
+        validExercises.push({
+          exerciseId: ex.exerciseId,
+          exerciseName: dbExercise.name,
+          dayNumber: ex.dayNumber || 1,
+          sets: ex.sets || 3,
+          reps: String(ex.reps || '10'),
+          restSeconds: ex.restSeconds || 90,
+          notes: ex.notes || '',
+          orderIndex: ex.orderIndex || 0,
+        });
+      }
+    }
+
+    return {
+      success: true,
+      exercises: validExercises,
+      message: `Generated ${validExercises.length} exercises for week ${request.weekNumber}`,
+      reasoning: parsed.reasoning,
+    };
+  } catch (error) {
+    console.error('AI Autofill error:', error);
+    return {
+      success: false,
+      exercises: [],
+      message: `Failed to generate exercises: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
+}
