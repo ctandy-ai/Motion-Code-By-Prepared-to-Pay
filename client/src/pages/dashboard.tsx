@@ -21,6 +21,7 @@ import {
   Cell,
 } from "recharts";
 import { format, subDays } from "date-fns";
+import { PageHeader } from "@/components/page-header";
 
 interface DashboardStats {
   totalWorkouts: number;
@@ -32,12 +33,6 @@ interface DashboardStats {
   longestStreak: number;
   topAthletes: (Athlete & { workoutCount: number; xp: number })[];
   recentPRs: any[];
-}
-
-interface WorkoutTrend {
-  date: string;
-  workouts: number;
-  sets: number;
 }
 
 interface AthleteDistribution {
@@ -92,21 +87,22 @@ export default function Dashboard() {
 
   const isLoading = loadingAthletes || loadingExercises || loadingPrograms || loadingStats;
 
-  const athleteCount = athletes?.length || 0;
-  const athleteBeltDistribution: AthleteDistribution[] = [
-    { belt: "White", count: Math.ceil(athleteCount * 0.5), color: "#e2e8f0" },
-    { belt: "Blue", count: Math.ceil(athleteCount * 0.35), color: "#3b82f6" },
-    { belt: "Black", count: Math.floor(athleteCount * 0.15), color: "#1e293b" },
-  ].filter(d => d.count > 0);
-
   const activePrograms = programs?.length || 0;
-  const draftPrograms = 0;
 
-  const workoutTrendData: WorkoutTrend[] = Array.from({ length: 7 }, (_, i) => ({
-    date: format(subDays(new Date(), 6 - i), "EEE"),
-    workouts: Math.floor(Math.random() * 8) + 2,
-    sets: Math.floor(Math.random() * 40) + 10,
-  }));
+  const athleteBeltDistribution: AthleteDistribution[] = (() => {
+    if (!athletes || athletes.length === 0) return [];
+    const counts: Record<string, number> = { White: 0, Blue: 0, Black: 0 };
+    athletes.forEach(a => {
+      const belt = (a as any).beltLevel || "White";
+      if (belt in counts) counts[belt]++;
+      else counts["White"]++;
+    });
+    return [
+      { belt: "White", count: counts.White, color: "#e2e8f0" },
+      { belt: "Blue", count: counts.Blue, color: "#3b82f6" },
+      { belt: "Black", count: counts.Black, color: "#1e293b" },
+    ].filter(d => d.count > 0);
+  })();
 
   const messageThreads: MessagePreview[] = recentMessages 
     ? recentMessages.reduce((acc: MessagePreview[], msg) => {
@@ -126,28 +122,24 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-100">
-            Coach Dashboard
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Real-time overview of your training organization
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/analytics">
-            <Button variant="outline" size="sm" data-testid="button-view-analytics">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Full Analytics
-            </Button>
-          </Link>
-          <div className="text-right">
-            <p className="text-xs text-slate-400">Updated</p>
-            <p className="text-sm font-medium text-slate-200">{format(new Date(), "MMM d, h:mm a")}</p>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title="Coach Dashboard"
+        description="Real-time overview of your training organization"
+        actions={
+          <>
+            <Link href="/analytics">
+              <Button variant="outline" size="sm" data-testid="button-view-analytics">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Full Analytics
+              </Button>
+            </Link>
+            <div className="text-right">
+              <p className="text-xs text-slate-400">Updated</p>
+              <p className="text-sm font-medium text-slate-200">{format(new Date(), "MMM d, h:mm a")}</p>
+            </div>
+          </>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
@@ -155,17 +147,15 @@ export default function Dashboard() {
           value={isLoading ? "-" : athletes?.length || 0}
           description="Active in platform"
           icon={Users}
-          trend={{ value: 12, isPositive: true }}
         />
         <StatCard
           title="Active Programs"
           value={isLoading ? "-" : activePrograms}
-          description={`${draftPrograms} in draft`}
+          description="Training programs"
           icon={Target}
-          trend={{ value: activePrograms, isPositive: true }}
         />
         <StatCard
-          title="This Week's Workouts"
+          title="Total Workouts"
           value={isLoading ? "-" : dashboardStats?.totalWorkouts || 0}
           description="Logged sessions"
           icon={Zap}
@@ -175,7 +165,6 @@ export default function Dashboard() {
           value={isLoading ? "-" : dashboardStats?.totalPRs || 0}
           description="All-time PRs"
           icon={Trophy}
-          trend={{ value: 3, isPositive: true }}
         />
       </div>
 
@@ -183,7 +172,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <TeamPulse />
 
-          <Card className="bglass shadow-glass border-0" data-testid="card-workout-trends">
+          <Card className="border-0" data-testid="card-workout-trends">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
                 <Activity className="h-4 w-4 text-brand-400" />
@@ -191,8 +180,20 @@ export default function Dashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {(dashboardStats?.totalWorkouts || 0) === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Activity className="h-8 w-8 text-slate-600 mb-2" />
+                  <p className="text-sm text-slate-400">No workout data yet</p>
+                  <p className="text-xs text-slate-500 mt-1">Activity trends will appear as athletes log workouts</p>
+                </div>
+              ) : (
               <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={workoutTrendData}>
+                <AreaChart data={Array.from({ length: 7 }, (_, i) => ({
+                  date: format(subDays(new Date(), 6 - i), "EEE"),
+                  workouts: 0,
+                  sets: 0,
+                }))}>
+
                   <defs>
                     <linearGradient id="workoutGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(200, 95%, 50%)" stopOpacity={0.3} />
@@ -227,11 +228,12 @@ export default function Dashboard() {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="bglass shadow-glass border-0" data-testid="card-program-status">
+            <Card className="border-0" data-testid="card-program-status">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
                   <Target className="h-4 w-4 text-emerald-400" />
@@ -252,7 +254,7 @@ export default function Dashboard() {
                       <div className="h-2 w-2 rounded-full bg-amber-500" />
                       <span className="text-sm text-slate-300">Draft Programs</span>
                     </div>
-                    <span className="text-lg font-semibold text-amber-400">{draftPrograms}</span>
+                    <span className="text-lg font-semibold text-amber-400">0</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-xl ringify">
                     <div className="flex items-center gap-2">
@@ -267,7 +269,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bglass shadow-glass border-0" data-testid="card-belt-distribution">
+            <Card className="border-0" data-testid="card-belt-distribution">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
                   <Users className="h-4 w-4 text-purple-400" />
@@ -321,7 +323,7 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          <Card className="bglass shadow-glass border-0" data-testid="card-assigned-programs">
+          <Card className="border-0" data-testid="card-assigned-programs">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
                 <Target className="h-4 w-4 text-brand-400" />
@@ -362,7 +364,7 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6">
-          <Card className="bglass shadow-glass border-0" data-testid="card-quick-actions">
+          <Card className="border-0" data-testid="card-quick-actions">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold text-slate-100">Quick Actions</CardTitle>
             </CardHeader>
@@ -394,7 +396,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bglass shadow-glass border-0" data-testid="card-messages-preview">
+          <Card className="border-0" data-testid="card-messages-preview">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
@@ -448,7 +450,7 @@ export default function Dashboard() {
           </Card>
 
           {dashboardStats && dashboardStats.topAthletes.length > 0 && (
-            <Card className="bglass shadow-glass border-0" data-testid="card-top-performers">
+            <Card className="border-0" data-testid="card-top-performers">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-amber-400" />
@@ -483,7 +485,7 @@ export default function Dashboard() {
             </Card>
           )}
 
-          <Card className="bglass shadow-glass border-0" data-testid="card-xp-level">
+          <Card className="border-0" data-testid="card-xp-level">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-semibold text-slate-100">Organization Level</CardTitle>

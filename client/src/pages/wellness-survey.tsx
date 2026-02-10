@@ -111,7 +111,7 @@ function MetricSlider({
   };
 
   return (
-    <Card className="bglass border-0 shadow-glass overflow-hidden">
+    <Card className="border-0 overflow-hidden">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${metric.color} flex items-center justify-center`}>
@@ -153,7 +153,7 @@ function SleepHoursInput({ value, onChange }: { value: number; onChange: (value:
   const hours = [4, 5, 6, 7, 8, 9, 10, 11, 12];
   
   return (
-    <Card className="bglass border-0 shadow-glass overflow-hidden">
+    <Card className="border-0 overflow-hidden">
       <CardContent className="p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center">
@@ -175,7 +175,7 @@ function SleepHoursInput({ value, onChange }: { value: number; onChange: (value:
               type="button"
               variant={value === h ? "default" : "outline"}
               size="sm"
-              className={`min-w-12 ${value === h ? 'bg-primary' : 'bglass'}`}
+              className={`min-w-12 ${value === h ? 'bg-primary' : ''}`}
               onClick={() => onChange(h)}
               data-testid={`sleep-hours-${h}`}
             >
@@ -227,7 +227,7 @@ function ReadinessScore({ values }: { values: Record<MetricKey, number> }) {
   const StatusIcon = status.icon;
 
   return (
-    <Card className="bglass border-0 shadow-glass overflow-hidden">
+    <Card className="border-0 overflow-hidden">
       <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -328,7 +328,7 @@ export default function WellnessSurvey() {
   if (!athlete) {
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
-        <Card className="bglass border-0 shadow-glass">
+        <Card className="border-0">
           <CardContent className="p-8 text-center">
             <p className="text-slate-400">Athlete not found</p>
           </CardContent>
@@ -351,7 +351,7 @@ export default function WellnessSurvey() {
           Back to Portal
         </Button>
 
-        <Card className="bglass border-0 shadow-glass overflow-hidden">
+        <Card className="border-0 overflow-hidden">
           <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 p-8 text-center">
             <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
             <h2 className="text-2xl font-display font-bold text-slate-100 mb-2">
@@ -420,7 +420,7 @@ export default function WellnessSurvey() {
           />
         ))}
 
-        <Card className="bglass border-0 shadow-glass">
+        <Card className="border-0">
           <CardContent className="p-5">
             <h3 className="font-display font-semibold text-slate-200 mb-3">
               Additional Notes (Optional)
@@ -429,7 +429,7 @@ export default function WellnessSurvey() {
               placeholder="Any injuries, concerns, or things your coach should know..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="bglass border-slate-700 text-slate-200 placeholder:text-slate-500 min-h-24"
+              className="border-slate-700 text-slate-200 placeholder:text-slate-500 min-h-24"
               data-testid="input-notes"
             />
           </CardContent>

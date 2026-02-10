@@ -295,7 +295,7 @@ export default function ValdIntegration() {
       </div>
 
       {!config?.isConfigured && (
-        <Card className="bglass border-yellow-500/20">
+        <Card className="border-yellow-500/20">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-yellow-400">
               <Settings className="w-5 h-5" />
@@ -322,7 +322,7 @@ export default function ValdIntegration() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bglass">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-blue-500/20">
@@ -335,7 +335,7 @@ export default function ValdIntegration() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bglass">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-green-500/20">
@@ -348,7 +348,7 @@ export default function ValdIntegration() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bglass">
+        <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-yellow-500/20">
@@ -364,7 +364,7 @@ export default function ValdIntegration() {
       </div>
 
       <Tabs defaultValue="profiles" className="space-y-4">
-        <TabsList className="bglass">
+        <TabsList>
           <TabsTrigger value="profiles" data-testid="tab-profiles">
             <Users className="w-4 h-4 mr-2" />
             Profiles
@@ -380,7 +380,7 @@ export default function ValdIntegration() {
         </TabsList>
 
         <TabsContent value="profiles" className="space-y-4">
-          <Card className="bglass">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>VALD Profiles</CardTitle>
@@ -623,7 +623,7 @@ export default function ValdIntegration() {
         </TabsContent>
 
         <TabsContent value="sync" className="space-y-4">
-          <Card className="bglass">
+          <Card>
             <CardHeader>
               <CardTitle>Sync Test Data</CardTitle>
               <CardDescription>
@@ -669,7 +669,7 @@ export default function ValdIntegration() {
                 ].map((device) => (
                   <Card 
                     key={device.id} 
-                    className={`bglass cursor-pointer transition-all hover:border-primary/50 ${
+                    className={`cursor-pointer transition-all hover:border-primary/50 ${
                       selectedDevice === device.id ? 'border-primary' : ''
                     }`}
                     onClick={() => setSelectedDevice(device.id)}
@@ -686,7 +686,7 @@ export default function ValdIntegration() {
         </TabsContent>
 
         <TabsContent value="logs" className="space-y-4">
-          <Card className="bglass">
+          <Card>
             <CardHeader>
               <CardTitle>Sync History</CardTitle>
               <CardDescription>

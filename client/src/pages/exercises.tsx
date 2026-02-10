@@ -4,7 +4,9 @@ import { Exercise, InsertExercise } from "@shared/schema";
 import { ExerciseCard } from "@/components/exercise-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Dumbbell } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import {
   Dialog,
   DialogContent,
@@ -196,18 +198,21 @@ export default function Exercises() {
         </DialogContent>
       </Dialog>
 
-      <div className="bglass rounded-2xl shadow-glass p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="font-semibold text-lg text-slate-100">Exercise Library</h2>
-            <p className="text-sm text-slate-400 mt-1">
-              {filteredExercises?.length || 0} exercise{(filteredExercises?.length || 0) === 1 ? '' : 's'} in your library
-            </p>
-          </div>
-          <div className="chip">Coach Portal</div>
-        </div>
-        
-        <div className="flex gap-3 flex-wrap">
+      <PageHeader
+        title="Exercise Library"
+        icon={Dumbbell}
+        description={`${filteredExercises?.length || 0} exercise${(filteredExercises?.length || 0) === 1 ? '' : 's'} in your library`}
+        badge={<Badge variant="secondary">Coach Portal</Badge>}
+        actions={
+          <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-exercise">
+            <Plus className="h-4 w-4 mr-1" />
+            Add Exercise
+          </Button>
+        }
+      />
+
+      <div>
+        <div className="flex gap-3 flex-wrap mb-4">
           <div className="relative flex-1 min-w-[280px]">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
@@ -230,14 +235,6 @@ export default function Exercises() {
               ))}
             </SelectContent>
           </Select>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <button className="btn btn-pri" data-testid="button-add-exercise">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Exercise
-              </button>
-            </DialogTrigger>
-          </Dialog>
         </div>
 
         {/* Edit Dialog */}

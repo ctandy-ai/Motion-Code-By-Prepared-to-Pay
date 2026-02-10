@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/page-header";
 import {
   MessageSquare,
   Send,
@@ -157,85 +158,80 @@ export default function CoachMessages() {
 
   return (
     <div className="space-y-6">
-      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-100 flex items-center gap-2">
-            <MessageSquare className="h-6 w-6 text-brand-400" />
-            Messaging Center
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Communicate with your athletes
-          </p>
-        </div>
-        <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-broadcast">
-              <Megaphone className="h-4 w-4 mr-2" />
-              Broadcast Message
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Broadcast Message</DialogTitle>
-              <DialogDescription>
-                Send a message to multiple athletes at once
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-400">
-                  {selectedForBroadcast.length} of {athletes?.length || 0} selected
-                </span>
-                <Button variant="outline" size="sm" onClick={selectAllForBroadcast}>
-                  {selectedForBroadcast.length === athletes?.length ? "Deselect All" : "Select All"}
-                </Button>
-              </div>
-              <div className="max-h-48 overflow-y-auto space-y-2 border rounded-lg p-3">
-                {athletes?.map((athlete) => (
-                  <label
-                    key={athlete.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={selectedForBroadcast.includes(athlete.id)}
-                      onCheckedChange={() => toggleBroadcastSelection(athlete.id)}
-                    />
-                    <span className="text-sm">{athlete.name}</span>
-                    {athlete.team && (
-                      <Badge variant="outline" className="text-xs">
-                        {athlete.team}
-                      </Badge>
-                    )}
-                  </label>
-                ))}
-              </div>
-              <Textarea
-                placeholder="Type your broadcast message..."
-                value={broadcastMessage}
-                onChange={(e) => setBroadcastMessage(e.target.value)}
-                rows={4}
-                data-testid="input-broadcast-message"
-              />
-              <Button
-                className="w-full"
-                onClick={handleBroadcast}
-                disabled={
-                  !broadcastMessage.trim() ||
-                  selectedForBroadcast.length === 0 ||
-                  broadcastMutation.isPending
-                }
-                data-testid="button-send-broadcast"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Send to {selectedForBroadcast.length} Athletes
+      <PageHeader
+        title="Messaging Center"
+        icon={MessageSquare}
+        description="Communicate with your athletes"
+        actions={
+          <Button onClick={() => setBroadcastOpen(true)} data-testid="button-broadcast">
+            <Megaphone className="h-4 w-4 mr-2" />
+            Broadcast Message
+          </Button>
+        }
+      />
+
+      <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Broadcast Message</DialogTitle>
+            <DialogDescription>
+              Send a message to multiple athletes at once
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-400">
+                {selectedForBroadcast.length} of {athletes?.length || 0} selected
+              </span>
+              <Button variant="outline" size="sm" onClick={selectAllForBroadcast}>
+                {selectedForBroadcast.length === athletes?.length ? "Deselect All" : "Select All"}
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            <div className="max-h-48 overflow-y-auto space-y-2 border rounded-lg p-3">
+              {athletes?.map((athlete) => (
+                <label
+                  key={athlete.id}
+                  className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer"
+                >
+                  <Checkbox
+                    checked={selectedForBroadcast.includes(athlete.id)}
+                    onCheckedChange={() => toggleBroadcastSelection(athlete.id)}
+                  />
+                  <span className="text-sm">{athlete.name}</span>
+                  {athlete.team && (
+                    <Badge variant="outline" className="text-xs">
+                      {athlete.team}
+                    </Badge>
+                  )}
+                </label>
+              ))}
+            </div>
+            <Textarea
+              placeholder="Type your broadcast message..."
+              value={broadcastMessage}
+              onChange={(e) => setBroadcastMessage(e.target.value)}
+              rows={4}
+              data-testid="input-broadcast-message"
+            />
+            <Button
+              className="w-full"
+              onClick={handleBroadcast}
+              disabled={
+                !broadcastMessage.trim() ||
+                selectedForBroadcast.length === 0 ||
+                broadcastMutation.isPending
+              }
+              data-testid="button-send-broadcast"
+            >
+              <Send className="h-4 w-4 mr-2" />
+              Send to {selectedForBroadcast.length} Athletes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-6 lg:grid-cols-3 h-[calc(100vh-16rem)]">
-        <Card className="bglass shadow-glass border-0 lg:col-span-1 flex flex-col">
+        <Card className="border-0 lg:col-span-1 flex flex-col">
           <CardHeader className="pb-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -303,7 +299,7 @@ export default function CoachMessages() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0 lg:col-span-2 flex flex-col">
+        <Card className="border-0 lg:col-span-2 flex flex-col">
           {selectedThreadData ? (
             <>
               <CardHeader className="pb-2 border-b border-slate-700/50">

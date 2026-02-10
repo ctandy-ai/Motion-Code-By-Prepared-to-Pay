@@ -193,7 +193,7 @@ export default function Templates() {
       </div>
 
       {filteredTemplates.length === 0 ? (
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardContent className="flex flex-col items-center justify-center py-16">
             <FileText className="h-16 w-16 text-slate-400 mb-4" />
             <h3 className="font-semibold text-lg mb-2 text-slate-100">No Templates Found</h3>
@@ -207,7 +207,7 @@ export default function Templates() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredTemplates.map((template) => (
-            <Card key={template.id} className="bglass shadow-glass border-0 hover-elevate group" data-testid={`template-card-${template.id}`}>
+            <Card key={template.id} className="border-0 hover-elevate group" data-testid={`template-card-${template.id}`}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -373,7 +373,7 @@ export default function Templates() {
                   const phaseWeeks = templateStructure.weeks.filter(w => w.phaseId === phase.id);
                   
                   return (
-                    <Card key={phase.id} className="bglass border-0">
+                    <Card key={phase.id} className="border-0">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div>

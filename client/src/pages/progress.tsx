@@ -148,7 +148,7 @@ export default function Progress() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Total PRs
@@ -161,7 +161,7 @@ export default function Progress() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Total Workouts
@@ -174,7 +174,7 @@ export default function Progress() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Total Volume
@@ -189,7 +189,7 @@ export default function Progress() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-slate-400">
               Avg Sets/Workout
@@ -207,7 +207,7 @@ export default function Progress() {
         </Card>
       </div>
 
-      <Card className="bglass shadow-glass border-0">
+      <Card className="border-0">
         <CardHeader>
           <CardTitle className="font-heading text-xl text-slate-100">Strength Progression</CardTitle>
           <CardDescription className="text-slate-400">
@@ -263,7 +263,7 @@ export default function Progress() {
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader>
             <CardTitle className="font-heading text-xl text-slate-100">Training Volume</CardTitle>
             <CardDescription className="text-slate-400">
@@ -298,7 +298,7 @@ export default function Progress() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader>
             <CardTitle className="font-heading text-xl text-slate-100">Recent Personal Records</CardTitle>
             <CardDescription className="text-slate-400">

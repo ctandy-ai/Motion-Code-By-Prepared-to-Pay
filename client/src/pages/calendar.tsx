@@ -222,7 +222,7 @@ export default function Calendar() {
         </Select>
       </div>
 
-      <Card className="bglass shadow-glass border-0">
+      <Card className="border-0">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="font-heading text-2xl text-slate-100">
@@ -313,7 +313,7 @@ export default function Calendar() {
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader>
             <CardTitle className="font-heading text-xl text-slate-100">Upcoming Workouts</CardTitle>
           </CardHeader>
@@ -352,7 +352,7 @@ export default function Calendar() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader>
             <CardTitle className="font-heading text-xl text-slate-100">Workout Summary</CardTitle>
           </CardHeader>
@@ -405,7 +405,7 @@ export default function Calendar() {
                       const athlete = athletes.find(a => a.id === log.athleteId);
                       const exercise = exercises.find(e => e.id === log.exerciseId);
                       return (
-                        <Card key={log.id} className="bglass shadow-glass border-0">
+                        <Card key={log.id} className="border-0">
                           <CardContent className="p-4">
                             <div className="flex items-center justify-between">
                               <div>
@@ -437,7 +437,7 @@ export default function Calendar() {
                     {selectedDayData.scheduledExercises.map((item, idx) => {
                       const athlete = athletes.find(a => a.id === item.athleteProgram.athleteId);
                       return (
-                        <Card key={`${item.athleteProgram.id}-${item.programExercise.id}-${idx}`} className="bglass shadow-glass border-0">
+                        <Card key={`${item.athleteProgram.id}-${item.programExercise.id}-${idx}`} className="border-0">
                           <CardContent className="p-4">
                             <div className="space-y-2">
                               <div className="flex items-start justify-between gap-2">
@@ -494,7 +494,7 @@ export default function Calendar() {
                   </h3>
                   <div className="space-y-3">
                     {selectedDayData.scheduledBlocks.map((block, idx) => (
-                      <Card key={`${block.blockId}-${idx}`} className="bglass shadow-glass border-0">
+                      <Card key={`${block.blockId}-${idx}`} className="border-0">
                         <CardContent className="p-4">
                           <div className="space-y-2">
                             <div className="flex items-start justify-between gap-2">

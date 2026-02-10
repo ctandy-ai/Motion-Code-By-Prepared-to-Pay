@@ -16,6 +16,7 @@ import {
   Area,
 } from "recharts";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/page-header";
 
 interface AnalyticsData {
   strengthData: Array<{
@@ -97,13 +98,14 @@ export default function Analytics() {
   if (isLoading) {
     return (
       <div className="space-y-8">
-        <div className="bglass rounded-2xl shadow-glass p-5">
-          <h1 className="text-2xl font-semibold text-slate-100">Analytics Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-1">Loading performance data...</p>
-        </div>
+        <PageHeader
+          title="Analytics Dashboard"
+          icon={BarChart3}
+          description="Loading performance data..."
+        />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="bglass shadow-glass border-0 animate-pulse">
+            <Card key={i} className="border-0 animate-pulse">
               <CardContent className="p-6">
                 <div className="h-20 bg-slate-700/50 rounded-lg" />
               </CardContent>
@@ -118,20 +120,14 @@ export default function Analytics() {
 
   return (
     <div className="space-y-8">
-      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-100">Analytics Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Performance insights across all athletes
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-brand-400" />
-        </div>
-      </div>
+      <PageHeader
+        title="Analytics Dashboard"
+        icon={BarChart3}
+        description="Performance insights across all athletes"
+      />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-        <Card className="bglass shadow-glass border-0" data-testid="stat-athletes">
+        <Card className="border-0" data-testid="stat-athletes">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-brand-600/20">
@@ -147,7 +143,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0" data-testid="stat-workouts">
+        <Card className="border-0" data-testid="stat-workouts">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-emerald-600/20">
@@ -163,7 +159,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0" data-testid="stat-prs">
+        <Card className="border-0" data-testid="stat-prs">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-amber-600/20">
@@ -179,7 +175,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0" data-testid="stat-surveys">
+        <Card className="border-0" data-testid="stat-surveys">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-purple-600/20">
@@ -195,7 +191,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0" data-testid="stat-readiness">
+        <Card className="border-0" data-testid="stat-readiness">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-cyan-600/20">
@@ -214,7 +210,7 @@ export default function Analytics() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="bglass shadow-glass border-0" data-testid="chart-volume">
+        <Card className="border-0" data-testid="chart-volume">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
               <Activity className="h-4 w-4 text-brand-400" />
@@ -268,7 +264,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0" data-testid="chart-wellness">
+        <Card className="border-0" data-testid="chart-wellness">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
               <Heart className="h-4 w-4 text-purple-400" />
@@ -343,7 +339,7 @@ export default function Analytics() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="bglass shadow-glass border-0 lg:col-span-2" data-testid="chart-prs">
+        <Card className="border-0 lg:col-span-2" data-testid="chart-prs">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
               <Trophy className="h-4 w-4 text-amber-400" />
@@ -390,7 +386,7 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="bglass shadow-glass border-0" data-testid="chart-top-exercises">
+        <Card className="border-0" data-testid="chart-top-exercises">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-emerald-400" />
@@ -442,7 +438,7 @@ export default function Analytics() {
         </Card>
       </div>
 
-      <Card className="bglass shadow-glass border-0" data-testid="chart-strength">
+      <Card className="border-0" data-testid="chart-strength">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-brand-400" />

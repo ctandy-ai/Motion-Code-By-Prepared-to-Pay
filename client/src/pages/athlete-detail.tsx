@@ -465,7 +465,7 @@ export default function AthleteDetail() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-4">
-        <Card className="bglass shadow-glass border-0" data-testid="card-belt-classification">
+        <Card className="border-0" data-testid="card-belt-classification">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400 flex items-center justify-between gap-2">
               Belt Classification
@@ -515,7 +515,7 @@ export default function AthleteDetail() {
             )}
           </CardContent>
         </Card>
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Active Programs</CardTitle>
           </CardHeader>
@@ -525,7 +525,7 @@ export default function AthleteDetail() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Completed Programs</CardTitle>
           </CardHeader>
@@ -535,7 +535,7 @@ export default function AthleteDetail() {
             </div>
           </CardContent>
         </Card>
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-slate-400">Total Programs</CardTitle>
           </CardHeader>
@@ -547,7 +547,7 @@ export default function AthleteDetail() {
         </Card>
       </div>
 
-      <Card className="bglass shadow-glass border-0">
+      <Card className="border-0">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-lg font-medium text-slate-100 flex items-center gap-2">
@@ -628,7 +628,7 @@ export default function AthleteDetail() {
         ) : athletePrograms && athletePrograms.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2">
             {athletePrograms.map((ap) => (
-              <Card key={ap.id} className="bglass shadow-glass border-0" data-testid={`assignment-card-${ap.id}`}>
+              <Card key={ap.id} className="border-0" data-testid={`assignment-card-${ap.id}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="text-base font-semibold text-slate-100">
@@ -736,7 +736,7 @@ export default function AthleteDetail() {
               return (
                 <Card 
                   key={log.id} 
-                  className="bglass border-0 shadow-glass"
+                  className="border-0"
                   data-testid={`workout-log-${log.id}`}
                 >
                   <CardContent className="p-4">
@@ -782,7 +782,7 @@ export default function AthleteDetail() {
             )}
           </div>
         ) : (
-          <Card className="bglass border-0 shadow-glass">
+          <Card className="border-0">
             <CardContent className="p-8 text-center">
               <Dumbbell className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <h3 className="font-semibold text-slate-300 mb-1">No Workout Logs Yet</h3>
@@ -851,7 +851,7 @@ export default function AthleteDetail() {
               return (
                 <Card 
                   key={survey.id} 
-                  className="bglass border-0 shadow-glass"
+                  className="border-0"
                   data-testid={`wellness-survey-${survey.id}`}
                 >
                   <CardContent className="p-4">
@@ -917,7 +917,7 @@ export default function AthleteDetail() {
             )}
           </div>
         ) : (
-          <Card className="bglass border-0 shadow-glass">
+          <Card className="border-0">
             <CardContent className="p-8 text-center">
               <Heart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
               <h3 className="font-semibold text-slate-300 mb-1">No Wellness Data Yet</h3>
@@ -952,7 +952,7 @@ export default function AthleteDetail() {
                 return (
                   <Card 
                     key={test.id} 
-                    className="bglass border-0 shadow-glass"
+                    className="border-0"
                     data-testid={`vald-test-${test.id}`}
                   >
                     <CardContent className="p-4">
@@ -1008,7 +1008,7 @@ export default function AthleteDetail() {
               )}
             </div>
           ) : (
-            <Card className="bglass border-0 shadow-glass">
+            <Card className="border-0">
               <CardContent className="p-8 text-center">
                 <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
                 <h3 className="font-semibold text-slate-300 mb-1">No VALD Tests Yet</h3>

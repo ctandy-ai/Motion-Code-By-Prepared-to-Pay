@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Dumbbell, Tag, Target, Video, Filter } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
 interface TeamBuildrExercise {
   id: string;
@@ -62,21 +63,18 @@ export default function CoachTools() {
 
   return (
     <div className="space-y-8">
-      <div className="bglass rounded-2xl shadow-glass p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-lg text-slate-100">Coach Tools</h2>
-            <p className="text-sm text-slate-400 mt-1">
-              Master exercise database and coaching resources
-            </p>
-          </div>
-          <div className="chip">
+      <PageHeader
+        title="Coach Tools"
+        icon={Dumbbell}
+        description="Master exercise database and coaching resources"
+        badge={
+          <Badge variant="secondary">
             {isLoading ? "Loading..." : `${exercises.length} Exercises`}
-          </div>
-        </div>
-      </div>
+          </Badge>
+        }
+      />
 
-      <div className="bglass rounded-2xl shadow-glass p-5">
+      <div className="bg-card rounded-lg border border-border p-5">
         <div className="space-y-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -131,7 +129,7 @@ export default function CoachTools() {
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="bglass shadow-glass border-0">
+              <Card key={i} className="border-0">
                 <CardHeader>
                   <Skeleton className="h-5 w-3/4" />
                 </CardHeader>
@@ -147,7 +145,7 @@ export default function CoachTools() {
             {filteredExercises.slice(0, 100).map((exercise) => (
               <Card
                 key={exercise.id}
-                className="bglass shadow-glass border-0"
+                className="border-0"
                 data-testid={`exercise-card-${exercise.id}`}
               >
                 <CardHeader className="pb-3">

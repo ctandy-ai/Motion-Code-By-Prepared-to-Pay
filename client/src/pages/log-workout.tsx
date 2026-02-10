@@ -284,7 +284,7 @@ export default function LogWorkout() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="space-y-6">
-          <Card className="bglass border-0 shadow-glass">
+          <Card className="border-0">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Dumbbell className="w-5 h-5 text-primary" />
@@ -445,7 +445,7 @@ export default function LogWorkout() {
         </div>
 
         <div className="space-y-6">
-          <Card className="bglass border-0 shadow-glass">
+          <Card className="border-0">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Target className="w-5 h-5 text-accent" />
@@ -519,7 +519,7 @@ export default function LogWorkout() {
             )}
           </Card>
 
-          <Card className="bglass border-0 shadow-glass overflow-hidden">
+          <Card className="border-0 overflow-hidden">
             <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Wand2, Check, X, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { PageHeader } from "@/components/page-header";
 
 interface AIClassification {
   exerciseName: string;
@@ -119,22 +120,19 @@ export default function AIClassifierTest() {
 
   return (
     <div className="space-y-8">
-      <div className="bglass rounded-2xl shadow-glass p-5">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="font-heading text-2xl text-slate-100 mb-2">
-              AI Exercise Classification Test
-            </h2>
-            <p className="text-sm text-slate-400">
-              Test GPT-4.1 classification on 5 sample exercises from your TeamBuildr database
-            </p>
-          </div>
+      <PageHeader
+        title="AI Exercise Classification Test"
+        icon={Wand2}
+        description="Test GPT-4.1 classification on 5 sample exercises from your TeamBuildr database"
+        badge={
           <Badge variant="outline" className="text-cyan-400 border-cyan-400">
             <Wand2 className="h-3 w-3 mr-1" />
             Powered by GPT-4.1
           </Badge>
-        </div>
+        }
+      />
 
+      <div>
         <div className="flex items-center gap-4 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg mb-6">
           <AlertCircle className="h-5 w-5 text-amber-400 flex-shrink-0" />
           <div className="text-sm text-slate-300">
@@ -146,7 +144,7 @@ export default function AIClassifierTest() {
         <Button
           onClick={() => classifyMutation.mutate()}
           disabled={classifyMutation.isPending}
-          className="btn btn-pri"
+          variant="default"
           data-testid="button-classify-sample"
         >
           <Wand2 className="h-4 w-4 mr-2" />
@@ -164,7 +162,7 @@ export default function AIClassifierTest() {
           </h3>
 
           {results.map((result, idx) => (
-            <Card key={idx} className="bglass border-0 shadow-glass">
+            <Card key={idx} className="border-0">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

@@ -365,7 +365,7 @@ export default function Workout() {
           )}
         </div>
 
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-slate-100">
               <User className="h-5 w-5" />
@@ -401,7 +401,7 @@ export default function Workout() {
         </Card>
 
         {!selectedAthleteId ? (
-          <Card className="bglass shadow-glass border-0">
+          <Card className="border-0">
             <CardContent className="p-12 text-center">
               <User className="h-16 w-16 mx-auto text-slate-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2 text-slate-100">Select an athlete to begin</h3>
@@ -417,7 +417,7 @@ export default function Workout() {
         ) : null}
 
         {selectedAthleteId && !isLoading && todayWorkout.length === 0 && (
-          <Card className="bglass shadow-glass border-0">
+          <Card className="border-0">
             <CardContent className="p-12 text-center">
               <Clock className="h-16 w-16 mx-auto text-slate-400 mb-4" />
               <h3 className="text-lg font-semibold mb-2 text-slate-100">No workout scheduled for today</h3>
@@ -441,7 +441,7 @@ export default function Workout() {
               const liveVol = liveVolume(sets);
 
               return (
-                <Card key={exerciseId} data-testid={`card-exercise-${exerciseId}`} className="bglass shadow-glass border-0">
+                <Card key={exerciseId} data-testid={`card-exercise-${exerciseId}`} className="border-0">
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">

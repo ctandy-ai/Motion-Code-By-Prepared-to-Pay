@@ -401,7 +401,7 @@ export default function ProgramBuilder() {
             if (dayExercises.length === 0) return null;
             
             return (
-              <Card key={dayNum} className="bglass shadow-glass border-0" data-testid={`day-card-${dayNum}`}>
+              <Card key={dayNum} className="border-0" data-testid={`day-card-${dayNum}`}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-semibold flex items-center justify-between text-slate-100">
                     <span>Day {dayNum}</span>

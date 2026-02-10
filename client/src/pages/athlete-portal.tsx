@@ -148,7 +148,7 @@ function StatCard({ icon: Icon, label, value, suffix, color }: {
   color: string;
 }) {
   return (
-    <Card className="bglass border-0 shadow-glass hover-elevate group">
+    <Card className="border-0 hover-elevate group">
       <CardContent className="p-4 flex items-center gap-4">
         <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center`}>
           <Icon className="w-6 h-6 text-white" />
@@ -174,7 +174,7 @@ function PRShowcase({ prs, exercises }: { prs: PersonalRecord[]; exercises: Exer
   
   if (recentPRs.length === 0) {
     return (
-      <Card className="bglass border-0 shadow-glass">
+      <Card className="border-0">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Trophy className="w-5 h-5 text-amber-400" />
@@ -192,7 +192,7 @@ function PRShowcase({ prs, exercises }: { prs: PersonalRecord[]; exercises: Exer
   }
 
   return (
-    <Card className="bglass border-0 shadow-glass overflow-hidden">
+    <Card className="border-0 overflow-hidden">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Trophy className="w-5 h-5 text-amber-400" />
@@ -240,7 +240,7 @@ function TodaysWorkout({ programs, allPrograms }: { programs: AthleteProgram[]; 
   
   if (activePrograms.length === 0) {
     return (
-      <Card className="bglass border-0 shadow-glass">
+      <Card className="border-0">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Dumbbell className="w-5 h-5 text-primary" />
@@ -259,7 +259,7 @@ function TodaysWorkout({ programs, allPrograms }: { programs: AthleteProgram[]; 
   }
 
   return (
-    <Card className="bglass border-0 shadow-glass overflow-hidden">
+    <Card className="border-0 overflow-hidden">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Dumbbell className="w-5 h-5 text-primary" />
@@ -403,7 +403,7 @@ export default function AthletePortal() {
         <span className="text-sm text-slate-500">Athlete Portal</span>
       </div>
 
-      <Card className="bglass border-0 shadow-glass overflow-hidden relative">
+      <Card className="border-0 overflow-hidden relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
         <CardContent className="relative p-6">
           <div className="flex flex-col md:flex-row items-center gap-6">
@@ -508,7 +508,7 @@ export default function AthletePortal() {
         <PRShowcase prs={prs} exercises={exercises} />
       </div>
 
-      <Card className="bglass border-0 shadow-glass">
+      <Card className="border-0">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <TrendingUp className="w-5 h-5 text-green-400" />

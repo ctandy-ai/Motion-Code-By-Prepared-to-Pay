@@ -5,6 +5,7 @@ import { Athlete, InsertAthlete, Program } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Mail, Users as UsersIcon, Upload, Eye, Sparkles, CheckSquare, Target, MessageSquare, X } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
@@ -260,86 +261,83 @@ export default function Athletes() {
 
   return (
     <div className="space-y-8">
-      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-heading text-4xl font-bold text-slate-100">Athletes</h1>
-          <p className="text-slate-400 mt-2">
-            Manage your athlete roster and assign training programs.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setLocation("/athletes/new/ai")}
-            className="bg-brand-600/20 border-brand-500/50 hover:bg-brand-600/30"
-            data-testid="button-ai-onboarding"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            AI Add Athlete
-          </Button>
-          <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" data-testid="button-import-athletes">
-                <Upload className="h-4 w-4 mr-2" />
-                Import CSV
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Import Athletes from CSV</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <label htmlFor="csv-upload" className="text-sm font-medium">
-                    Upload TeamBuildr CSV Export
-                  </label>
-                  <Input
-                    id="csv-upload"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileChange}
-                    data-testid="input-csv-file"
-                  />
-                  {importProgress && (
-                    <p className="text-sm text-muted-foreground">{importProgress}</p>
-                  )}
-                </div>
-                <div className="rounded-lg border-0 p-4 bglass">
-                  <h4 className="font-semibold text-sm mb-2 text-slate-100">CSV Format:</h4>
-                  <p className="text-xs text-slate-400">
-                    Expected columns: FIRST, LAST, EMAIL, PHONE, GROUPS, CALENDAR, STATUS
-                  </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Athletes will be automatically assigned to their groups/teams.
-                  </p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsImportDialogOpen(false)}
-                  data-testid="button-cancel-import"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleImport}
-                  disabled={!csvFile || importMutation.isPending}
-                  data-testid="button-start-import"
-                >
-                  {importMutation.isPending ? "Importing..." : "Import Athletes"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+      <PageHeader
+        title="Athletes"
+        icon={UsersIcon}
+        description="Manage your athlete roster and assign training programs."
+        actions={
+          <>
+            <Button 
+              variant="outline" 
+              onClick={() => setLocation("/athletes/new/ai")}
+              data-testid="button-ai-onboarding"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              AI Add Athlete
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportDialogOpen(true)} data-testid="button-import-athletes">
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
+            </Button>
+            <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-athlete">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Athlete
+            </Button>
+          </>
+        }
+      />
 
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button data-testid="button-add-athlete">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Athlete
-              </Button>
-            </DialogTrigger>
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Import Athletes from CSV</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="csv-upload" className="text-sm font-medium">
+                Upload TeamBuildr CSV Export
+              </label>
+              <Input
+                id="csv-upload"
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                data-testid="input-csv-file"
+              />
+              {importProgress && (
+                <p className="text-sm text-muted-foreground">{importProgress}</p>
+              )}
+            </div>
+            <div className="rounded-lg border-0 p-4 bg-card border border-border">
+              <h4 className="font-semibold text-sm mb-2 text-slate-100">CSV Format:</h4>
+              <p className="text-xs text-slate-400">
+                Expected columns: FIRST, LAST, EMAIL, PHONE, GROUPS, CALENDAR, STATUS
+              </p>
+              <p className="text-xs text-slate-400 mt-1">
+                Athletes will be automatically assigned to their groups/teams.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsImportDialogOpen(false)}
+              data-testid="button-cancel-import"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleImport}
+              disabled={!csvFile || importMutation.isPending}
+              data-testid="button-start-import"
+            >
+              {importMutation.isPending ? "Importing..." : "Import Athletes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-heading text-2xl">Add New Athlete</DialogTitle>
@@ -444,9 +442,7 @@ export default function Athletes() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
-        </div>
-      </div>
+      </Dialog>
 
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="relative max-w-md w-full md:flex-1">
@@ -515,7 +511,7 @@ export default function Athletes() {
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="rounded-lg bglass p-3">
+                      <div className="rounded-lg bg-card border border-border p-3">
                         <p className="text-sm text-slate-300">
                           Athletes to assign:
                         </p>
@@ -567,7 +563,7 @@ export default function Athletes() {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <textarea
-                        className="w-full h-32 rounded-lg bglass border border-white/10 p-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="w-full h-32 rounded-lg bg-card border border-border p-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
                         placeholder="Type your message..."
                         value={bulkMessage}
                         onChange={(e) => setBulkMessage(e.target.value)}
@@ -597,7 +593,7 @@ export default function Athletes() {
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-[240px] rounded-2xl bglass shadow-glass animate-shimmer" />
+            <div key={i} className="h-[240px] rounded-lg bg-card border border-border animate-shimmer" />
           ))}
         </div>
       ) : filteredAthletes && filteredAthletes.length > 0 ? (
@@ -605,7 +601,7 @@ export default function Athletes() {
           {filteredAthletes.map((athlete) => (
             <Card 
               key={athlete.id} 
-              className={`bglass shadow-glass border-0 hover-elevate transition-all duration-200 ${selectedAthletes.has(athlete.id) ? 'ring-2 ring-brand-500' : ''}`} 
+              className={`border-0 hover-elevate transition-all duration-200 ${selectedAthletes.has(athlete.id) ? 'ring-2 ring-brand-500' : ''}`} 
               data-testid={`athlete-card-${athlete.id}`}
             >
               <CardHeader className="space-y-4">

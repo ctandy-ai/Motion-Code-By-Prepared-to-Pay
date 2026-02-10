@@ -298,14 +298,14 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
                 data-testid="input-chat-message"
                 className="flex-1"
               />
-              <button
+              <Button
+                size="icon"
                 onClick={handleSend}
                 disabled={!input.trim() || chatMutation.isPending}
-                className="btn btn-pri h-9 w-9 flex items-center justify-center disabled:opacity-50"
                 data-testid="button-send-message"
               >
                 <Send className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
             <div className="flex items-start gap-2 mt-2 text-xs text-slate-500">
               <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />

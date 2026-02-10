@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Shield, Activity, Clock, User, Filter, RefreshCw } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
+import { PageHeader } from "@/components/page-header";
 
 interface AuditLog {
   id: string;
@@ -83,28 +84,24 @@ export default function AuditLogs() {
 
   return (
     <div className="space-y-8">
-      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="font-heading text-4xl font-bold text-slate-100 flex items-center gap-3">
-            <Shield className="h-8 w-8 text-brand-500" />
-            Audit Logs
-          </h1>
-          <p className="text-slate-400 mt-2">
-            Track all system activity for enterprise compliance
-          </p>
-        </div>
-        <Button 
-          variant="outline" 
-          onClick={() => refetch()}
-          data-testid="button-refresh-logs"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
+      <PageHeader
+        title="Audit Logs"
+        icon={Shield}
+        description="Track all system activity for enterprise compliance"
+        actions={
+          <Button 
+            variant="outline" 
+            onClick={() => refetch()}
+            data-testid="button-refresh-logs"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-4">
-        <Card className="bglass border-0">
+        <Card className="border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-400">Total Actions (7d)</CardTitle>
           </CardHeader>
@@ -115,7 +112,7 @@ export default function AuditLogs() {
           </CardContent>
         </Card>
 
-        <Card className="bglass border-0">
+        <Card className="border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-400">Top Action</CardTitle>
           </CardHeader>
@@ -128,7 +125,7 @@ export default function AuditLogs() {
           </CardContent>
         </Card>
 
-        <Card className="bglass border-0">
+        <Card className="border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-400">Top Resource</CardTitle>
           </CardHeader>
@@ -141,7 +138,7 @@ export default function AuditLogs() {
           </CardContent>
         </Card>
 
-        <Card className="bglass border-0">
+        <Card className="border-0">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-slate-400">Actions Types</CardTitle>
           </CardHeader>
@@ -153,7 +150,7 @@ export default function AuditLogs() {
         </Card>
       </div>
 
-      <Card className="bglass border-0">
+      <Card className="border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5 text-brand-500" />
@@ -195,7 +192,7 @@ export default function AuditLogs() {
         </CardContent>
       </Card>
 
-      <Card className="bglass border-0">
+      <Card className="border-0">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-brand-500" />
@@ -209,7 +206,7 @@ export default function AuditLogs() {
           {logsLoading ? (
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="h-16 rounded-lg bglass animate-shimmer" />
+                <div key={i} className="h-16 rounded-lg bg-card border border-border animate-shimmer" />
               ))}
             </div>
           ) : filteredLogs && filteredLogs.length > 0 ? (
@@ -217,7 +214,7 @@ export default function AuditLogs() {
               {filteredLogs.map((log) => (
                 <div
                   key={log.id}
-                  className="p-4 rounded-lg bglass border border-white/5 hover-elevate"
+                  className="p-4 rounded-lg bg-card border border-border hover-elevate"
                   data-testid={`audit-log-${log.id}`}
                 >
                   <div className="flex flex-wrap items-center gap-3 mb-2">

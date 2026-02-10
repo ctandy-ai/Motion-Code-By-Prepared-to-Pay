@@ -229,7 +229,7 @@ function TestCategoryCard({ category }: { category: TestCategory }) {
   };
 
   return (
-    <Card className={`bglass border-2 ${statusColors[category.status]}`} data-testid={`card-test-${category.id}`}>
+    <Card className={`border-2 ${statusColors[category.status]}`} data-testid={`card-test-${category.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3">
@@ -292,7 +292,7 @@ function TestCategoryCard({ category }: { category: TestCategory }) {
 function StrengthsGapsSection({ strengths, gaps }: { strengths: string[]; gaps: string[] }) {
   return (
     <div className="grid md:grid-cols-2 gap-4" data-testid="section-strengths-gaps">
-      <Card className="bglass border-emerald-500/20" data-testid="card-strengths">
+      <Card className="border-emerald-500/20" data-testid="card-strengths">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
@@ -311,7 +311,7 @@ function StrengthsGapsSection({ strengths, gaps }: { strengths: string[]; gaps: 
         </CardContent>
       </Card>
 
-      <Card className="bglass border-amber-500/20" data-testid="card-gaps">
+      <Card className="border-amber-500/20" data-testid="card-gaps">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
@@ -335,7 +335,7 @@ function StrengthsGapsSection({ strengths, gaps }: { strengths: string[]; gaps: 
 
 function RecommendationsSection({ recommendations }: { recommendations: { title: string; items: string[] }[] }) {
   return (
-    <Card className="bglass" data-testid="section-recommendations">
+    <Card data-testid="section-recommendations">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="w-5 h-5 text-professional-gold" />
@@ -370,7 +370,7 @@ function RecommendationsSection({ recommendations }: { recommendations: { title:
 
 function AthleteSummarySection({ athleteName, summary }: { athleteName: string; summary: string }) {
   return (
-    <Card className="bglass border-professional-gold/20" data-testid="section-athlete-summary">
+    <Card className="border-professional-gold/20" data-testid="section-athlete-summary">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Award className="w-5 h-5 text-professional-gold" />
@@ -626,7 +626,7 @@ export default function AthleteReport() {
         </div>
       </div>
 
-      <Card className="bglass border-2 border-professional-gold/30" data-testid="card-report-header">
+      <Card className="border-2 border-professional-gold/30" data-testid="card-report-header">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -699,7 +699,7 @@ export default function AthleteReport() {
           </div>
         </div>
       ) : (
-        <Card className="bglass border-dashed border-2 border-muted-foreground/20" data-testid="card-no-vald-data">
+        <Card className="border-dashed border-2 border-muted-foreground/20" data-testid="card-no-vald-data">
           <CardContent className="py-12 text-center">
             <Activity className="w-12 h-12 text-muted-foreground/40 mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No VALD Testing Data Available</h3>

@@ -24,6 +24,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Brain, Plus, Trash2, Edit2, Zap, AlertTriangle, TrendingDown, Shield } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
 interface CoachHeuristic {
   id: string;
@@ -190,26 +191,22 @@ export default function Heuristics() {
 
   return (
     <div className="space-y-8">
-      <div className="bglass rounded-2xl shadow-glass p-5 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-100 flex items-center gap-3">
-            <Brain className="h-7 w-7 text-brand-400" />
-            Coach Intelligence Rules
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Define "When X happens, do Y" rules for AI-powered coaching decisions
-          </p>
-        </div>
-        <Dialog open={isDialogOpen} onOpenChange={(open) => {
-          setIsDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-add-rule" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Add Rule
-            </Button>
-          </DialogTrigger>
+      <PageHeader
+        title="Coach Intelligence Rules"
+        icon={Brain}
+        description='Define "When X happens, do Y" rules for AI-powered coaching decisions'
+        actions={
+          <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-rule" className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Rule
+          </Button>
+        }
+      />
+
+      <Dialog open={isDialogOpen} onOpenChange={(open) => {
+        setIsDialogOpen(open);
+        if (!open) resetForm();
+      }}>
           <DialogContent className="bglass border-white/10 max-w-2xl">
             <DialogHeader>
               <DialogTitle className="text-slate-100">
@@ -338,13 +335,12 @@ export default function Heuristics() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
-      </div>
+      </Dialog>
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="bglass shadow-glass border-0 animate-pulse">
+            <Card key={i} className="border-0 animate-pulse">
               <CardContent className="p-6">
                 <div className="h-24 bg-slate-700/50 rounded-lg" />
               </CardContent>
@@ -358,7 +354,7 @@ export default function Heuristics() {
             return (
               <Card
                 key={heuristic.id}
-                className={`bglass shadow-glass border-0 transition-all ${
+                className={`border-0 transition-all ${
                   heuristic.isActive ? "opacity-100" : "opacity-50"
                 }`}
                 data-testid={`rule-card-${heuristic.id}`}
@@ -449,7 +445,7 @@ export default function Heuristics() {
           })}
         </div>
       ) : (
-        <Card className="bglass shadow-glass border-0">
+        <Card className="border-0">
           <CardContent className="p-12 text-center">
             <Brain className="h-16 w-16 mx-auto mb-4 text-slate-600" />
             <h3 className="text-lg font-semibold text-slate-200 mb-2">No Rules Defined Yet</h3>
@@ -465,7 +461,7 @@ export default function Heuristics() {
         </Card>
       )}
 
-      <Card className="bglass shadow-glass border-0">
+      <Card className="border-0">
         <CardHeader>
           <CardTitle className="text-base font-semibold text-slate-100">
             Example Rules to Get Started
