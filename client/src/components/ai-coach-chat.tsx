@@ -173,21 +173,21 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
             <Bot className="h-5 w-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm text-slate-100">MotionCode AI Coach</h3>
+            <h3 className="font-semibold text-sm text-foreground">MotionCode AI Coach</h3>
             <div className="chip text-[10px] px-2 py-0.5">Full Context Enabled</div>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => setIsMinimized(!isMinimized)}
-            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
             data-testid="button-minimize-chat"
           >
             {isMinimized ? <Maximize2 className="h-4 w-4" /> : <Minimize2 className="h-4 w-4" />}
           </button>
           <button
             onClick={() => setIsOpen(false)}
-            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors"
+            className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"
             data-testid="button-close-chat"
           >
             <X className="h-4 w-4" />
@@ -211,7 +211,7 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
                       : 'ringify bg-white/5'
                   }`}
                 >
-                  <p className={`text-sm whitespace-pre-wrap ${message.role === 'assistant' ? 'text-slate-200' : ''}`}>
+                  <p className={`text-sm whitespace-pre-wrap ${message.role === 'assistant' ? 'text-foreground' : ''}`}>
                     {message.content}
                   </p>
                 </div>
@@ -227,7 +227,7 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
                     className="p-3 rounded-lg bg-white/5 space-y-2"
                     data-testid={`pending-action-${action.id}`}
                   >
-                    <p className="text-sm text-slate-200">{action.description}</p>
+                    <p className="text-sm text-foreground">{action.description}</p>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -281,7 +281,7 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
               <div className="flex justify-start">
                 <div className="ringify bg-white/5 rounded-2xl px-4 py-2 flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin text-brand-400" />
-                  <span className="text-xs text-slate-400">Analyzing context...</span>
+                  <span className="text-xs text-muted-foreground">Analyzing context...</span>
                 </div>
               </div>
             )}
@@ -307,7 +307,7 @@ export function AICoachChat({ athleteId }: { athleteId?: string }) {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            <div className="flex items-start gap-2 mt-2 text-xs text-slate-500">
+            <div className="flex items-start gap-2 mt-2 text-xs text-muted-foreground">
               <AlertCircle className="h-3 w-3 mt-0.5 flex-shrink-0" />
               <p>For medical concerns, consult a healthcare professional</p>
             </div>

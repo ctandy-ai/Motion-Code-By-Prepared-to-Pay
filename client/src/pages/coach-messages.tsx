@@ -180,7 +180,7 @@ export default function CoachMessages() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">
+              <span className="text-sm text-muted-foreground">
                 {selectedForBroadcast.length} of {athletes?.length || 0} selected
               </span>
               <Button variant="outline" size="sm" onClick={selectAllForBroadcast}>
@@ -234,7 +234,7 @@ export default function CoachMessages() {
         <Card className="lg:col-span-1 flex flex-col">
           <CardHeader className="pb-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search athletes..."
                 value={searchQuery}
@@ -248,13 +248,13 @@ export default function CoachMessages() {
             {loadingMessages ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-slate-700/50 rounded-lg animate-pulse" />
+                  <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : threads.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 mx-auto text-slate-600 mb-3" />
-                <p className="text-sm text-slate-400">No conversations yet</p>
+                <p className="text-sm text-muted-foreground">No conversations yet</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -276,7 +276,7 @@ export default function CoachMessages() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-slate-100 truncate">
+                        <span className="text-sm font-medium text-foreground truncate">
                           {thread.athleteName}
                         </span>
                         {thread.unreadCount > 0 && (
@@ -286,9 +286,9 @@ export default function CoachMessages() {
                         )}
                       </div>
                       {thread.team && (
-                        <span className="text-xs text-slate-500">{thread.team}</span>
+                        <span className="text-xs text-muted-foreground">{thread.team}</span>
                       )}
-                      <p className="text-xs text-slate-400 truncate mt-0.5">
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {thread.lastMessage}
                       </p>
                     </div>
@@ -302,7 +302,7 @@ export default function CoachMessages() {
         <Card className="lg:col-span-2 flex flex-col">
           {selectedThreadData ? (
             <>
-              <CardHeader className="pb-2 border-b border-slate-700/50">
+              <CardHeader className="pb-2 border-b border-border">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-brand-600 text-white">
@@ -310,11 +310,11 @@ export default function CoachMessages() {
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <CardTitle className="text-base font-semibold text-slate-100">
+                    <CardTitle className="text-base font-semibold text-foreground">
                       {selectedThreadData.athleteName}
                     </CardTitle>
                     {selectedThreadData.team && (
-                      <p className="text-xs text-slate-400">{selectedThreadData.team}</p>
+                      <p className="text-xs text-muted-foreground">{selectedThreadData.team}</p>
                     )}
                   </div>
                 </div>
@@ -323,8 +323,8 @@ export default function CoachMessages() {
                 {selectedThreadData.messages.length === 0 ? (
                   <div className="text-center py-12">
                     <MessageSquare className="h-12 w-12 mx-auto text-slate-600 mb-3" />
-                    <p className="text-sm text-slate-400">No messages yet</p>
-                    <p className="text-xs text-slate-500">Start the conversation</p>
+                    <p className="text-sm text-muted-foreground">No messages yet</p>
+                    <p className="text-xs text-muted-foreground">Start the conversation</p>
                   </div>
                 ) : (
                   selectedThreadData.messages.map((message) => {
@@ -339,7 +339,7 @@ export default function CoachMessages() {
                           className={`max-w-[75%] rounded-2xl px-4 py-2 ${
                             isCoach
                               ? "bg-brand-600 text-white rounded-br-sm"
-                              : "bg-slate-700 rounded-bl-sm"
+                              : "bg-muted rounded-bl-sm"
                           }`}
                         >
                           <p className="text-sm">{message.content}</p>
@@ -350,7 +350,7 @@ export default function CoachMessages() {
                           >
                             <span
                               className={`text-[10px] ${
-                                isCoach ? "text-white/70" : "text-slate-500"
+                                isCoach ? "text-white/70" : "text-muted-foreground"
                               }`}
                             >
                               {message.createdAt
@@ -374,7 +374,7 @@ export default function CoachMessages() {
                 )}
                 <div ref={messagesEndRef} />
               </CardContent>
-              <div className="p-4 border-t border-slate-700/50">
+              <div className="p-4 border-t border-border">
                 <div className="flex items-center gap-2">
                   <Input
                     placeholder="Type a message..."
@@ -404,10 +404,10 @@ export default function CoachMessages() {
             <CardContent className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <MessageSquare className="h-16 w-16 mx-auto text-slate-600 mb-4" />
-                <h3 className="text-lg font-medium text-slate-300 mb-2">
+                <h3 className="text-lg font-medium text-muted-foreground mb-2">
                   Select a conversation
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   Choose an athlete from the list to start messaging
                 </p>
               </div>

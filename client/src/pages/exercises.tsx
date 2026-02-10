@@ -5,7 +5,8 @@ import { ExerciseCard } from "@/components/exercise-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Dumbbell } from "lucide-react";
+import { Plus, Search, Dumbbell, Calculator, Video } from "lucide-react";
+import { Link } from "wouter";
 import { PageHeader } from "@/components/page-header";
 import {
   Dialog,
@@ -177,21 +178,21 @@ export default function Exercises() {
           )}
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-slate-100 mb-2">Instructions</h3>
-              <p className="text-sm text-slate-400">{videoExercise?.instructions}</p>
+              <h3 className="font-semibold text-foreground mb-2">Instructions</h3>
+              <p className="text-sm text-muted-foreground">{videoExercise?.instructions}</p>
             </div>
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-4 flex-wrap text-sm">
               <div>
-                <span className="text-slate-400">Category: </span>
-                <span className="text-slate-200">{videoExercise?.category}</span>
+                <span className="text-muted-foreground">Category: </span>
+                <span className="text-foreground">{videoExercise?.category}</span>
               </div>
               <div>
-                <span className="text-slate-400">Muscle Group: </span>
-                <span className="text-slate-200">{videoExercise?.muscleGroup}</span>
+                <span className="text-muted-foreground">Muscle Group: </span>
+                <span className="text-foreground">{videoExercise?.muscleGroup}</span>
               </div>
               <div>
-                <span className="text-slate-400">Equipment: </span>
-                <span className="text-slate-200">{videoExercise?.equipment}</span>
+                <span className="text-muted-foreground">Equipment: </span>
+                <span className="text-foreground">{videoExercise?.equipment}</span>
               </div>
             </div>
           </div>
@@ -204,17 +205,31 @@ export default function Exercises() {
         description={`${filteredExercises?.length || 0} exercise${(filteredExercises?.length || 0) === 1 ? '' : 's'} in your library`}
         badge={<Badge variant="secondary">Coach Portal</Badge>}
         actions={
-          <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-exercise">
-            <Plus className="h-4 w-4 mr-1" />
-            Add Exercise
-          </Button>
+          <>
+            <Link href="/video-library">
+              <Button variant="outline" size="sm" data-testid="button-video-library">
+                <Video className="h-4 w-4 mr-2" />
+                Videos
+              </Button>
+            </Link>
+            <Link href="/rm-calculator">
+              <Button variant="outline" size="sm" data-testid="button-rm-calculator">
+                <Calculator className="h-4 w-4 mr-2" />
+                RM Calculator
+              </Button>
+            </Link>
+            <Button onClick={() => setIsDialogOpen(true)} data-testid="button-add-exercise">
+              <Plus className="h-4 w-4 mr-1" />
+              Add Exercise
+            </Button>
+          </>
         }
       />
 
       <div>
         <div className="flex gap-3 flex-wrap mb-4">
           <div className="relative flex-1 min-w-[280px]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search exercises..."
@@ -618,11 +633,11 @@ export default function Exercises() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <Dumbbell className="mx-auto h-16 w-16 text-slate-400 mb-4" />
-          <h3 className="font-heading text-xl font-semibold text-slate-100 mb-2">
+          <Dumbbell className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+          <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
             No exercises found
           </h3>
-          <p className="text-slate-400 mb-6">
+          <p className="text-muted-foreground mb-6">
             {searchQuery || selectedCategory !== "all" 
               ? "Try adjusting your search or filters" 
               : "Get started by adding your first exercise"}

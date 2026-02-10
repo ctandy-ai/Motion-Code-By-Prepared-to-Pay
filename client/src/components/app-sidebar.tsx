@@ -8,8 +8,6 @@ import {
   Database,
   Library,
   ChevronRight,
-  Wand2,
-  Calculator,
   BarChart3,
   Brain,
   Zap,
@@ -17,8 +15,6 @@ import {
   Shield,
   Trophy,
   Megaphone,
-  Video,
-  ClipboardList,
   Users2,
   SlidersHorizontal,
 } from "lucide-react";
@@ -61,17 +57,13 @@ const planItems = [
 const communicationItems = [
   { title: "Messages", url: "/coach/messages", icon: MessageSquare },
   { title: "Noticeboard", url: "/noticeboard", icon: Megaphone },
-  { title: "Video Library", url: "/video-library", icon: Video },
 ];
 
 const toolsItems = [
   { title: "AI Command Center", url: "/ai-command-center", icon: Brain },
   { title: "Master Database", url: "/coach-tools", icon: Database },
-  { title: "AI Classifier", url: "/ai-classifier", icon: Wand2 },
-  { title: "RM Calculator", url: "/rm-calculator", icon: Calculator },
   { title: "Coaching Rules", url: "/heuristics", icon: SlidersHorizontal },
   { title: "VALD Hub", url: "/vald", icon: Zap },
-  { title: "Survey Builder", url: "/survey-builder", icon: ClipboardList },
   { title: "Audit Logs", url: "/audit-logs", icon: Shield },
 ];
 

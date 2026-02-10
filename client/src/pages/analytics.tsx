@@ -1,5 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { BarChart3, TrendingUp, Activity, Users, Trophy, Heart } from "lucide-react";
 import {
   LineChart,
@@ -124,6 +126,14 @@ export default function Analytics() {
         title="Analytics Dashboard"
         icon={BarChart3}
         description="Performance insights across all athletes"
+        actions={
+          <Link href="/progress">
+            <Button variant="outline" size="sm" data-testid="button-individual-progress">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Athlete Progress
+            </Button>
+          </Link>
+        }
       />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">

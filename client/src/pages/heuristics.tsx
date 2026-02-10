@@ -447,7 +447,7 @@ export default function Heuristics() {
       ) : (
         <Card className="border-0">
           <CardContent className="p-12 text-center">
-            <Brain className="h-16 w-16 mx-auto mb-4 text-slate-600" />
+            <Brain className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground mb-2">No Rules Defined Yet</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
               Create coaching intelligence rules to automate decisions. For example:

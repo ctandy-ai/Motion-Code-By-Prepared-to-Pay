@@ -217,7 +217,7 @@ export function BlockComposer({ open, onOpenChange, onSave, initialData }: Block
               
               {/* Exercise Search */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   data-testid="input-exercise-search"
                   placeholder="Search exercises..."
@@ -239,13 +239,13 @@ export function BlockComposer({ open, onOpenChange, onSave, initialData }: Block
                           onClick={() => addExercise(ex)}
                           className="w-full flex items-center justify-between p-3 hover-elevate active-elevate-2"
                         >
-                          <span className="text-sm text-slate-200">{ex.name}</span>
-                          <Plus className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm text-foreground">{ex.name}</span>
+                          <Plus className="h-4 w-4 text-muted-foreground" />
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <div className="p-4 text-sm text-slate-400 text-center">
+                    <div className="p-4 text-sm text-muted-foreground text-center">
                       No exercises found
                     </div>
                   )}
@@ -263,7 +263,7 @@ export function BlockComposer({ open, onOpenChange, onSave, initialData }: Block
                     >
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium text-slate-100">{ex.name}</span>
+                          <span className="text-sm font-medium text-foreground">{ex.name}</span>
                           <Button
                             size="icon"
                             variant="ghost"

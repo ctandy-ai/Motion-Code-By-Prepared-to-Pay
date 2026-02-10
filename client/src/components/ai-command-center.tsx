@@ -146,8 +146,8 @@ export function AICommandCenter() {
           <Brain className="h-8 w-8 text-brand-400" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-100">AI Command Center</h1>
-          <p className="text-slate-400">Intelligent insights across all levels of your program</p>
+          <h1 className="text-2xl font-bold text-foreground">AI Command Center</h1>
+          <p className="text-muted-foreground">Intelligent insights across all levels of your program</p>
         </div>
       </div>
 
@@ -160,7 +160,7 @@ export function AICommandCenter() {
               key={level}
               variant={selectedLevel === level ? "default" : "outline"}
               className={`flex flex-col items-center gap-1 h-auto py-3 ${
-                selectedLevel === level ? "" : "bg-slate-800/50 border-slate-700"
+                selectedLevel === level ? "" : "bg-muted/50 border-border"
               }`}
               onClick={() => {
                 setSelectedLevel(level);
@@ -178,7 +178,7 @@ export function AICommandCenter() {
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2 space-y-4">
-          <Card className="bg-slate-900/80 border-slate-700">
+          <Card className="bg-card/80 border-border">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export function AICommandCenter() {
                 
                 {(selectedLevel === "athlete" || selectedLevel === "program") && (
                   <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
-                    <SelectTrigger className="w-48 bg-slate-800/50" data-testid="select-entity">
+                    <SelectTrigger className="w-48 bg-muted/50" data-testid="select-entity">
                       <SelectValue placeholder={`Select ${selectedLevel}...`} />
                     </SelectTrigger>
                     <SelectContent>
@@ -202,7 +202,7 @@ export function AICommandCenter() {
                   </Select>
                 )}
               </div>
-              <p className="text-sm text-slate-400">{levelConfig[selectedLevel].description}</p>
+              <p className="text-sm text-muted-foreground">{levelConfig[selectedLevel].description}</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
@@ -210,7 +210,7 @@ export function AICommandCenter() {
                   placeholder={`Ask about ${levelConfig[selectedLevel].label.toLowerCase()}...`}
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  className="min-h-[80px] bg-slate-800/50 border-slate-600 resize-none"
+                  className="min-h-[80px] bg-muted/50 border-border resize-none"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -238,7 +238,7 @@ export function AICommandCenter() {
                   <Badge
                     key={i}
                     variant="outline"
-                    className="cursor-pointer hover:bg-slate-700/50 transition-colors"
+                    className="cursor-pointer hover:bg-muted transition-colors"
                     onClick={() => handleExampleClick(example)}
                   >
                     {example}
@@ -249,7 +249,7 @@ export function AICommandCenter() {
           </Card>
 
           {response && (
-            <Card className="bg-slate-900/80 border-slate-700">
+            <Card className="bg-card/80 border-border">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="h-5 w-5 text-brand-400" />
@@ -257,13 +257,13 @@ export function AICommandCenter() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="p-4 rounded-lg bg-slate-800/50">
-                  <p className="text-slate-200 whitespace-pre-wrap">{response.message}</p>
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <p className="text-foreground whitespace-pre-wrap">{response.message}</p>
                 </div>
 
                 {response.insights && response.insights.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <Lightbulb className="h-4 w-4" />
                       Insights
                     </h4>
@@ -290,7 +290,7 @@ export function AICommandCenter() {
 
                 {response.suggestions && response.suggestions.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <Target className="h-4 w-4" />
                       Suggestions
                     </h4>
@@ -298,14 +298,14 @@ export function AICommandCenter() {
                       {response.suggestions.map((suggestion, i) => (
                         <div
                           key={i}
-                          className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50 hover:border-brand-500/50 transition-colors cursor-pointer"
+                          className="p-3 rounded-lg bg-muted/50 border border-border hover:border-brand-500/50 transition-colors cursor-pointer"
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="text-sm font-medium text-slate-200">{suggestion.title}</p>
-                              <p className="text-xs text-slate-400">{suggestion.description}</p>
+                              <p className="text-sm font-medium text-foreground">{suggestion.title}</p>
+                              <p className="text-xs text-muted-foreground">{suggestion.description}</p>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-slate-500" />
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
                           </div>
                         </div>
                       ))}
@@ -315,7 +315,7 @@ export function AICommandCenter() {
 
                 {response.predictions && response.predictions.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                       <TrendingUp className="h-4 w-4" />
                       Predictions
                     </h4>
@@ -323,15 +323,15 @@ export function AICommandCenter() {
                       {response.predictions.map((prediction, i) => (
                         <div
                           key={i}
-                          className="p-3 rounded-lg bg-slate-800/50 border border-slate-700/50"
+                          className="p-3 rounded-lg bg-muted/50 border border-border"
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <p className="text-sm font-medium text-slate-200">{prediction.metric}</p>
+                            <p className="text-sm font-medium text-foreground">{prediction.metric}</p>
                             <Badge variant="outline" className="text-[10px]">
                               {Math.round(prediction.confidence * 100)}% confidence
                             </Badge>
                           </div>
-                          <p className="text-sm text-slate-400">{prediction.prediction}</p>
+                          <p className="text-sm text-muted-foreground">{prediction.prediction}</p>
                         </div>
                       ))}
                     </div>
@@ -343,14 +343,14 @@ export function AICommandCenter() {
         </div>
 
         <div className="space-y-4">
-          <Card className="bg-slate-900/80 border-slate-700">
+          <Card className="bg-card/80 border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button
                 variant="outline"
-                className="w-full justify-start bg-slate-800/50"
+                className="w-full justify-start bg-muted/50"
                 onClick={() => {
                   setSelectedLevel("team");
                   setQuery("Provide a comprehensive team health check");
@@ -363,7 +363,7 @@ export function AICommandCenter() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start bg-slate-800/50"
+                className="w-full justify-start bg-muted/50"
                 onClick={() => {
                   setSelectedLevel("team");
                   setQuery("Which athletes are at highest injury risk?");
@@ -376,7 +376,7 @@ export function AICommandCenter() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start bg-slate-800/50"
+                className="w-full justify-start bg-muted/50"
                 onClick={() => {
                   setSelectedLevel("analytics");
                   setQuery("Summarize this month's training performance");
@@ -390,7 +390,7 @@ export function AICommandCenter() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-900/80 border-slate-700">
+          <Card className="bg-card/80 border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">AI Capabilities</CardTitle>
             </CardHeader>
@@ -399,7 +399,7 @@ export function AICommandCenter() {
                 <div className="space-y-3 text-xs">
                   <div>
                     <p className="font-medium text-blue-400">Athlete Level</p>
-                    <ul className="text-slate-400 mt-1 space-y-1">
+                    <ul className="text-muted-foreground mt-1 space-y-1">
                       <li>- Profile updates via natural language</li>
                       <li>- Injury risk predictions</li>
                       <li>- Belt progression recommendations</li>
@@ -407,7 +407,7 @@ export function AICommandCenter() {
                   </div>
                   <div>
                     <p className="font-medium text-purple-400">Program Level</p>
-                    <ul className="text-slate-400 mt-1 space-y-1">
+                    <ul className="text-muted-foreground mt-1 space-y-1">
                       <li>- Periodization optimization</li>
                       <li>- Volume/intensity balancing</li>
                       <li>- Recovery week placement</li>
@@ -415,7 +415,7 @@ export function AICommandCenter() {
                   </div>
                   <div>
                     <p className="font-medium text-green-400">Exercise Level</p>
-                    <ul className="text-slate-400 mt-1 space-y-1">
+                    <ul className="text-muted-foreground mt-1 space-y-1">
                       <li>- Context-aware recommendations</li>
                       <li>- Injury-safe substitutions</li>
                       <li>- Progression pathways</li>
@@ -423,7 +423,7 @@ export function AICommandCenter() {
                   </div>
                   <div>
                     <p className="font-medium text-orange-400">Team Level</p>
-                    <ul className="text-slate-400 mt-1 space-y-1">
+                    <ul className="text-muted-foreground mt-1 space-y-1">
                       <li>- Workload distribution</li>
                       <li>- Readiness trends</li>
                       <li>- Compliance monitoring</li>
@@ -431,7 +431,7 @@ export function AICommandCenter() {
                   </div>
                   <div>
                     <p className="font-medium text-cyan-400">Analytics Level</p>
-                    <ul className="text-slate-400 mt-1 space-y-1">
+                    <ul className="text-muted-foreground mt-1 space-y-1">
                       <li>- Natural language queries</li>
                       <li>- Trend interpretation</li>
                       <li>- Performance summaries</li>
@@ -439,7 +439,7 @@ export function AICommandCenter() {
                   </div>
                   <div>
                     <p className="font-medium text-yellow-400">Coaching Level</p>
-                    <ul className="text-slate-400 mt-1 space-y-1">
+                    <ul className="text-muted-foreground mt-1 space-y-1">
                       <li>- Decision support</li>
                       <li>- What-if scenarios</li>
                       <li>- Competition prep</li>

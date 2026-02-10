@@ -207,16 +207,16 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
   };
 
   return (
-    <Card className="flex flex-col h-[600px] bg-slate-900/90 border-slate-700">
-      <CardHeader className="pb-2 border-b border-slate-700/50">
+    <Card className="flex flex-col h-[600px] bg-card/90 border-border">
+      <CardHeader className="pb-2 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg bg-brand-500/20">
               <Brain className="h-5 w-5 text-brand-400" />
             </div>
             <div>
-              <CardTitle className="text-lg text-slate-200">AI Athlete Onboarding</CardTitle>
-              <p className="text-xs text-slate-400">Describe your athlete naturally</p>
+              <CardTitle className="text-lg text-foreground">AI Athlete Onboarding</CardTitle>
+              <p className="text-xs text-muted-foreground">Describe your athlete naturally</p>
             </div>
           </div>
           {onClose && (
@@ -244,14 +244,14 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
                   <div
                     className={`max-w-[80%] rounded-lg p-3 ${
                       msg.role === "user"
-                        ? "bg-brand-600/30 text-slate-200"
-                        : "bg-slate-800/50 text-slate-300"
+                        ? "bg-brand-600/30 text-foreground"
+                        : "bg-muted/50 text-muted-foreground"
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     {msg.extractedData && (
-                      <div className="mt-2 pt-2 border-t border-slate-600/50">
-                        <p className="text-xs text-slate-400 mb-1">Captured:</p>
+                      <div className="mt-2 pt-2 border-t border-border">
+                        <p className="text-xs text-muted-foreground mb-1">Captured:</p>
                         <div className="flex flex-wrap gap-1">
                           {Object.entries(msg.extractedData).map(([key, value]) => {
                             if (!value || (Array.isArray(value) && value.length === 0)) return null;
@@ -259,7 +259,7 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
                               <Badge
                                 key={key}
                                 variant="outline"
-                                className="text-[10px] bg-slate-700/50"
+                                className="text-[10px] bg-muted"
                               >
                                 {key}: {Array.isArray(value) ? value.join(", ") : String(value)}
                               </Badge>
@@ -270,8 +270,8 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
                     )}
                   </div>
                   {msg.role === "user" && (
-                    <div className="shrink-0 w-8 h-8 rounded-full bg-slate-700/50 flex items-center justify-center">
-                      <User className="h-4 w-4 text-slate-400" />
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                      <User className="h-4 w-4 text-muted-foreground" />
                     </div>
                   )}
                 </div>
@@ -282,7 +282,7 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
                   <div className="shrink-0 w-8 h-8 rounded-full bg-brand-500/20 flex items-center justify-center">
                     <Sparkles className="h-4 w-4 text-brand-400" />
                   </div>
-                  <div className="bg-slate-800/50 rounded-lg p-3">
+                  <div className="bg-muted/50 rounded-lg p-3">
                     <Loader2 className="h-4 w-4 animate-spin text-brand-400" />
                   </div>
                 </div>
@@ -291,42 +291,42 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
           </ScrollArea>
 
           {extractedData && (
-            <div className="w-64 border-l border-slate-700/50 p-3 overflow-auto">
+            <div className="w-64 border-l border-border p-3 overflow-auto">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-slate-400" />
-                  <h4 className="text-sm font-medium text-slate-300">Athlete Profile</h4>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <h4 className="text-sm font-medium text-muted-foreground">Athlete Profile</h4>
                 </div>
 
                 <div className="space-y-2 text-xs">
                   {extractedData.name && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Name</span>
-                      <span className="text-slate-300 font-medium">{extractedData.name}</span>
+                      <span className="text-muted-foreground">Name</span>
+                      <span className="text-muted-foreground font-medium">{extractedData.name}</span>
                     </div>
                   )}
                   {extractedData.team && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Team</span>
-                      <span className="text-slate-300">{extractedData.team}</span>
+                      <span className="text-muted-foreground">Team</span>
+                      <span className="text-muted-foreground">{extractedData.team}</span>
                     </div>
                   )}
                   {extractedData.position && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Position</span>
-                      <span className="text-slate-300">{extractedData.position}</span>
+                      <span className="text-muted-foreground">Position</span>
+                      <span className="text-muted-foreground">{extractedData.position}</span>
                     </div>
                   )}
                   {extractedData.trainingAgeYears !== undefined && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Training Age</span>
-                      <span className="text-slate-300">{extractedData.trainingAgeYears} yrs</span>
+                      <span className="text-muted-foreground">Training Age</span>
+                      <span className="text-muted-foreground">{extractedData.trainingAgeYears} yrs</span>
                     </div>
                   )}
                   {extractedData.movementQualityScore !== undefined && (
                     <div className="flex justify-between">
-                      <span className="text-slate-500">Movement Quality</span>
-                      <span className="text-slate-300">{extractedData.movementQualityScore}/5</span>
+                      <span className="text-muted-foreground">Movement Quality</span>
+                      <span className="text-muted-foreground">{extractedData.movementQualityScore}/5</span>
                     </div>
                   )}
 
@@ -334,7 +334,7 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
                     extractedData.recurrentCalf ||
                     extractedData.recurrentGroin) && (
                     <div className="pt-1">
-                      <span className="text-slate-500">Injury Flags</span>
+                      <span className="text-muted-foreground">Injury Flags</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {extractedData.recurrentHamstring && (
                           <Badge variant="destructive" className="text-[10px]">
@@ -357,7 +357,7 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
 
                   {extractedData.goals && extractedData.goals.length > 0 && (
                     <div className="pt-1">
-                      <span className="text-slate-500">Goals</span>
+                      <span className="text-muted-foreground">Goals</span>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {extractedData.goals.map((goal, i) => (
                           <Badge key={i} variant="outline" className="text-[10px]">
@@ -369,9 +369,9 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
                   )}
                 </div>
 
-                <div className="pt-2 border-t border-slate-700/50">
+                <div className="pt-2 border-t border-border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-slate-500">Predicted Belt</span>
+                    <span className="text-xs text-muted-foreground">Predicted Belt</span>
                     <Badge className={beltColors[getBeltFromData(extractedData)]}>
                       {getBeltFromData(extractedData)}
                     </Badge>
@@ -399,17 +399,17 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
         </div>
 
         {suggestedPrograms.length > 0 && (
-          <div className="border-t border-slate-700/50 p-3">
-            <p className="text-xs text-slate-400 mb-2">Recommended Programs</p>
+          <div className="border-t border-border p-3">
+            <p className="text-xs text-muted-foreground mb-2">Recommended Programs</p>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {suggestedPrograms.map((program) => (
                 <Card
                   key={program.id}
-                  className="shrink-0 w-48 bg-slate-800/50 border-slate-700/50 cursor-pointer hover:border-brand-500/50 transition-colors"
+                  className="shrink-0 w-48 bg-muted/50 border-border cursor-pointer hover:border-brand-500/50 transition-colors"
                 >
                   <CardContent className="p-3">
-                    <p className="text-sm font-medium text-slate-200 truncate">{program.name}</p>
-                    <p className="text-[10px] text-slate-400 mt-1">{program.matchReason}</p>
+                    <p className="text-sm font-medium text-foreground truncate">{program.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{program.matchReason}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -417,14 +417,14 @@ export function AIOnboardingChat({ onAthleteCreated, onClose }: AIOnboardingChat
           </div>
         )}
 
-        <div className="p-3 border-t border-slate-700/50">
+        <div className="p-3 border-t border-border">
           <div className="flex gap-2">
             <Textarea
               placeholder="Describe the athlete..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="min-h-[60px] bg-slate-800/50 border-slate-600 resize-none"
+              className="min-h-[60px] bg-muted/50 border-slate-600 resize-none"
               data-testid="input-onboarding-message"
             />
             <Button

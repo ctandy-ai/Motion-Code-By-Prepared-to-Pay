@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { Athlete, Exercise, Program, Message } from "@shared/schema";
-import { XPBar } from "@/components/xp-bar";
 import { TeamPulse } from "@/components/team-pulse";
 import { Link } from "wouter";
 import {
@@ -492,24 +491,6 @@ export default function Dashboard() {
             </Card>
           )}
 
-          <Card data-testid="card-xp-level">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold text-foreground">Organization Level</CardTitle>
-                <Badge variant="outline" className="text-xs">Level {dashboardStats?.level || 1}</Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <XPBar
-                currentXP={dashboardStats?.totalXP || 0}
-                level={dashboardStats?.level || 1}
-              />
-              <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                <span>Total XP: {(dashboardStats?.totalXP || 0).toLocaleString()}</span>
-                <span>Streak: {dashboardStats?.currentStreak || 0} days</span>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

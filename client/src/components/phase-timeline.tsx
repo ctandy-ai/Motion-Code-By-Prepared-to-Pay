@@ -56,7 +56,7 @@ export function PhaseTimeline({ phases, weeks, currentWeek, onWeekSelect }: Phas
   return (
     <Card className="p-4" data-testid="phase-timeline">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
           <Calendar className="h-4 w-4" />
           52-Week Program Timeline
         </h3>
@@ -71,7 +71,7 @@ export function PhaseTimeline({ phases, weeks, currentWeek, onWeekSelect }: Phas
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-xs text-slate-400" data-testid="text-week-range">
+          <span className="text-xs text-muted-foreground" data-testid="text-week-range">
             Weeks {viewStart}-{Math.min(viewStart + visibleWeeks - 1, 52)}
           </span>
           <Button
@@ -117,10 +117,10 @@ export function PhaseTimeline({ phases, weeks, currentWeek, onWeekSelect }: Phas
                 >
                   <div className="flex items-center justify-between">
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-sm font-semibold text-slate-100 truncate" data-testid={`text-phase-name-${phase.id}`}>
+                      <h4 className="text-sm font-semibold text-foreground truncate" data-testid={`text-phase-name-${phase.id}`}>
                         {phase.name}
                       </h4>
-                      <p className="text-xs text-slate-400 mt-1" data-testid={`text-phase-weeks-${phase.id}`}>
+                      <p className="text-xs text-muted-foreground mt-1" data-testid={`text-phase-weeks-${phase.id}`}>
                         Weeks {phase.startWeek}-{phase.endWeek} ({phase.endWeek - phase.startWeek + 1} weeks)
                       </p>
                     </div>
@@ -129,7 +129,7 @@ export function PhaseTimeline({ phases, weeks, currentWeek, onWeekSelect }: Phas
                     </Badge>
                   </div>
                   {phase.goals && (
-                    <p className="text-xs text-slate-400 mt-2 line-clamp-1" data-testid={`text-phase-goals-${phase.id}`}>
+                    <p className="text-xs text-muted-foreground mt-2 line-clamp-1" data-testid={`text-phase-goals-${phase.id}`}>
                       {phase.goals}
                     </p>
                   )}
@@ -138,7 +138,7 @@ export function PhaseTimeline({ phases, weeks, currentWeek, onWeekSelect }: Phas
             );
           })
         ) : (
-          <div className="text-center py-8 text-sm text-slate-500">
+          <div className="text-center py-8 text-sm text-muted-foreground">
             No phases defined. Create phases to structure your 52-week program.
           </div>
         )}
@@ -168,7 +168,7 @@ export function PhaseTimeline({ phases, weeks, currentWeek, onWeekSelect }: Phas
                     : undefined
                 }
               >
-                <div className="text-xs font-semibold text-slate-200" data-testid={`text-week-number-${weekNum}`}>
+                <div className="text-xs font-semibold text-foreground" data-testid={`text-week-number-${weekNum}`}>
                   W{weekNum}
                 </div>
                 {weekMeta?.beltTarget && (

@@ -141,13 +141,13 @@ export function ProgramCreationWizard({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl bg-slate-900 border-slate-700 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl bg-background border-border max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl text-white flex items-center gap-2">
             <Layers className="h-5 w-5 text-amber-400" />
             Create Training Program
           </DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-muted-foreground">
             {step === 1 && "Choose a template or start from scratch"}
             {step === 2 && "Configure your program details"}
           </DialogDescription>
@@ -157,16 +157,16 @@ export function ProgramCreationWizard({
         <div className="flex items-center gap-2 mb-6">
           <div className={`flex items-center gap-2 ${step >= 1 ? "text-amber-400" : "text-slate-600"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-              step >= 1 ? "bg-amber-500 text-slate-900" : "bg-slate-700 text-slate-400"
+              step >= 1 ? "bg-amber-500 text-slate-900" : "bg-muted text-muted-foreground"
             }`}>
               {step > 1 ? <Check className="h-4 w-4" /> : "1"}
             </div>
             <span className="text-sm font-medium">Template</span>
           </div>
-          <div className="flex-1 h-px bg-slate-700" />
+          <div className="flex-1 h-px bg-muted" />
           <div className={`flex items-center gap-2 ${step >= 2 ? "text-amber-400" : "text-slate-600"}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-              step >= 2 ? "bg-amber-500 text-slate-900" : "bg-slate-700 text-slate-400"
+              step >= 2 ? "bg-amber-500 text-slate-900" : "bg-muted text-muted-foreground"
             }`}>
               2
             </div>
@@ -184,7 +184,7 @@ export function ProgramCreationWizard({
                   className={`p-4 cursor-pointer transition-all border-2 ${
                     selectedTemplate?.id === template.id
                       ? "border-amber-500 bg-amber-500/10"
-                      : "border-slate-700 bg-slate-800/50 hover:border-slate-600"
+                      : "border-border bg-muted/50 hover:border-border"
                   }`}
                   onClick={() => handleSelectTemplate(template)}
                   data-testid={`template-${template.id}`}
@@ -193,7 +193,7 @@ export function ProgramCreationWizard({
                     <div className={`p-2 rounded-lg ${
                       selectedTemplate?.id === template.id 
                         ? "bg-amber-500/20 text-amber-400" 
-                        : "bg-slate-700/50 text-slate-400"
+                        : "bg-muted text-muted-foreground"
                     }`}>
                       {template.icon}
                     </div>
@@ -206,10 +206,10 @@ export function ProgramCreationWizard({
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                         {template.description}
                       </p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
+                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {template.duration}w
@@ -237,41 +237,41 @@ export function ProgramCreationWizard({
                 </div>
                 <div>
                   <p className="text-sm font-medium text-amber-400">{selectedTemplate.name}</p>
-                  <p className="text-xs text-slate-400">{selectedTemplate.description}</p>
+                  <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
                 </div>
               </div>
             )}
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-slate-300 mb-2 block">
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">
                   Program Name
                 </label>
                 <Input
                   value={programName}
                   onChange={(e) => setProgramName(e.target.value)}
                   placeholder="e.g., 2024 Spring Preseason"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-program-name"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-slate-300 mb-2 block">
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">
                   Description (Optional)
                 </label>
                 <Textarea
                   value={programDescription}
                   onChange={(e) => setProgramDescription(e.target.value)}
                   placeholder="Describe the goals and focus of this program..."
-                  className="bg-slate-800 border-slate-600 min-h-[80px]"
+                  className="bg-muted/50 border-border min-h-[80px]"
                   data-testid="textarea-program-description"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
                     Duration (weeks)
                   </label>
                   <Input
@@ -280,12 +280,12 @@ export function ProgramCreationWizard({
                     max={52}
                     value={duration}
                     onChange={(e) => setDuration(parseInt(e.target.value) || 4)}
-                    className="bg-slate-800 border-slate-600"
+                    className="bg-muted/50 border-border"
                     data-testid="input-duration"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-slate-300 mb-2 block">
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
                     Training Days per Week
                   </label>
                   <div className="flex gap-2">
@@ -296,7 +296,7 @@ export function ProgramCreationWizard({
                         className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
                           trainingDays === days
                             ? "bg-amber-500 text-slate-900"
-                            : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                            : "bg-muted text-muted-foreground hover:bg-slate-600"
                         }`}
                         data-testid={`training-days-${days}`}
                       >
@@ -308,20 +308,20 @@ export function ProgramCreationWizard({
               </div>
 
               {/* Preview */}
-              <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                <h4 className="text-sm font-medium text-slate-300 mb-3">Program Preview</h4>
+              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Program Preview</h4>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <p className="text-2xl font-bold text-amber-400">{duration}</p>
-                    <p className="text-xs text-slate-500">Weeks</p>
+                    <p className="text-xs text-muted-foreground">Weeks</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-amber-400">{trainingDays}</p>
-                    <p className="text-xs text-slate-500">Days/Week</p>
+                    <p className="text-xs text-muted-foreground">Days/Week</p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-amber-400">{duration * trainingDays}</p>
-                    <p className="text-xs text-slate-500">Total Sessions</p>
+                    <p className="text-xs text-muted-foreground">Total Sessions</p>
                   </div>
                 </div>
               </div>
@@ -330,7 +330,7 @@ export function ProgramCreationWizard({
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-700">
+        <div className="flex items-center justify-between pt-4 border-t border-border">
           <div>
             {step > 1 && (
               <Button

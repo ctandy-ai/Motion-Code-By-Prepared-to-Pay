@@ -250,7 +250,7 @@ export default function TeamTraining() {
     const date = new Date(session.scheduledAt);
     if (isToday(date)) return { label: "Today", color: "text-amber-400" };
     if (isFuture(date)) return { label: "Upcoming", color: "text-blue-400" };
-    if (isPast(date)) return { label: "Past", color: "text-slate-400" };
+    if (isPast(date)) return { label: "Past", color: "text-muted-foreground" };
     return { label: "", color: "" };
   };
 
@@ -275,8 +275,8 @@ export default function TeamTraining() {
             <Users2 className="h-6 w-6 text-teal-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-100">Team Training</h1>
-            <p className="text-sm text-slate-400">Schedule and manage group workout sessions</p>
+            <h1 className="text-2xl font-bold text-foreground">Team Training</h1>
+            <p className="text-sm text-muted-foreground">Schedule and manage group workout sessions</p>
           </div>
         </div>
         <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-session">
@@ -287,14 +287,14 @@ export default function TeamTraining() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : sessions.length === 0 ? (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-muted/50 border-border">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users2 className="h-12 w-12 text-slate-500 mb-4" />
-            <p className="text-slate-400 text-lg">No team sessions yet</p>
-            <p className="text-slate-500 text-sm">Create your first group training session</p>
+            <Users2 className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-lg">No team sessions yet</p>
+            <p className="text-muted-foreground text-sm">Create your first group training session</p>
           </CardContent>
         </Card>
       ) : (
@@ -304,13 +304,13 @@ export default function TeamTraining() {
             return (
               <Card
                 key={session.id}
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-muted/50 border-border"
                 data-testid={`session-card-${session.id}`}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <CardTitle className="text-base text-slate-100 truncate" data-testid={`text-session-name-${session.id}`}>
+                      <CardTitle className="text-base text-foreground truncate" data-testid={`text-session-name-${session.id}`}>
                         {session.name}
                       </CardTitle>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -329,7 +329,7 @@ export default function TeamTraining() {
                         onClick={() => openEditDialog(session)}
                         data-testid={`button-edit-session-${session.id}`}
                       >
-                        <Edit2 className="h-4 w-4 text-slate-400" />
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -338,27 +338,27 @@ export default function TeamTraining() {
                         disabled={deleteMutation.isPending}
                         data-testid={`button-delete-session-${session.id}`}
                       >
-                        <Trash2 className="h-4 w-4 text-slate-400" />
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {session.description && (
-                    <p className="text-sm text-slate-400 line-clamp-2">{session.description}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{session.description}</p>
                   )}
 
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2 text-slate-400">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <Calendar className="h-4 w-4" />
                       <span>{format(new Date(session.scheduledAt), "MMM d, yyyy")}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-400">
+                    <div className="flex items-center gap-2 text-muted-foreground">
                       <Clock className="h-4 w-4" />
                       <span>{format(new Date(session.scheduledAt), "h:mm a")} ({session.duration} min)</span>
                     </div>
                     {session.location && (
-                      <div className="flex items-center gap-2 text-slate-400">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <MapPin className="h-4 w-4" />
                         <span className="truncate">{session.location}</span>
                       </div>
@@ -405,9 +405,9 @@ export default function TeamTraining() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-[500px] bg-slate-900 border-slate-700">
+        <DialogContent className="sm:max-w-[500px] bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-slate-100">
+            <DialogTitle className="text-foreground">
               {editingSession ? "Edit Session" : "Create Session"}
             </DialogTitle>
           </DialogHeader>
@@ -419,7 +419,7 @@ export default function TeamTraining() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Morning Strength Session"
-                className="bg-slate-800 border-slate-600"
+                className="bg-muted/50 border-border"
                 data-testid="input-session-name"
               />
             </div>
@@ -431,7 +431,7 @@ export default function TeamTraining() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Session details..."
-                className="bg-slate-800 border-slate-600 resize-none"
+                className="bg-muted/50 border-border resize-none"
                 rows={2}
                 data-testid="input-session-description"
               />
@@ -445,7 +445,7 @@ export default function TeamTraining() {
                   type="datetime-local"
                   value={formData.scheduledAt}
                   onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-scheduled-at"
                 />
               </div>
@@ -456,7 +456,7 @@ export default function TeamTraining() {
                   type="number"
                   value={formData.duration}
                   onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 60 })}
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-duration"
                 />
               </div>
@@ -470,7 +470,7 @@ export default function TeamTraining() {
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="Weight Room A"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-location"
                 />
               </div>
@@ -482,7 +482,7 @@ export default function TeamTraining() {
                   value={formData.maxAthletes}
                   onChange={(e) => setFormData({ ...formData, maxAthletes: e.target.value })}
                   placeholder="15"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-max-athletes"
                 />
               </div>
@@ -491,7 +491,7 @@ export default function TeamTraining() {
             {!editingSession && athletes.length > 0 && (
               <div className="space-y-2">
                 <Label>Add Athletes</Label>
-                <div className="max-h-32 overflow-y-auto border border-slate-700 rounded-md p-2 space-y-1">
+                <div className="max-h-32 overflow-y-auto border border-border rounded-md p-2 space-y-1">
                   {athletes.map((athlete) => (
                     <div key={athlete.id} className="flex items-center gap-2">
                       <Checkbox
@@ -534,9 +534,9 @@ export default function TeamTraining() {
       </Dialog>
 
       <Dialog open={isParticipantsOpen} onOpenChange={setIsParticipantsOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-slate-900 border-slate-700">
+        <DialogContent className="sm:max-w-[500px] bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-slate-100">
+            <DialogTitle className="text-foreground">
               Manage Athletes - {selectedSession?.name}
             </DialogTitle>
           </DialogHeader>
@@ -544,14 +544,14 @@ export default function TeamTraining() {
             {participants.length > 0 && (
               <div className="space-y-2">
                 <Label>Registered Athletes ({participants.length})</Label>
-                <div className="border border-slate-700 rounded-md divide-y divide-slate-700">
+                <div className="border border-border rounded-md divide-y divide-border">
                   {participants.map((participant) => {
                     const athlete = athletes.find(a => a.id === participant.athleteId);
                     return (
                       <div key={participant.id} className="flex items-center justify-between p-3">
                         <div className="flex items-center gap-3">
                           <div>
-                            <p className="text-sm font-medium text-slate-200">
+                            <p className="text-sm font-medium text-foreground">
                               {athlete ? athlete.name : 'Unknown Athlete'}
                             </p>
                             <Badge variant="outline" className={`text-xs ${participantStatusColors[participant.status]}`}>
@@ -594,7 +594,7 @@ export default function TeamTraining() {
                 <Select
                   onValueChange={(athleteId) => addParticipantMutation.mutate(athleteId)}
                 >
-                  <SelectTrigger className="bg-slate-800 border-slate-600" data-testid="select-add-athlete">
+                  <SelectTrigger className="bg-muted/50 border-border" data-testid="select-add-athlete">
                     <SelectValue placeholder="Select athlete to add..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -610,8 +610,8 @@ export default function TeamTraining() {
 
             {participants.length === 0 && availableAthletes.length === 0 && (
               <div className="text-center py-8">
-                <Users2 className="h-10 w-10 text-slate-500 mx-auto mb-2" />
-                <p className="text-slate-400">No athletes available</p>
+                <Users2 className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground">No athletes available</p>
               </div>
             )}
 

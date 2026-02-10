@@ -114,8 +114,8 @@ export default function Progress() {
     <div className="space-y-8">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-heading text-4xl font-bold text-slate-100">Progress Tracking</h1>
-          <p className="text-slate-400 mt-2">
+          <h1 className="font-heading text-4xl font-bold text-foreground">Progress Tracking</h1>
+          <p className="text-muted-foreground mt-2">
             Monitor performance metrics and personal records over time.
           </p>
         </div>
@@ -150,73 +150,73 @@ export default function Progress() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total PRs
             </CardTitle>
-            <Award className="h-4 w-4 text-slate-400" />
+            <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-100" data-testid="text-total-prs">{totalPRs}</div>
-            <p className="text-xs text-slate-400 mt-1">All time</p>
+            <div className="text-3xl font-bold text-foreground" data-testid="text-total-prs">{totalPRs}</div>
+            <p className="text-xs text-muted-foreground mt-1">All time</p>
           </CardContent>
         </Card>
 
         <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Workouts
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-slate-400" />
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-100" data-testid="text-total-workouts">{filteredLogs.length}</div>
-            <p className="text-xs text-slate-400 mt-1">Completed</p>
+            <div className="text-3xl font-bold text-foreground" data-testid="text-total-workouts">{filteredLogs.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Completed</p>
           </CardContent>
         </Card>
 
         <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Volume
             </CardTitle>
-            <Zap className="h-4 w-4 text-slate-400" />
+            <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-100" data-testid="text-total-volume">
+            <div className="text-3xl font-bold text-foreground" data-testid="text-total-volume">
               {Math.round(totalVolume).toLocaleString()}
             </div>
-            <p className="text-xs text-slate-400 mt-1">lbs total</p>
+            <p className="text-xs text-muted-foreground mt-1">lbs total</p>
           </CardContent>
         </Card>
 
         <Card className="border-0">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-400">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Avg Sets/Workout
             </CardTitle>
-            <Target className="h-4 w-4 text-slate-400" />
+            <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-100">
+            <div className="text-3xl font-bold text-foreground">
               {filteredLogs.length > 0 
                 ? Math.round(filteredLogs.reduce((sum, log) => sum + log.sets, 0) / filteredLogs.length)
                 : 0}
             </div>
-            <p className="text-xs text-slate-400 mt-1">Average</p>
+            <p className="text-xs text-muted-foreground mt-1">Average</p>
           </CardContent>
         </Card>
       </div>
 
       <Card className="border-0">
         <CardHeader>
-          <CardTitle className="font-heading text-xl text-slate-100">Strength Progression</CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardTitle className="font-heading text-xl text-foreground">Strength Progression</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Track max weight lifted per exercise over time
           </CardDescription>
         </CardHeader>
         <CardContent>
           {strengthData.every(week => Object.keys(week).length === 1) ? (
-            <div className="h-[400px] flex items-center justify-center text-slate-400">
+            <div className="h-[400px] flex items-center justify-center text-muted-foreground">
               No workout data available for the selected time range
             </div>
           ) : (
@@ -265,8 +265,8 @@ export default function Progress() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-0">
           <CardHeader>
-            <CardTitle className="font-heading text-xl text-slate-100">Training Volume</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle className="font-heading text-xl text-foreground">Training Volume</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Total weight lifted per week (lbs)
             </CardDescription>
           </CardHeader>
@@ -300,15 +300,15 @@ export default function Progress() {
 
         <Card className="border-0">
           <CardHeader>
-            <CardTitle className="font-heading text-xl text-slate-100">Recent Personal Records</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle className="font-heading text-xl text-foreground">Recent Personal Records</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Latest achievements from your athletes
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {recentPRs.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-8">
+                <p className="text-sm text-muted-foreground text-center py-8">
                   No personal records yet
                 </p>
               ) : (
@@ -325,10 +325,10 @@ export default function Progress() {
                         <Award className="h-5 w-5" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-100 truncate">
+                        <p className="text-sm font-semibold text-foreground truncate">
                           {athlete?.name || 'Unknown'}
                         </p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-muted-foreground">
                           {exercise?.name || 'Unknown Exercise'}
                         </p>
                       </div>
@@ -336,7 +336,7 @@ export default function Progress() {
                         <Badge variant="secondary" className="font-semibold">
                           {pr.maxWeight} lbs
                         </Badge>
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {pr.achievedAt ? format(parseISO(pr.achievedAt.toString()), 'MMM d') : 'Unknown'}
                         </p>
                       </div>

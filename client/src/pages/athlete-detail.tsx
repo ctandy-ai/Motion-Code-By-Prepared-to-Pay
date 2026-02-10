@@ -340,10 +340,10 @@ export default function AthleteDetail() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold text-slate-100">
+            <h1 className="text-2xl font-semibold text-foreground">
               {athlete.name}
             </h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {athlete.team && athlete.position
                 ? `${athlete.team} • ${athlete.position}`
                 : athlete.team || athlete.position || "No team assigned"}
@@ -406,7 +406,7 @@ export default function AthleteDetail() {
                       <FormControl>
                         <input
                           type="date"
-                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                           value={field.value}
                           onChange={(e) => field.onChange(e.target.value)}
                           data-testid="input-start-date"
@@ -467,7 +467,7 @@ export default function AthleteDetail() {
       <div className="grid gap-6 md:grid-cols-4">
         <Card className="border-0" data-testid="card-belt-classification">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-400 flex items-center justify-between gap-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
               Belt Classification
               <Button
                 variant="ghost"
@@ -482,7 +482,7 @@ export default function AthleteDetail() {
           </CardHeader>
           <CardContent>
             {loadingBelt ? (
-              <div className="animate-pulse h-8 bg-slate-700 rounded" />
+              <div className="animate-pulse h-8 bg-muted rounded" />
             ) : beltClassification ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -490,7 +490,7 @@ export default function AthleteDetail() {
                     {getBeltIcon(beltClassification.belt)}
                     <span className="ml-1">{beltClassification.belt}</span>
                   </Badge>
-                  <span className="text-xs text-slate-500">{beltClassification.confidence}% confidence</span>
+                  <span className="text-xs text-muted-foreground">{beltClassification.confidence}% confidence</span>
                 </div>
                 {beltClassification.isOverridden ? (
                   <p className="text-xs text-yellow-400 flex items-center gap-1">
@@ -499,7 +499,7 @@ export default function AthleteDetail() {
                 ) : null}
               </div>
             ) : (
-              <div className="text-sm text-slate-500">
+              <div className="text-sm text-muted-foreground">
                 <p>Not classified yet</p>
                 <Button
                   variant="ghost"
@@ -517,30 +517,30 @@ export default function AthleteDetail() {
         </Card>
         <Card className="border-0">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-400">Active Programs</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Active Programs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">
+            <div className="text-2xl font-bold text-foreground">
               {athletePrograms?.filter((ap) => ap.status === "active").length || 0}
             </div>
           </CardContent>
         </Card>
         <Card className="border-0">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-400">Completed Programs</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Programs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">
+            <div className="text-2xl font-bold text-foreground">
               {athletePrograms?.filter((ap) => ap.status === "completed").length || 0}
             </div>
           </CardContent>
         </Card>
         <Card className="border-0">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-slate-400">Total Programs</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Programs</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-100">
+            <div className="text-2xl font-bold text-foreground">
               {athletePrograms?.length || 0}
             </div>
           </CardContent>
@@ -550,7 +550,7 @@ export default function AthleteDetail() {
       <Card className="border-0">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between gap-2">
-            <CardTitle className="text-lg font-medium text-slate-100 flex items-center gap-2">
+            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
               <Users className="h-5 w-5 text-brand-500" />
               Team Memberships
             </CardTitle>
@@ -574,7 +574,7 @@ export default function AthleteDetail() {
         </CardHeader>
         <CardContent>
           {athleteTeams.length === 0 ? (
-            <p className="text-sm text-slate-400">Not assigned to any teams yet.</p>
+            <p className="text-sm text-muted-foreground">Not assigned to any teams yet.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {athleteTeams.map((team) => (
@@ -631,7 +631,7 @@ export default function AthleteDetail() {
               <Card key={ap.id} className="border-0" data-testid={`assignment-card-${ap.id}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base font-semibold text-slate-100">
+                    <CardTitle className="text-base font-semibold text-foreground">
                       {getProgramName(ap.programId)}
                     </CardTitle>
                     <Badge variant={getStatusColor(ap.status)} className="shrink-0">
@@ -640,11 +640,11 @@ export default function AthleteDetail() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span>Started {new Date(ap.startDate).toLocaleDateString()}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Trophy className="h-4 w-4" />
                     <span>{getProgramDuration(ap.programId)} weeks</span>
                   </div>
@@ -694,10 +694,10 @@ export default function AthleteDetail() {
           </div>
         ) : (
           <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h3 className="text-base font-semibold text-slate-100 mb-2">
+            <h3 className="text-base font-semibold text-foreground mb-2">
               No programs assigned
             </h3>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-muted-foreground mb-6">
               Assign a training program to get started
             </p>
             <Button onClick={() => setIsDialogOpen(true)} data-testid="button-assign-first-program">
@@ -745,17 +745,17 @@ export default function AthleteDetail() {
                         <Dumbbell className="w-5 h-5 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-slate-200 truncate">
+                        <p className="font-medium text-foreground truncate">
                           {getExerciseName(log.exerciseId)}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
                           <span>{log.sets} sets</span>
                           <span>Max: {maxWeight}kg</span>
                           <span>Volume: {totalVolume.toLocaleString()}kg</span>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-muted-foreground">
                           {log.completedAt ? new Date(log.completedAt).toLocaleDateString() : 'Today'}
                         </p>
                         {log.notes && (
@@ -767,7 +767,7 @@ export default function AthleteDetail() {
                     </div>
                     {log.notes && (
                       <div className="mt-3 pt-3 border-t border-ink-3">
-                        <p className="text-sm text-slate-400 italic">"{log.notes}"</p>
+                        <p className="text-sm text-muted-foreground italic">"{log.notes}"</p>
                       </div>
                     )}
                   </CardContent>
@@ -776,7 +776,7 @@ export default function AthleteDetail() {
             })}
             
             {workoutLogs.length > 10 && (
-              <p className="text-center text-sm text-slate-500 py-2">
+              <p className="text-center text-sm text-muted-foreground py-2">
                 + {workoutLogs.length - 10} more logs
               </p>
             )}
@@ -785,8 +785,8 @@ export default function AthleteDetail() {
           <Card className="border-0">
             <CardContent className="p-8 text-center">
               <Dumbbell className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-300 mb-1">No Workout Logs Yet</h3>
-              <p className="text-sm text-slate-500 mb-4">
+              <h3 className="font-semibold text-muted-foreground mb-1">No Workout Logs Yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
                 This athlete hasn't logged any workouts yet
               </p>
               <Button 
@@ -873,7 +873,7 @@ export default function AthleteDetail() {
                             {readinessScore >= 80 ? 'Ready to Train' : readinessScore >= 60 ? 'Moderate Readiness' : 'Consider Recovery'}
                           </span>
                         </div>
-                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
+                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                           <span className="flex items-center gap-1">
                             <Moon className="w-3 h-3" />
                             Sleep: {survey.sleepHours ?? 7}h ({survey.sleepQuality ?? 5}/10)
@@ -890,7 +890,7 @@ export default function AthleteDetail() {
                       </div>
                       
                       <div className="text-right shrink-0">
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-muted-foreground">
                           {survey.surveyDate ? new Date(survey.surveyDate).toLocaleDateString() : 'Today'}
                         </p>
                         {survey.notes && (
@@ -902,7 +902,7 @@ export default function AthleteDetail() {
                     </div>
                     {survey.notes && (
                       <div className="mt-3 pt-3 border-t border-ink-3">
-                        <p className="text-sm text-slate-400 italic">"{survey.notes}"</p>
+                        <p className="text-sm text-muted-foreground italic">"{survey.notes}"</p>
                       </div>
                     )}
                   </CardContent>
@@ -911,7 +911,7 @@ export default function AthleteDetail() {
             })}
             
             {wellnessSurveys.length > 7 && (
-              <p className="text-center text-sm text-slate-500 py-2">
+              <p className="text-center text-sm text-muted-foreground py-2">
                 + {wellnessSurveys.length - 7} more surveys
               </p>
             )}
@@ -920,8 +920,8 @@ export default function AthleteDetail() {
           <Card className="border-0">
             <CardContent className="p-8 text-center">
               <Heart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-slate-300 mb-1">No Wellness Data Yet</h3>
-              <p className="text-sm text-slate-500">
+              <h3 className="font-semibold text-muted-foreground mb-1">No Wellness Data Yet</h3>
+              <p className="text-sm text-muted-foreground">
                 This athlete hasn't submitted any wellness surveys yet
               </p>
             </CardContent>
@@ -963,7 +963,7 @@ export default function AthleteDetail() {
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-slate-200">
+                            <span className="font-medium text-foreground">
                               {test.testName || test.testType}
                             </span>
                             <Badge variant="secondary" className="text-xs capitalize">
@@ -975,8 +975,8 @@ export default function AthleteDetail() {
                             <div className="flex flex-wrap gap-3 mt-2">
                               {keyMetrics.map((metric, idx) => (
                                 <div key={idx} className="text-xs">
-                                  <span className="text-slate-500">{metric.metricName}: </span>
-                                  <span className="text-slate-300 font-medium">
+                                  <span className="text-muted-foreground">{metric.metricName}: </span>
+                                  <span className="text-muted-foreground font-medium">
                                     {typeof metric.metricValue === 'number' 
                                       ? metric.metricValue.toFixed(2) 
                                       : metric.metricValue}
@@ -989,7 +989,7 @@ export default function AthleteDetail() {
                         </div>
                         
                         <div className="text-right shrink-0">
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             {test.recordedAt 
                               ? new Date(test.recordedAt).toLocaleDateString() 
                               : 'Unknown date'}
@@ -1002,7 +1002,7 @@ export default function AthleteDetail() {
               })}
               
               {valdData.tests.length > 5 && (
-                <p className="text-center text-sm text-slate-500 py-2">
+                <p className="text-center text-sm text-muted-foreground py-2">
                   + {valdData.tests.length - 5} more tests
                 </p>
               )}
@@ -1011,8 +1011,8 @@ export default function AthleteDetail() {
             <Card className="border-0">
               <CardContent className="p-8 text-center">
                 <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="font-semibold text-slate-300 mb-1">No VALD Tests Yet</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="font-semibold text-muted-foreground mb-1">No VALD Tests Yet</h3>
+                <p className="text-sm text-muted-foreground">
                   Sync tests from VALD Hub to see testing data here
                 </p>
               </CardContent>

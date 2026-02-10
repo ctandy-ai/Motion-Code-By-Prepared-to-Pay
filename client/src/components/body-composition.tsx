@@ -180,7 +180,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
   }
 
   return (
-    <Card className="bg-slate-800/50 border-slate-700" data-testid="body-composition-card">
+    <Card className="bg-muted/50 border-border" data-testid="body-composition-card">
       <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
         <div className="flex items-center gap-2">
           <Scale className="h-5 w-5 text-cyan-400" />
@@ -194,33 +194,33 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
       <CardContent className="space-y-4">
         {isLoading ? (
           <div className="flex items-center justify-center h-24">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : logs.length === 0 ? (
           <div className="text-center py-6">
-            <Scale className="h-10 w-10 text-slate-500 mx-auto mb-2" />
-            <p className="text-sm text-slate-400">No body composition data yet</p>
+            <Scale className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No body composition data yet</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                <p className="text-xs text-slate-400 mb-1">Weight</p>
-                <p className="text-xl font-bold text-slate-100" data-testid="text-latest-weight">
+              <div className="p-3 rounded-lg bg-card/50 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Weight</p>
+                <p className="text-xl font-bold text-foreground" data-testid="text-latest-weight">
                   {latest?.weight ? `${latest.weight} kg` : "--"}
                 </p>
                 {formatDiff(getDiff(latest?.weight ?? null, previous?.weight ?? null), "kg")}
               </div>
-              <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                <p className="text-xs text-slate-400 mb-1">Body Fat</p>
-                <p className="text-xl font-bold text-slate-100" data-testid="text-latest-bodyfat">
+              <div className="p-3 rounded-lg bg-card/50 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Body Fat</p>
+                <p className="text-xl font-bold text-foreground" data-testid="text-latest-bodyfat">
                   {latest?.bodyFat ? `${latest.bodyFat}%` : "--"}
                 </p>
                 {formatDiff(getDiff(latest?.bodyFat ?? null, previous?.bodyFat ?? null), "%", true)}
               </div>
-              <div className="p-3 rounded-lg bg-slate-900/50 border border-slate-700">
-                <p className="text-xs text-slate-400 mb-1">Muscle Mass</p>
-                <p className="text-xl font-bold text-slate-100" data-testid="text-latest-muscle">
+              <div className="p-3 rounded-lg bg-card/50 border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Muscle Mass</p>
+                <p className="text-xl font-bold text-foreground" data-testid="text-latest-muscle">
                   {latest?.muscleMass ? `${latest.muscleMass} kg` : "--"}
                 </p>
                 {formatDiff(getDiff(latest?.muscleMass ?? null, previous?.muscleMass ?? null), "kg")}
@@ -265,19 +265,19 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
             )}
 
             <div className="space-y-2">
-              <p className="text-xs text-slate-400 font-medium">Recent Logs</p>
+              <p className="text-xs text-muted-foreground font-medium">Recent Logs</p>
               {logs.slice(0, 3).map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-center justify-between p-2 rounded bg-slate-900/30 border border-slate-700/50"
+                  className="flex items-center justify-between p-2 rounded bg-card/30 border border-border"
                   data-testid={`composition-log-${log.id}`}
                 >
                   <div className="flex items-center gap-3">
-                    <Calendar className="h-4 w-4 text-slate-500" />
-                    <span className="text-sm text-slate-300">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
                       {format(new Date(log.loggedAt!), "MMM d, yyyy")}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {log.weight && `${log.weight}kg`}
                       {log.bodyFat && ` • ${log.bodyFat}%`}
                       {log.muscleMass && ` • ${log.muscleMass}kg muscle`}
@@ -290,7 +290,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                     disabled={deleteMutation.isPending}
                     data-testid={`button-delete-log-${log.id}`}
                   >
-                    <Trash2 className="h-4 w-4 text-slate-400" />
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
               ))}
@@ -300,9 +300,9 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
       </CardContent>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-slate-900 border-slate-700">
+        <DialogContent className="sm:max-w-[500px] bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-slate-100">Log Body Composition</DialogTitle>
+            <DialogTitle className="text-foreground">Log Body Composition</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -315,7 +315,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                   value={formData.weight}
                   onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                   placeholder="75.5"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-weight"
                 />
               </div>
@@ -328,7 +328,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                   value={formData.bodyFat}
                   onChange={(e) => setFormData({ ...formData, bodyFat: e.target.value })}
                   placeholder="15.0"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-bodyfat"
                 />
               </div>
@@ -341,7 +341,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                   value={formData.muscleMass}
                   onChange={(e) => setFormData({ ...formData, muscleMass: e.target.value })}
                   placeholder="32.0"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-muscle"
                 />
               </div>
@@ -352,14 +352,14 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                   type="date"
                   value={formData.loggedAt}
                   onChange={(e) => setFormData({ ...formData, loggedAt: e.target.value })}
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-date"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-slate-400">Body Measurements (cm)</Label>
+              <Label className="text-xs text-muted-foreground">Body Measurements (cm)</Label>
               <div className="grid grid-cols-5 gap-2">
                 <div>
                   <Label className="text-xs">Waist</Label>
@@ -368,7 +368,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                     step="0.1"
                     value={formData.waist}
                     onChange={(e) => setFormData({ ...formData, waist: e.target.value })}
-                    className="bg-slate-800 border-slate-600 text-xs"
+                    className="bg-muted/50 border-border text-xs"
                     data-testid="input-waist"
                   />
                 </div>
@@ -379,7 +379,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                     step="0.1"
                     value={formData.chest}
                     onChange={(e) => setFormData({ ...formData, chest: e.target.value })}
-                    className="bg-slate-800 border-slate-600 text-xs"
+                    className="bg-muted/50 border-border text-xs"
                     data-testid="input-chest"
                   />
                 </div>
@@ -390,7 +390,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                     step="0.1"
                     value={formData.hips}
                     onChange={(e) => setFormData({ ...formData, hips: e.target.value })}
-                    className="bg-slate-800 border-slate-600 text-xs"
+                    className="bg-muted/50 border-border text-xs"
                     data-testid="input-hips"
                   />
                 </div>
@@ -401,7 +401,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                     step="0.1"
                     value={formData.arms}
                     onChange={(e) => setFormData({ ...formData, arms: e.target.value })}
-                    className="bg-slate-800 border-slate-600 text-xs"
+                    className="bg-muted/50 border-border text-xs"
                     data-testid="input-arms"
                   />
                 </div>
@@ -412,7 +412,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                     step="0.1"
                     value={formData.thighs}
                     onChange={(e) => setFormData({ ...formData, thighs: e.target.value })}
-                    className="bg-slate-800 border-slate-600 text-xs"
+                    className="bg-muted/50 border-border text-xs"
                     data-testid="input-thighs"
                   />
                 </div>
@@ -426,7 +426,7 @@ export function BodyComposition({ athleteId }: BodyCompositionProps) {
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Any observations..."
-                className="bg-slate-800 border-slate-600 resize-none"
+                className="bg-muted/50 border-border resize-none"
                 rows={2}
                 data-testid="input-notes"
               />

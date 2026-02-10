@@ -170,8 +170,8 @@ export default function Noticeboard() {
             <Megaphone className="h-6 w-6 text-amber-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-100">Team Noticeboard</h1>
-            <p className="text-sm text-slate-400">Announcements and updates for your team</p>
+            <h1 className="text-2xl font-bold text-foreground">Team Noticeboard</h1>
+            <p className="text-sm text-muted-foreground">Announcements and updates for your team</p>
           </div>
         </div>
 
@@ -190,9 +190,9 @@ export default function Noticeboard() {
               New Announcement
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] bg-slate-900 border-slate-700">
+          <DialogContent className="sm:max-w-[500px] bg-card border-border">
             <DialogHeader>
-              <DialogTitle className="text-slate-100">
+              <DialogTitle className="text-foreground">
                 {editingAnnouncement ? "Edit Announcement" : "Create Announcement"}
               </DialogTitle>
             </DialogHeader>
@@ -204,7 +204,7 @@ export default function Noticeboard() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="Announcement title"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-announcement-title"
                 />
               </div>
@@ -216,7 +216,7 @@ export default function Noticeboard() {
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder="Write your announcement..."
                   rows={4}
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-announcement-content"
                 />
               </div>
@@ -227,7 +227,7 @@ export default function Noticeboard() {
                     value={formData.priority} 
                     onValueChange={(v) => setFormData({ ...formData, priority: v })}
                   >
-                    <SelectTrigger className="bg-slate-800 border-slate-600" data-testid="select-priority">
+                    <SelectTrigger className="bg-muted/50 border-border" data-testid="select-priority">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -279,14 +279,14 @@ export default function Noticeboard() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : announcements.length === 0 ? (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-muted/50 border-border">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Megaphone className="h-12 w-12 text-slate-500 mb-4" />
-            <p className="text-slate-400 text-lg">No announcements yet</p>
-            <p className="text-slate-500 text-sm">Create your first announcement to get started</p>
+            <Megaphone className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-lg">No announcements yet</p>
+            <p className="text-muted-foreground text-sm">Create your first announcement to get started</p>
           </CardContent>
         </Card>
       ) : (
@@ -316,7 +316,7 @@ export default function Noticeboard() {
           {regularAnnouncements.length > 0 && (
             <div className="space-y-3">
               {pinnedAnnouncements.length > 0 && (
-                <h2 className="text-sm font-medium text-slate-400">Recent Announcements</h2>
+                <h2 className="text-sm font-medium text-muted-foreground">Recent Announcements</h2>
               )}
               <div className="space-y-3">
                 {regularAnnouncements.map((announcement) => (
@@ -361,7 +361,7 @@ function AnnouncementCard({
 
   return (
     <Card 
-      className={`bg-slate-800/50 border-slate-700 ${announcement.isPinned ? 'ring-1 ring-amber-500/30' : ''}`}
+      className={`bg-muted/50 border-border ${announcement.isPinned ? 'ring-1 ring-amber-500/30' : ''}`}
       data-testid={`announcement-card-${announcement.id}`}
     >
       <CardHeader className="pb-2">
@@ -371,7 +371,7 @@ function AnnouncementCard({
               <PriorityIcon className={`h-4 w-4 ${config.color.replace('bg-', 'text-').replace('-500', '-400')}`} />
             </div>
             <div className="min-w-0">
-              <CardTitle className="text-base text-slate-100 flex items-center gap-2">
+              <CardTitle className="text-base text-foreground flex items-center gap-2">
                 <span className="truncate" data-testid={`text-announcement-title-${announcement.id}`}>
                   {announcement.title}
                 </span>
@@ -383,7 +383,7 @@ function AnnouncementCard({
                 <Badge variant="outline" className={`text-xs ${config.color.replace('bg-', 'text-').replace('-500', '-400')} border-current`}>
                   {config.label}
                 </Badge>
-                <span className="text-xs text-slate-500 flex items-center gap-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {formatDate(announcement.createdAt)}
                 </span>
@@ -397,7 +397,7 @@ function AnnouncementCard({
               onClick={() => onTogglePin(announcement.id, announcement.isPinned !== 1)}
               data-testid={`button-pin-${announcement.id}`}
             >
-              <Pin className={`h-4 w-4 ${announcement.isPinned ? 'text-amber-400' : 'text-slate-400'}`} />
+              <Pin className={`h-4 w-4 ${announcement.isPinned ? 'text-amber-400' : 'text-muted-foreground'}`} />
             </Button>
             <Button
               variant="ghost"
@@ -405,7 +405,7 @@ function AnnouncementCard({
               onClick={() => onEdit(announcement)}
               data-testid={`button-edit-${announcement.id}`}
             >
-              <Edit2 className="h-4 w-4 text-slate-400" />
+              <Edit2 className="h-4 w-4 text-muted-foreground" />
             </Button>
             <Button
               variant="ghost"
@@ -414,13 +414,13 @@ function AnnouncementCard({
               disabled={isDeleting}
               data-testid={`button-delete-${announcement.id}`}
             >
-              <Trash2 className="h-4 w-4 text-slate-400" />
+              <Trash2 className="h-4 w-4 text-muted-foreground" />
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-slate-300 whitespace-pre-wrap" data-testid={`text-announcement-content-${announcement.id}`}>
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap" data-testid={`text-announcement-content-${announcement.id}`}>
           {announcement.content}
         </p>
       </CardContent>

@@ -103,7 +103,7 @@ export default function AuditLogs() {
       <div className="grid gap-6 md:grid-cols-4">
         <Card className="border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-400">Total Actions (7d)</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Total Actions (7d)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-brand-400">
@@ -114,10 +114,10 @@ export default function AuditLogs() {
 
         <Card className="border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-400">Top Action</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Top Action</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-semibold text-slate-100">
+            <div className="text-lg font-semibold text-foreground">
               {summary && Object.keys(summary.byAction).length > 0
                 ? Object.entries(summary.byAction).sort((a, b) => b[1] - a[1])[0][0]
                 : "N/A"}
@@ -127,10 +127,10 @@ export default function AuditLogs() {
 
         <Card className="border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-400">Top Resource</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Top Resource</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-semibold text-slate-100">
+            <div className="text-lg font-semibold text-foreground">
               {summary && Object.keys(summary.byResourceType).length > 0
                 ? Object.entries(summary.byResourceType).sort((a, b) => b[1] - a[1])[0][0]
                 : "N/A"}
@@ -140,10 +140,10 @@ export default function AuditLogs() {
 
         <Card className="border-0">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-slate-400">Actions Types</CardTitle>
+            <CardTitle className="text-sm text-muted-foreground">Actions Types</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-slate-100">
+            <div className="text-3xl font-bold text-foreground">
               {summary ? Object.keys(summary.byAction).length : 0}
             </div>
           </CardContent>
@@ -226,7 +226,7 @@ export default function AuditLogs() {
                       <Badge variant="destructive">Failed</Badge>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                     {log.userEmail && (
                       <span className="flex items-center gap-1">
                         <User className="h-3 w-3" />
@@ -234,7 +234,7 @@ export default function AuditLogs() {
                       </span>
                     )}
                     {log.resourceName && (
-                      <span className="text-slate-300">
+                      <span className="text-muted-foreground">
                         Resource: {log.resourceName}
                       </span>
                     )}
@@ -244,7 +244,7 @@ export default function AuditLogs() {
                     </span>
                   </div>
                   {log.details && (
-                    <p className="text-xs text-slate-500 mt-2 truncate">
+                    <p className="text-xs text-muted-foreground mt-2 truncate">
                       {log.details}
                     </p>
                   )}
@@ -257,7 +257,7 @@ export default function AuditLogs() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-slate-400">
+            <div className="text-center py-12 text-muted-foreground">
               <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
               <p>No audit logs found</p>
               <p className="text-sm mt-1">Activity will appear here as actions are performed</p>

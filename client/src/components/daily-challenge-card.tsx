@@ -39,7 +39,7 @@ export function DailyChallengeCard({
                 <Target className="h-4 w-4 text-amber-400" data-testid="icon-target" />
               )}
             </div>
-            <h3 className="text-base font-semibold text-slate-100" data-testid="text-challenge-title">
+            <h3 className="text-base font-semibold text-foreground" data-testid="text-challenge-title">
               {challenge.title}
             </h3>
           </div>
@@ -51,15 +51,15 @@ export function DailyChallengeCard({
           </div>
         </div>
         
-        <p className="text-sm text-slate-400" data-testid="text-challenge-description">
+        <p className="text-sm text-muted-foreground" data-testid="text-challenge-description">
           {challenge.description}
         </p>
         
         {!completed && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-slate-400">Progress</span>
-              <span className="font-medium text-slate-200" data-testid="text-progress">
+              <span className="text-muted-foreground">Progress</span>
+              <span className="font-medium text-foreground" data-testid="text-progress">
                 {progress} / {challenge.targetValue}
               </span>
             </div>

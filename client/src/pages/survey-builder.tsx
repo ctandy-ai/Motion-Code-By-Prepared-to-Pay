@@ -224,8 +224,8 @@ export default function SurveyBuilder() {
             <ClipboardList className="h-6 w-6 text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-100">Survey Builder</h1>
-            <p className="text-sm text-slate-400">Create custom surveys for athlete check-ins</p>
+            <h1 className="text-2xl font-bold text-foreground">Survey Builder</h1>
+            <p className="text-sm text-muted-foreground">Create custom surveys for athlete check-ins</p>
           </div>
         </div>
         <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-survey">
@@ -236,14 +236,14 @@ export default function SurveyBuilder() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-48">
-          <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       ) : surveys.length === 0 ? (
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-muted/50 border-border">
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <ClipboardList className="h-12 w-12 text-slate-500 mb-4" />
-            <p className="text-slate-400 text-lg">No surveys yet</p>
-            <p className="text-slate-500 text-sm">Create your first custom survey</p>
+            <ClipboardList className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground text-lg">No surveys yet</p>
+            <p className="text-muted-foreground text-sm">Create your first custom survey</p>
           </CardContent>
         </Card>
       ) : (
@@ -253,13 +253,13 @@ export default function SurveyBuilder() {
             return (
               <Card
                 key={survey.id}
-                className={`bg-slate-800/50 border-slate-700 ${survey.isActive !== 1 && 'opacity-60'}`}
+                className={`bg-muted/50 border-border ${survey.isActive !== 1 && 'opacity-60'}`}
                 data-testid={`survey-card-${survey.id}`}
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <CardTitle className="text-base text-slate-100 truncate" data-testid={`text-survey-name-${survey.id}`}>
+                      <CardTitle className="text-base text-foreground truncate" data-testid={`text-survey-name-${survey.id}`}>
                         {survey.name}
                       </CardTitle>
                       <div className="flex items-center gap-2 mt-1">
@@ -278,7 +278,7 @@ export default function SurveyBuilder() {
                         onClick={() => openEditDialog(survey)}
                         data-testid={`button-edit-survey-${survey.id}`}
                       >
-                        <Edit2 className="h-4 w-4 text-slate-400" />
+                        <Edit2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -287,19 +287,19 @@ export default function SurveyBuilder() {
                         disabled={deleteMutation.isPending}
                         data-testid={`button-delete-survey-${survey.id}`}
                       >
-                        <Trash2 className="h-4 w-4 text-slate-400" />
+                        <Trash2 className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   {survey.description && (
-                    <p className="text-sm text-slate-400 mb-3 line-clamp-2">
+                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {survey.description}
                     </p>
                   )}
                   <div className="space-y-1">
-                    <p className="text-xs text-slate-500 font-medium">{surveyQuestions.length} questions</p>
+                    <p className="text-xs text-muted-foreground font-medium">{surveyQuestions.length} questions</p>
                     <div className="flex flex-wrap gap-1">
                       {surveyQuestions.slice(0, 4).map((q) => {
                         const config = questionTypeConfig[q.type];
@@ -318,8 +318,8 @@ export default function SurveyBuilder() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-700">
-                    <span className="text-xs text-slate-500">Toggle Active</span>
+                  <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                    <span className="text-xs text-muted-foreground">Toggle Active</span>
                     <Switch
                       checked={survey.isActive === 1}
                       onCheckedChange={(checked) => 
@@ -336,9 +336,9 @@ export default function SurveyBuilder() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="sm:max-w-[700px] bg-slate-900 border-slate-700 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] bg-card border-border max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-slate-100">
+            <DialogTitle className="text-foreground">
               {editingSurvey ? "Edit Survey" : "Create Survey"}
             </DialogTitle>
           </DialogHeader>
@@ -351,14 +351,14 @@ export default function SurveyBuilder() {
                   value={surveyName}
                   onChange={(e) => setSurveyName(e.target.value)}
                   placeholder="Pre-Game Readiness"
-                  className="bg-slate-800 border-slate-600"
+                  className="bg-muted/50 border-border"
                   data-testid="input-survey-name"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Frequency</Label>
                 <Select value={frequency} onValueChange={setFrequency}>
-                  <SelectTrigger className="bg-slate-800 border-slate-600" data-testid="select-frequency">
+                  <SelectTrigger className="bg-muted/50 border-border" data-testid="select-frequency">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -379,7 +379,7 @@ export default function SurveyBuilder() {
                 value={surveyDescription}
                 onChange={(e) => setSurveyDescription(e.target.value)}
                 placeholder="Describe the purpose of this survey..."
-                className="bg-slate-800 border-slate-600 resize-none"
+                className="bg-muted/50 border-border resize-none"
                 rows={2}
                 data-testid="input-survey-description"
               />
@@ -419,9 +419,9 @@ export default function SurveyBuilder() {
               </div>
 
               {questions.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-slate-700 rounded-lg">
-                  <p className="text-sm text-slate-500">No questions yet</p>
-                  <p className="text-xs text-slate-600">Add questions using the buttons above</p>
+                <div className="text-center py-8 border border-dashed border-border rounded-lg">
+                  <p className="text-sm text-muted-foreground">No questions yet</p>
+                  <p className="text-xs text-muted-foreground">Add questions using the buttons above</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -429,10 +429,10 @@ export default function SurveyBuilder() {
                     const config = questionTypeConfig[question.type];
                     const Icon = config.icon;
                     return (
-                      <Card key={question.id} className="bg-slate-800/50 border-slate-700" data-testid={`question-card-${question.id}`}>
+                      <Card key={question.id} className="bg-muted/50 border-border" data-testid={`question-card-${question.id}`}>
                         <CardContent className="p-3">
                           <div className="flex items-start gap-3">
-                            <div className="flex items-center gap-2 text-slate-500 pt-1">
+                            <div className="flex items-center gap-2 text-muted-foreground pt-1">
                               <GripVertical className="h-4 w-4" />
                               <span className="text-sm font-medium">{index + 1}</span>
                             </div>
@@ -447,28 +447,28 @@ export default function SurveyBuilder() {
                                 value={question.label}
                                 onChange={(e) => updateQuestion(question.id, { label: e.target.value })}
                                 placeholder="Enter question..."
-                                className="bg-slate-900 border-slate-600"
+                                className="bg-background border-border"
                                 data-testid={`input-question-label-${question.id}`}
                               />
                               
                               {question.type === "scale" && (
                                 <div className="flex items-center gap-4 text-xs">
                                   <div className="flex items-center gap-2">
-                                    <Label className="text-slate-500">Min:</Label>
+                                    <Label className="text-muted-foreground">Min:</Label>
                                     <Input
                                       type="number"
                                       value={question.min || 1}
                                       onChange={(e) => updateQuestion(question.id, { min: parseInt(e.target.value) || 1 })}
-                                      className="w-16 h-7 bg-slate-900 border-slate-600"
+                                      className="w-16 h-7 bg-background border-border"
                                     />
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Label className="text-slate-500">Max:</Label>
+                                    <Label className="text-muted-foreground">Max:</Label>
                                     <Input
                                       type="number"
                                       value={question.max || 10}
                                       onChange={(e) => updateQuestion(question.id, { max: parseInt(e.target.value) || 10 })}
-                                      className="w-16 h-7 bg-slate-900 border-slate-600"
+                                      className="w-16 h-7 bg-background border-border"
                                     />
                                   </div>
                                 </div>
@@ -476,14 +476,14 @@ export default function SurveyBuilder() {
 
                               {question.type === "multiChoice" && (
                                 <div className="space-y-1">
-                                  <Label className="text-xs text-slate-500">Options (comma-separated)</Label>
+                                  <Label className="text-xs text-muted-foreground">Options (comma-separated)</Label>
                                   <Input
                                     value={(question.options || []).join(", ")}
                                     onChange={(e) => updateQuestion(question.id, { 
                                       options: e.target.value.split(",").map(s => s.trim()).filter(Boolean)
                                     })}
                                     placeholder="Option 1, Option 2, Option 3"
-                                    className="bg-slate-900 border-slate-600"
+                                    className="bg-background border-border"
                                   />
                                 </div>
                               )}
@@ -493,7 +493,7 @@ export default function SurveyBuilder() {
                                   checked={question.required}
                                   onCheckedChange={(checked) => updateQuestion(question.id, { required: checked })}
                                 />
-                                <Label className="text-xs text-slate-500">Required</Label>
+                                <Label className="text-xs text-muted-foreground">Required</Label>
                               </div>
                             </div>
                             <Button
@@ -502,7 +502,7 @@ export default function SurveyBuilder() {
                               onClick={() => removeQuestion(question.id)}
                               data-testid={`button-remove-question-${question.id}`}
                             >
-                              <Trash2 className="h-4 w-4 text-slate-400" />
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </div>
                         </CardContent>

@@ -144,7 +144,7 @@ export default function Templates() {
       'Periodization': 'text-gold-500',
       'Annual Plan': 'text-gold-500',
     };
-    return colors[category] || 'text-slate-400';
+    return colors[category] || 'text-muted-foreground';
   };
 
   const getPhaseTypeColor = (phaseType: string) => {
@@ -162,8 +162,8 @@ export default function Templates() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-heading text-4xl font-bold text-slate-100 gradient-text">Program Templates</h1>
-        <p className="text-slate-400 mt-2">
+        <h1 className="font-heading text-4xl font-bold text-foreground gradient-text">Program Templates</h1>
+        <p className="text-muted-foreground mt-2">
           Pre-built training programs ready to copy and customize for your athletes
         </p>
       </div>
@@ -195,9 +195,9 @@ export default function Templates() {
       {filteredTemplates.length === 0 ? (
         <Card className="border-0">
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <FileText className="h-16 w-16 text-slate-400 mb-4" />
-            <h3 className="font-semibold text-lg mb-2 text-slate-100">No Templates Found</h3>
-            <p className="text-sm text-slate-400">
+            <FileText className="h-16 w-16 text-muted-foreground mb-4" />
+            <h3 className="font-semibold text-lg mb-2 text-foreground">No Templates Found</h3>
+            <p className="text-sm text-muted-foreground">
               {searchTerm
                 ? "Try adjusting your search terms"
                 : "No templates available yet"}
@@ -211,35 +211,35 @@ export default function Templates() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <CardTitle className="text-xl truncate text-slate-100 group-hover:text-ocean-400 transition-colors">
+                    <CardTitle className="text-xl truncate text-foreground group-hover:text-ocean-400 transition-colors">
                       {template.name}
                     </CardTitle>
-                    <CardDescription className="mt-1 text-slate-400 flex items-center gap-2">
+                    <CardDescription className="mt-1 text-muted-foreground flex items-center gap-2">
                       <Clock className="h-3 w-3" />
                       {template.duration} weeks
                       <span>•</span>
                       <span className={getCategoryColor(template.category)}>{template.category}</span>
                     </CardDescription>
                   </div>
-                  <Badge variant="secondary" className="text-slate-100 shrink-0">
+                  <Badge variant="secondary" className="text-foreground shrink-0">
                     {template.isPublic ? "Public" : "Private"}
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-slate-400 line-clamp-3">
+                <p className="text-sm text-muted-foreground line-clamp-3">
                   {template.description || "No description available"}
                 </p>
 
                 {template.tags && template.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {template.tags.slice(0, 3).map((tag, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs text-slate-200">
+                      <Badge key={idx} variant="outline" className="text-xs text-foreground">
                         {tag}
                       </Badge>
                     ))}
                     {template.tags.length > 3 && (
-                      <Badge variant="outline" className="text-xs text-slate-200">
+                      <Badge variant="outline" className="text-xs text-foreground">
                         +{template.tags.length - 3} more
                       </Badge>
                     )}
@@ -304,20 +304,20 @@ export default function Templates() {
               />
 
               {selectedTemplate && (
-                <div className="rounded-lg border border-slate-700 p-4 bg-slate-800/50 space-y-2">
-                  <h4 className="font-semibold text-sm text-slate-200">Template Details:</h4>
+                <div className="rounded-lg border border-border p-4 bg-muted/50 space-y-2">
+                  <h4 className="font-semibold text-sm text-foreground">Template Details:</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-400">{selectedTemplate.duration} weeks</span>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{selectedTemplate.duration} weeks</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Target className="h-4 w-4 text-slate-400" />
-                      <span className="text-slate-400">{selectedTemplate.category}</span>
+                      <Target className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">{selectedTemplate.category}</span>
                     </div>
                   </div>
                   {selectedTemplate.description && (
-                    <p className="text-sm text-slate-400 mt-2">
+                    <p className="text-sm text-muted-foreground mt-2">
                       {selectedTemplate.description}
                     </p>
                   )}
@@ -361,11 +361,11 @@ export default function Templates() {
           <ScrollArea className="max-h-[calc(90vh-12rem)]">
             {isLoadingStructure ? (
               <div className="flex justify-center py-8">
-                <p className="text-slate-400">Loading template structure...</p>
+                <p className="text-muted-foreground">Loading template structure...</p>
               </div>
             ) : !templateStructure || templateStructure.phases.length === 0 ? (
               <div className="flex justify-center py-8">
-                <p className="text-slate-400">No structure data available</p>
+                <p className="text-muted-foreground">No structure data available</p>
               </div>
             ) : (
               <div className="space-y-6">
@@ -377,8 +377,8 @@ export default function Templates() {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div>
-                            <CardTitle className="text-lg text-slate-100">{phase.name}</CardTitle>
-                            <CardDescription className="text-slate-400">
+                            <CardTitle className="text-lg text-foreground">{phase.name}</CardTitle>
+                            <CardDescription className="text-muted-foreground">
                               Weeks {phase.startWeek}-{phase.endWeek} ({phase.endWeek - phase.startWeek + 1} weeks)
                             </CardDescription>
                           </div>
@@ -387,7 +387,7 @@ export default function Templates() {
                           </Badge>
                         </div>
                         {phase.goals && (
-                          <p className="text-sm text-slate-400 mt-2">{phase.goals}</p>
+                          <p className="text-sm text-muted-foreground mt-2">{phase.goals}</p>
                         )}
                       </CardHeader>
                       <CardContent className="space-y-4">
@@ -398,36 +398,36 @@ export default function Templates() {
                           return (
                             <Collapsible key={week.id}>
                               <CollapsibleTrigger className="w-full">
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800/70 transition-colors">
+                                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                                   <div className="flex items-center gap-4">
-                                    <span className="font-semibold text-slate-100">Week {week.weekNumber}</span>
+                                    <span className="font-semibold text-foreground">Week {week.weekNumber}</span>
                                     <Badge variant="secondary" className="text-xs">
                                       {week.beltTarget || 'N/A'}
                                     </Badge>
                                     {week.focus && week.focus.length > 0 && (
-                                      <span className="text-sm text-slate-400">
+                                      <span className="text-sm text-muted-foreground">
                                         {week.focus.slice(0, 2).join(', ')}
                                       </span>
                                     )}
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <span className="text-xs text-slate-500">
+                                    <span className="text-xs text-muted-foreground">
                                       {weekBlocks.length} blocks • {totalExercises} exercises
                                     </span>
-                                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                                   </div>
                                 </div>
                               </CollapsibleTrigger>
                               <CollapsibleContent>
                                 <div className="mt-3 space-y-3 pl-4">
                                   {weekBlocks.length === 0 ? (
-                                    <p className="text-sm text-slate-500 italic">No blocks in this week</p>
+                                    <p className="text-sm text-muted-foreground italic">No blocks in this week</p>
                                   ) : (
                                     weekBlocks.map((block) => (
-                                      <div key={block.id} className="rounded-lg border border-slate-700 bg-slate-900/50 p-3">
+                                      <div key={block.id} className="rounded-lg border border-border bg-card p-3">
                                         <div className="flex items-center justify-between mb-2">
                                           <div className="flex items-center gap-2">
-                                            <span className="font-medium text-slate-200">{block.title}</span>
+                                            <span className="font-medium text-foreground">{block.title}</span>
                                             <Badge variant="outline" className="text-xs">
                                               Day {block.dayNumber}
                                             </Badge>
@@ -435,14 +435,14 @@ export default function Templates() {
                                               {block.belt}
                                             </Badge>
                                           </div>
-                                          <span className="text-xs text-slate-500">
+                                          <span className="text-xs text-muted-foreground">
                                             {block.exercises?.length || 0} exercises
                                           </span>
                                         </div>
                                         {block.focus && block.focus.length > 0 && (
                                           <div className="flex flex-wrap gap-1 mb-2">
                                             {block.focus.map((f, idx) => (
-                                              <Badge key={idx} variant="outline" className="text-xs text-slate-400">
+                                              <Badge key={idx} variant="outline" className="text-xs text-muted-foreground">
                                                 {f}
                                               </Badge>
                                             ))}
@@ -453,16 +453,16 @@ export default function Templates() {
                                             {block.exercises.map((ex) => (
                                               <div 
                                                 key={ex.id} 
-                                                className="flex items-center justify-between text-sm py-1 px-2 rounded bg-slate-800/30"
+                                                className="flex items-center justify-between text-sm py-1 px-2 rounded bg-muted/50"
                                               >
                                                 <div className="flex items-center gap-2">
                                                   <Dumbbell className="h-3 w-3 text-teal-400" />
-                                                  <span className="text-slate-300">{ex.exerciseName || 'Unknown Exercise'}</span>
+                                                  <span className="text-muted-foreground">{ex.exerciseName || 'Unknown Exercise'}</span>
                                                   {ex.exerciseMuscleGroup && (
-                                                    <span className="text-xs text-slate-500">({ex.exerciseMuscleGroup})</span>
+                                                    <span className="text-xs text-muted-foreground">({ex.exerciseMuscleGroup})</span>
                                                   )}
                                                 </div>
-                                                <span className="text-xs text-slate-400">{ex.scheme || ''}</span>
+                                                <span className="text-xs text-muted-foreground">{ex.scheme || ''}</span>
                                               </div>
                                             ))}
                                           </div>

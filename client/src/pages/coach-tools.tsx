@@ -77,7 +77,7 @@ export default function CoachTools() {
       <div className="bg-card rounded-lg border border-border p-5">
         <div className="space-y-4 mb-6">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search exercises, tags, attributes..."
               value={searchQuery}
@@ -89,8 +89,8 @@ export default function CoachTools() {
           
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-slate-400" />
-              <span className="text-sm text-slate-400">Tracking:</span>
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Tracking:</span>
               {trackingTypes.map((type) => (
                 <Button
                   key={type}
@@ -105,7 +105,7 @@ export default function CoachTools() {
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-400">Belt:</span>
+              <span className="text-sm text-muted-foreground">Belt:</span>
               {beltLevels.map((belt) => (
                 <Button
                   key={belt}
@@ -120,7 +120,7 @@ export default function CoachTools() {
             </div>
           </div>
           
-          <div className="text-sm text-slate-400">
+          <div className="text-sm text-muted-foreground">
             Showing {filteredExercises.length > 100 ? "first 100" : filteredExercises.length} of {filteredExercises.length}
             {filteredExercises.length !== exercises.length && ` (filtered from ${exercises.length} total)`}
           </div>
@@ -149,7 +149,7 @@ export default function CoachTools() {
                 data-testid={`exercise-card-${exercise.id}`}
               >
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base font-semibold text-slate-100">
+                  <CardTitle className="text-base font-semibold text-foreground">
                     {exercise.name}
                   </CardTitle>
                 </CardHeader>
@@ -162,7 +162,7 @@ export default function CoachTools() {
                       </Badge>
                     )}
                     {exercise.belt_min && (
-                      <Badge variant="secondary" className="text-xs bg-slate-500/20 text-slate-300">
+                      <Badge variant="secondary" className="text-xs bg-slate-500/20 text-muted-foreground">
                         {exercise.belt_min}
                         {exercise.belt_max && exercise.belt_max !== exercise.belt_min && ` - ${exercise.belt_max}`}
                       </Badge>
@@ -170,14 +170,14 @@ export default function CoachTools() {
                   </div>
 
                   {exercise.attributes && (
-                    <div className="flex items-start gap-2 text-slate-400">
+                    <div className="flex items-start gap-2 text-muted-foreground">
                       <Tag className="h-3 w-3 mt-0.5 shrink-0" />
                       <span className="text-xs">{exercise.attributes}</span>
                     </div>
                   )}
 
                   {exercise.tags && (
-                    <div className="flex items-start gap-2 text-slate-400">
+                    <div className="flex items-start gap-2 text-muted-foreground">
                       <Dumbbell className="h-3 w-3 mt-0.5 shrink-0" />
                       <span className="text-xs">{exercise.tags}</span>
                     </div>
@@ -185,8 +185,8 @@ export default function CoachTools() {
 
                   {exercise.variables_default && (
                     <div className="pt-3 border-t border-white/10">
-                      <div className="text-xs text-slate-400 mb-2">Suggested Programming</div>
-                      <div className="space-y-1 text-xs text-slate-200">
+                      <div className="text-xs text-muted-foreground mb-2">Suggested Programming</div>
+                      <div className="space-y-1 text-xs text-foreground">
                         <div>Sets: {exercise.variables_default.sets}</div>
                         <div>Reps: {exercise.variables_default.reps}</div>
                         <div>Intensity: {exercise.variables_default.intensity}</div>
@@ -202,13 +202,13 @@ export default function CoachTools() {
         {!isLoading && filteredExercises.length === 0 && (
           <div className="text-center py-12">
             <Dumbbell className="h-12 w-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400">No exercises found matching your search</p>
+            <p className="text-muted-foreground">No exercises found matching your search</p>
           </div>
         )}
 
         {!isLoading && filteredExercises.length > 100 && (
           <div className="text-center pt-6">
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Showing first 100 of {filteredExercises.length} results. Refine your search to see more.
             </p>
           </div>

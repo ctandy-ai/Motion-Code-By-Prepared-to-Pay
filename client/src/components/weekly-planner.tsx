@@ -70,7 +70,7 @@ function DroppableDay({
       className="space-y-3"
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-200" data-testid={`text-day-${dayNumber}`}>
+        <h3 className="text-sm font-semibold text-foreground" data-testid={`text-day-${dayNumber}`}>
           {dayName}
         </h3>
         <Button
@@ -99,7 +99,7 @@ function DroppableDay({
             <button
               onClick={onCreateBlock}
               data-testid={`button-add-block-empty-${dayNumber}`}
-              className="flex flex-col items-center justify-center w-full h-24 text-xs text-slate-500 hover:text-slate-400 hover:bg-ink-2/30 rounded-md transition-colors cursor-pointer"
+              className="flex flex-col items-center justify-center w-full h-24 text-xs text-muted-foreground hover:text-muted-foreground hover:bg-ink-2/30 rounded-md transition-colors cursor-pointer"
             >
               <Plus className="h-5 w-5 mb-1" />
               <span>Click to add training block</span>
@@ -156,12 +156,12 @@ function SortableBlock({ block, onEdit, onDelete }: SortableBlockProps) {
           data-testid={`drag-handle-${block.id}`}
           className="mt-1 cursor-grab active:cursor-grabbing hover-elevate active-elevate-2 p-1 rounded"
         >
-          <GripVertical className="h-4 w-4 text-slate-400" />
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-2">
-            <h4 className="text-sm font-semibold text-slate-100 truncate">{block.title}</h4>
+            <h4 className="text-sm font-semibold text-foreground truncate">{block.title}</h4>
             <div className="flex items-center gap-1">
               <Button
                 size="icon"
@@ -201,19 +201,19 @@ function SortableBlock({ block, onEdit, onDelete }: SortableBlockProps) {
           </div>
 
           {block.scheme && (
-            <div className="text-xs text-slate-400 mb-2" data-testid={`text-scheme-${block.id}`}>
+            <div className="text-xs text-muted-foreground mb-2" data-testid={`text-scheme-${block.id}`}>
               {block.scheme}
             </div>
           )}
 
           {block.exercises && block.exercises.length > 0 && (
-            <div className="text-xs text-slate-400" data-testid={`text-exercises-${block.id}`}>
+            <div className="text-xs text-muted-foreground" data-testid={`text-exercises-${block.id}`}>
               {block.exercises.length} exercise{block.exercises.length !== 1 ? "s" : ""}
             </div>
           )}
 
           {block.notes && (
-            <div className="text-xs text-slate-500 italic line-clamp-2" data-testid={`text-notes-${block.id}`}>
+            <div className="text-xs text-muted-foreground italic line-clamp-2" data-testid={`text-notes-${block.id}`}>
               {block.notes}
             </div>
           )}
@@ -380,7 +380,7 @@ export function WeeklyPlanner({
       <DragOverlay>
         {activeBlock && (
           <Card className="p-3 opacity-90 cursor-grabbing" data-testid="drag-overlay-block">
-            <h4 className="text-sm font-semibold text-slate-100">{activeBlock.title}</h4>
+            <h4 className="text-sm font-semibold text-foreground">{activeBlock.title}</h4>
             <Badge variant="outline" className="text-xs mt-2">
               {activeBlock.belt}
             </Badge>
