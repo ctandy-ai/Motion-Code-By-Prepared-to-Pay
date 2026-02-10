@@ -208,6 +208,112 @@ export default function EnhancedProgramBuilder() {
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: async (updates: Array<{ id: string; orderIndex: number }>) => {
+      await Promise.all(
+        updates.map((u) => apiRequest("PATCH", `/api/program-exercises/${u.id}`, { orderIndex: u.orderIndex }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs", programId, "exercises"] });
+    },
+  });
+
+  const copyDayMutation = useMutation({
+    mutationFn: async ({ fromDay, toDay }: { fromDay: number; toDay: number }) => {
+      const source = programExercises.filter(
+        (pe) => pe.weekNumber === selectedWeek && pe.dayNumber === fromDay
+      );
+      const maxOrder = programExercises
+        .filter((pe) => pe.weekNumber === selectedWeek && pe.dayNumber === toDay)
+        .reduce((max, pe) => Math.max(max, pe.orderIndex), -1);
+      await Promise.all(
+        source.map((pe, i) =>
+          apiRequest("POST", "/api/program-exercises", {
+            programId,
+            exerciseId: pe.exerciseId,
+            weekNumber: selectedWeek,
+            dayNumber: toDay,
+            sets: pe.sets,
+            reps: pe.reps,
+            restSeconds: pe.restSeconds,
+            targetWeight: pe.targetWeight,
+            notes: pe.notes,
+            orderIndex: maxOrder + 1 + i,
+            intensityPercent: pe.intensityPercent,
+            tempo: pe.tempo,
+            rpeTarget: pe.rpeTarget,
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs", programId, "exercises"] });
+      toast({ title: "Day copied" });
+    },
+  });
+
+  const copyWeekMutation = useMutation({
+    mutationFn: async (fromWeek: number) => {
+      const source = programExercises.filter((pe) => pe.weekNumber === fromWeek);
+      await Promise.all(
+        source.map((pe) =>
+          apiRequest("POST", "/api/program-exercises", {
+            programId,
+            exerciseId: pe.exerciseId,
+            weekNumber: selectedWeek,
+            dayNumber: pe.dayNumber,
+            sets: pe.sets,
+            reps: pe.reps,
+            restSeconds: pe.restSeconds,
+            targetWeight: pe.targetWeight,
+            notes: pe.notes,
+            orderIndex: pe.orderIndex,
+            intensityPercent: pe.intensityPercent,
+            tempo: pe.tempo,
+            rpeTarget: pe.rpeTarget,
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs", programId, "exercises"] });
+      toast({ title: "Week copied" });
+    },
+  });
+
+  const groupExercisesMutation = useMutation({
+    mutationFn: async ({ exerciseIds, groupType }: { exerciseIds: string[]; groupType: string }) => {
+      const gId = crypto.randomUUID();
+      await Promise.all(
+        exerciseIds.map((id, i) =>
+          apiRequest("PATCH", `/api/program-exercises/${id}`, {
+            groupId: gId,
+            groupType,
+            groupOrder: i,
+          })
+        )
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs", programId, "exercises"] });
+      toast({ title: "Exercises grouped" });
+    },
+  });
+
+  const ungroupExerciseMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return apiRequest("PATCH", `/api/program-exercises/${id}`, {
+        groupId: null,
+        groupType: null,
+        groupOrder: null,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/programs", programId, "exercises"] });
+    },
+  });
+
   const handleExerciseDrop = (exercise: Exercise, day: number) => {
     addExerciseMutation.mutate({ exercise, day });
   };
@@ -222,6 +328,26 @@ export default function EnhancedProgramBuilder() {
 
   const handleExerciseSwap = (programExerciseId: string, newExerciseId: string) => {
     swapExerciseMutation.mutate({ programExerciseId, newExerciseId });
+  };
+
+  const handleReorderExercises = (updates: Array<{ id: string; orderIndex: number }>) => {
+    reorderMutation.mutate(updates);
+  };
+
+  const handleCopyDay = (fromDay: number, toDay: number) => {
+    copyDayMutation.mutate({ fromDay, toDay });
+  };
+
+  const handleCopyWeek = (fromWeek: number) => {
+    copyWeekMutation.mutate(fromWeek);
+  };
+
+  const handleGroupExercises = (exerciseIds: string[], groupType: string) => {
+    groupExercisesMutation.mutate({ exerciseIds, groupType });
+  };
+
+  const handleUngroupExercise = (id: string) => {
+    ungroupExerciseMutation.mutate(id);
   };
 
   if (loadingProgram) {
@@ -376,6 +502,11 @@ export default function EnhancedProgramBuilder() {
             onExerciseUpdate={handleExerciseUpdate}
             onExerciseDelete={handleExerciseDelete}
             onExerciseSwap={handleExerciseSwap}
+            onCopyWeek={handleCopyWeek}
+            onReorderExercises={handleReorderExercises}
+            onCopyDay={handleCopyDay}
+            onGroupExercises={handleGroupExercises}
+            onUngroupExercise={handleUngroupExercise}
             trainingDays={4}
           />
         </div>

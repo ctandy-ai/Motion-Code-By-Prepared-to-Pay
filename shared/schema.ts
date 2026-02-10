@@ -229,6 +229,12 @@ export const programExercises = pgTable("program_exercises", {
   targetWeight: varchar("target_weight"),
   notes: text("notes"),
   orderIndex: integer("order_index").notNull(),
+  intensityPercent: integer("intensity_percent"),
+  tempo: varchar("tempo"),
+  rpeTarget: real("rpe_target"),
+  groupId: varchar("group_id"),
+  groupType: varchar("group_type"),
+  groupOrder: integer("group_order"),
 });
 
 export const insertProgramExerciseSchema = createInsertSchema(programExercises).omit({ id: true });
