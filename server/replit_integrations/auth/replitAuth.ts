@@ -51,7 +51,7 @@ function updateUserSession(
 }
 
 async function upsertUser(claims: any) {
-  await authStorage.upsertUser({
+  return await authStorage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
@@ -72,9 +72,16 @@ export async function setupAuth(app: Express) {
     tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
     verified: passport.AuthenticateCallback
   ) => {
-    const user = {};
+    const user: any = {};
     updateUserSession(user, tokens);
-    await upsertUser(tokens.claims());
+    const dbUser = await upsertUser(tokens.claims());
+    if (dbUser) {
+      user.id = dbUser.id;
+      user.role = dbUser.role;
+      user.email = dbUser.email;
+      user.firstName = dbUser.firstName;
+      user.lastName = dbUser.lastName;
+    }
     verified(null, user);
   };
 

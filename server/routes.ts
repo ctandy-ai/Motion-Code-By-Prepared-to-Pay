@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
-import { getPermissions, USER_ROLES, requireHeadCoach, requireCoach } from "./auth";
+import { authMiddleware, getPermissions, USER_ROLES, requireHeadCoach, requireCoach } from "./auth";
 import {
   insertExerciseSchema,
   insertAthleteSchema,
@@ -34,6 +34,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication BEFORE registering other routes
   await setupAuth(app);
   registerAuthRoutes(app);
+  
+  // Auth middleware must come AFTER passport session setup
+  app.use(authMiddleware);
   
   // User permissions and roles API
   app.get("/api/user/permissions", (req, res) => {
@@ -347,7 +350,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/team-sessions", requireCoach, async (req, res) => {
     try {
-      const validated = insertTeamSessionSchema.parse(req.body);
+      const body = {
+        ...req.body,
+        scheduledAt: req.body.scheduledAt ? new Date(req.body.scheduledAt) : undefined,
+      };
+      const validated = insertTeamSessionSchema.parse(body);
       const session = await storage.createTeamSession(validated);
       res.status(201).json(session);
     } catch (error) {
@@ -358,7 +365,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/team-sessions/:id", requireCoach, async (req, res) => {
     try {
-      const validated = insertTeamSessionSchema.partial().parse(req.body);
+      const body = {
+        ...req.body,
+        ...(req.body.scheduledAt && { scheduledAt: new Date(req.body.scheduledAt) }),
+      };
+      const validated = insertTeamSessionSchema.partial().parse(body);
       const session = await storage.updateTeamSession(req.params.id, validated);
       if (!session) {
         return res.status(404).json({ error: "Session not found" });
