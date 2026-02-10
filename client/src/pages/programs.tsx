@@ -121,10 +121,10 @@ export default function Programs() {
       ) : programs && programs.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {programs.map((program) => (
-            <Card key={program.id} className="border-0 hover-elevate" data-testid={`program-card-${program.id}`}>
+            <Card key={program.id} className="hover-elevate" data-testid={`program-card-${program.id}`}>
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base font-semibold text-slate-100 line-clamp-2">
+                  <CardTitle className="text-base font-semibold text-foreground line-clamp-2">
                     {program.name}
                   </CardTitle>
                   <Badge variant="secondary" className="shrink-0">{program.duration}w</Badge>
@@ -133,15 +133,15 @@ export default function Programs() {
 
               <CardContent className="space-y-2">
                 {program.description ? (
-                  <p className="text-sm text-slate-400 line-clamp-3">
+                  <p className="text-sm text-muted-foreground line-clamp-3">
                     {program.description}
                   </p>
                 ) : (
-                  <p className="text-sm text-slate-500 italic">
+                  <p className="text-sm text-muted-foreground italic">
                     No description provided
                   </p>
                 )}
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Created {new Date(program.createdAt!).toLocaleDateString()}
                 </p>
               </CardContent>
@@ -192,11 +192,11 @@ export default function Programs() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <BookOpen className="mx-auto h-16 w-16 text-slate-500 mb-4" />
-          <h3 className="font-heading text-xl font-semibold text-slate-200 mb-2">
+          <BookOpen className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+          <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
             No programs yet
           </h3>
-          <p className="text-slate-400 mb-6">
+          <p className="text-muted-foreground mb-6">
             Create your first training program to get started
           </p>
           <Button onClick={() => setIsWizardOpen(true)} data-testid="button-add-first-program">

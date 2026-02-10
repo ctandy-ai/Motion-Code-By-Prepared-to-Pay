@@ -308,12 +308,12 @@ export default function Athletes() {
                 <p className="text-sm text-muted-foreground">{importProgress}</p>
               )}
             </div>
-            <div className="rounded-lg border-0 p-4 bg-card border border-border">
-              <h4 className="font-semibold text-sm mb-2 text-slate-100">CSV Format:</h4>
-              <p className="text-xs text-slate-400">
+            <div className="rounded-lg p-4 bg-muted/50">
+              <h4 className="font-semibold text-sm mb-2 text-foreground">CSV Format:</h4>
+              <p className="text-xs text-muted-foreground">
                 Expected columns: FIRST, LAST, EMAIL, PHONE, GROUPS, CALENDAR, STATUS
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Athletes will be automatically assigned to their groups/teams.
               </p>
             </div>
@@ -446,12 +446,12 @@ export default function Athletes() {
 
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="relative max-w-md w-full md:flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search athletes..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-white/5 border-white/10 text-slate-100 placeholder:text-slate-500"
+            className="pl-10 bg-muted/50 border-border text-foreground placeholder:text-muted-foreground"
             data-testid="input-search-athletes"
           />
         </div>
@@ -512,7 +512,7 @@ export default function Athletes() {
                         </Select>
                       </div>
                       <div className="rounded-lg bg-card border border-border p-3">
-                        <p className="text-sm text-slate-300">
+                        <p className="text-sm text-muted-foreground">
                           Athletes to assign:
                         </p>
                         <div className="flex flex-wrap gap-1 mt-2">
@@ -563,7 +563,7 @@ export default function Athletes() {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <textarea
-                        className="w-full h-32 rounded-lg bg-card border border-border p-3 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                        className="w-full h-32 rounded-lg bg-card border border-border p-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-brand-500"
                         placeholder="Type your message..."
                         value={bulkMessage}
                         onChange={(e) => setBulkMessage(e.target.value)}
@@ -601,7 +601,7 @@ export default function Athletes() {
           {filteredAthletes.map((athlete) => (
             <Card 
               key={athlete.id} 
-              className={`border-0 hover-elevate transition-all duration-200 ${selectedAthletes.has(athlete.id) ? 'ring-2 ring-brand-500' : ''}`} 
+              className={`hover-elevate transition-all duration-200 ${selectedAthletes.has(athlete.id) ? 'ring-2 ring-brand-500' : ''}`} 
               data-testid={`athlete-card-${athlete.id}`}
             >
               <CardHeader className="space-y-4">
@@ -618,10 +618,10 @@ export default function Athletes() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-heading text-lg font-semibold text-slate-100 truncate">
+                    <h3 className="font-heading text-lg font-semibold text-foreground truncate">
                       {athlete.name}
                     </h3>
-                    <p className="text-sm text-slate-400 flex items-center gap-1 truncate">
+                    <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
                       <Mail className="h-3 w-3" />
                       {athlete.email}
                     </p>
@@ -638,7 +638,7 @@ export default function Athletes() {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Joined {new Date(athlete.dateJoined!).toLocaleDateString()}
                 </p>
               </CardContent>
@@ -676,11 +676,11 @@ export default function Athletes() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <UsersIcon className="mx-auto h-16 w-16 text-slate-500 mb-4" />
-          <h3 className="font-heading text-xl font-semibold text-slate-200 mb-2">
+          <UsersIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+          <h3 className="font-heading text-xl font-semibold text-foreground mb-2">
             No athletes found
           </h3>
-          <p className="text-slate-400 mb-6">
+          <p className="text-muted-foreground mb-6">
             {searchQuery 
               ? "Try adjusting your search" 
               : "Get started by adding your first athlete"}

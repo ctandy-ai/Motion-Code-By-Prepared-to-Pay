@@ -17,7 +17,7 @@ export default function RMCalculatorPage() {
       </div>
 
       <div className="max-w-4xl mx-auto space-y-4">
-        <div className="ringify p-6 rounded-lg">
+        <div className="bg-muted/50 border border-border p-6 rounded-lg">
           <h2 className="text-base font-semibold text-slate-100 mb-3">About the Formulas</h2>
           <div className="space-y-3 text-sm text-slate-300">
             <p>
@@ -44,7 +44,7 @@ export default function RMCalculatorPage() {
           </div>
         </div>
 
-        <div className="ringify p-6 rounded-lg">
+        <div className="bg-muted/50 border border-border p-6 rounded-lg">
           <h2 className="text-base font-semibold text-slate-100 mb-3">How to Use</h2>
           <ol className="space-y-2 text-sm text-slate-300 list-decimal list-inside">
             <li>Select a weight you can lift for multiple reps (ideally 3-10 reps)</li>

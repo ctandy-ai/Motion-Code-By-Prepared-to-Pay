@@ -121,12 +121,12 @@ export function ProgramEngineGuidance({
 
   if (isLoading) {
     return (
-      <Card className="bglass shadow-glass border-0">
+      <Card>
         <CardContent className="p-4">
           <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-slate-700/50 rounded w-1/3" />
-            <div className="h-8 bg-slate-700/50 rounded" />
-            <div className="h-8 bg-slate-700/50 rounded" />
+            <div className="h-4 bg-muted rounded w-1/3" />
+            <div className="h-8 bg-muted rounded" />
+            <div className="h-8 bg-muted rounded" />
           </div>
         </CardContent>
       </Card>
@@ -141,13 +141,13 @@ export function ProgramEngineGuidance({
   const setsProgress = budgetProgress(currentHardSets, guidance.budgets.hardLowerSets);
 
   return (
-    <Card className="bglass shadow-glass border-0" data-testid="program-engine-guidance">
+    <Card data-testid="program-engine-guidance">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+          <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
             <Target className="h-4 w-4 text-brand-400" />
             Engine Guidance
-            {athleteName && <span className="text-slate-400 font-normal">for {athleteName}</span>}
+            {athleteName && <span className="text-muted-foreground font-normal">for {athleteName}</span>}
           </CardTitle>
           <Badge className={`${beltColor(guidance.belt)} text-xs`}>
             {guidance.belt} Belt
@@ -157,9 +157,9 @@ export function ProgramEngineGuidance({
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Phase</label>
+            <label className="text-xs text-muted-foreground mb-1 block">Phase</label>
             <Select value={phase} onValueChange={handlePhaseChange}>
-              <SelectTrigger className="h-8 text-xs bg-slate-800/50 border-slate-600" data-testid="select-phase">
+              <SelectTrigger className="h-8 text-xs bg-muted border-border" data-testid="select-phase">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -172,9 +172,9 @@ export function ProgramEngineGuidance({
             </Select>
           </div>
           <div>
-            <label className="text-xs text-slate-400 mb-1 block">Wave Week</label>
+            <label className="text-xs text-muted-foreground mb-1 block">Wave Week</label>
             <Select value={String(waveWeek)} onValueChange={handleWaveWeekChange}>
-              <SelectTrigger className="h-8 text-xs bg-slate-800/50 border-slate-600" data-testid="select-wave-week">
+              <SelectTrigger className="h-8 text-xs bg-muted border-border" data-testid="select-wave-week">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -191,18 +191,18 @@ export function ProgramEngineGuidance({
         <div className="space-y-3">
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
+              <span className="text-muted-foreground flex items-center gap-1">
                 <Zap className="h-3 w-3" />
                 Plyo Contacts
               </span>
-              <span className="text-slate-300">
+              <span className="text-muted-foreground">
                 {currentPlyoContacts} / {guidance.budgets.plyoContacts}
-                <span className="text-slate-500 ml-1">
+                <span className="text-muted-foreground ml-1">
                   ({guidance.sessionCaps.plyoContactsPerSession}/session)
                 </span>
               </span>
             </div>
-            <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div 
                 className={`h-full ${plyoProgress.color} transition-all`}
                 style={{ width: `${plyoProgress.percentage}%` }}
@@ -212,18 +212,18 @@ export function ProgramEngineGuidance({
 
           <div className="space-y-1">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-400 flex items-center gap-1">
+              <span className="text-muted-foreground flex items-center gap-1">
                 <Activity className="h-3 w-3" />
                 Hard Lower Sets
               </span>
-              <span className="text-slate-300">
+              <span className="text-muted-foreground">
                 {currentHardSets} / {guidance.budgets.hardLowerSets}
-                <span className="text-slate-500 ml-1">
+                <span className="text-muted-foreground ml-1">
                   ({guidance.sessionCaps.hardLowerSetsPerSession}/session)
                 </span>
               </span>
             </div>
-            <div className="h-2 bg-slate-700/50 rounded-full overflow-hidden">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div 
                 className={`h-full ${setsProgress.color} transition-all`}
                 style={{ width: `${setsProgress.percentage}%` }}
@@ -231,8 +231,8 @@ export function ProgramEngineGuidance({
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-800/30">
-            <span className="text-slate-400">Speed Touches/Week</span>
+          <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-muted">
+            <span className="text-muted-foreground">Speed Touches/Week</span>
             <Badge variant="outline" className="text-xs">
               {guidance.budgets.speedTouches}
             </Badge>
@@ -277,7 +277,7 @@ export function ProgramEngineGuidance({
 
         <button
           onClick={() => setShowDetails(!showDetails)}
-          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-300 transition-colors w-full justify-center pt-2"
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full justify-center pt-2"
           data-testid="toggle-details"
         >
           {showDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -285,13 +285,13 @@ export function ProgramEngineGuidance({
         </button>
 
         {showDetails && (
-          <div className="space-y-3 pt-2 border-t border-slate-700/50">
+          <div className="space-y-3 pt-2 border-t border-border">
             <div>
-              <p className="text-xs font-medium text-slate-400 mb-1">Belt Classification Reasons:</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Belt Classification Reasons:</p>
               <ul className="space-y-1">
                 {guidance.beltReasons.map((reason, i) => (
-                  <li key={i} className="text-xs text-slate-300 flex items-start gap-1">
-                    <span className="text-slate-500">•</span>
+                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
+                    <span className="text-muted-foreground">•</span>
                     {reason}
                   </li>
                 ))}
@@ -299,10 +299,10 @@ export function ProgramEngineGuidance({
             </div>
 
             <div>
-              <p className="text-xs font-medium text-slate-400 mb-1">Global Stop Rules:</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Global Stop Rules:</p>
               <ul className="space-y-1">
                 {guidance.globalStopRules.map((rule, i) => (
-                  <li key={i} className="text-xs text-slate-300 flex items-start gap-1">
+                  <li key={i} className="text-xs text-muted-foreground flex items-start gap-1">
                     <span className="text-red-400">⚠</span>
                     {rule}
                   </li>

@@ -207,27 +207,27 @@ export default function Heuristics() {
         setIsDialogOpen(open);
         if (!open) resetForm();
       }}>
-          <DialogContent className="bglass border-white/10 max-w-2xl">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle className="text-slate-100">
+              <DialogTitle className="text-foreground">
                 {editingHeuristic ? "Edit Rule" : "Create New Rule"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Rule Name</Label>
+                  <Label className="text-muted-foreground">Rule Name</Label>
                   <Input
                     data-testid="input-rule-name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g., Low Readiness Deload"
-                    className="bg-white/5 border-white/10"
+                    className="bg-muted/50 border-border"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Priority (0-10)</Label>
+                  <Label className="text-muted-foreground">Priority (0-10)</Label>
                   <Input
                     data-testid="input-priority"
                     type="number"
@@ -235,30 +235,30 @@ export default function Heuristics() {
                     max={10}
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
-                    className="bg-white/5 border-white/10"
+                    className="bg-muted/50 border-border"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Description</Label>
+                <Label className="text-muted-foreground">Description</Label>
                 <Textarea
                   data-testid="input-description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Describe what this rule does..."
-                  className="bg-white/5 border-white/10"
+                  className="bg-muted/50 border-border"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-slate-300">When (Trigger Type)</Label>
+                  <Label className="text-muted-foreground">When (Trigger Type)</Label>
                   <Select
                     value={formData.triggerType}
                     onValueChange={(value) => setFormData({ ...formData, triggerType: value })}
                   >
-                    <SelectTrigger className="bg-white/5 border-white/10" data-testid="select-trigger-type">
+                    <SelectTrigger className="bg-muted/50 border-border" data-testid="select-trigger-type">
                       <SelectValue placeholder="Select trigger..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -271,12 +271,12 @@ export default function Heuristics() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Then (Action Type)</Label>
+                  <Label className="text-muted-foreground">Then (Action Type)</Label>
                   <Select
                     value={formData.actionType}
                     onValueChange={(value) => setFormData({ ...formData, actionType: value })}
                   >
-                    <SelectTrigger className="bg-white/5 border-white/10" data-testid="select-action-type">
+                    <SelectTrigger className="bg-muted/50 border-border" data-testid="select-action-type">
                       <SelectValue placeholder="Select action..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -291,25 +291,25 @@ export default function Heuristics() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Trigger Condition Details</Label>
+                <Label className="text-muted-foreground">Trigger Condition Details</Label>
                 <Textarea
                   data-testid="input-trigger-condition"
                   value={formData.triggerCondition}
                   onChange={(e) => setFormData({ ...formData, triggerCondition: e.target.value })}
                   placeholder="e.g., readiness_score < 5, or 'When athlete reports soreness > 7'"
-                  className="bg-white/5 border-white/10"
+                  className="bg-muted/50 border-border"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Action Details</Label>
+                <Label className="text-muted-foreground">Action Details</Label>
                 <Textarea
                   data-testid="input-action-details"
                   value={formData.actionDetails}
                   onChange={(e) => setFormData({ ...formData, actionDetails: e.target.value })}
                   placeholder="e.g., reduce_volume_by: 20%, or 'Add hip mobility exercises to warm-up'"
-                  className="bg-white/5 border-white/10"
+                  className="bg-muted/50 border-border"
                   required
                 />
               </div>
@@ -342,7 +342,7 @@ export default function Heuristics() {
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="border-0 animate-pulse">
               <CardContent className="p-6">
-                <div className="h-24 bg-slate-700/50 rounded-lg" />
+                <div className="h-24 bg-muted rounded-lg" />
               </CardContent>
             </Card>
           ))}
@@ -374,11 +374,11 @@ export default function Heuristics() {
                         }`} />
                       </div>
                       <div>
-                        <CardTitle className="text-base font-semibold text-slate-100">
+                        <CardTitle className="text-base font-semibold text-foreground">
                           {heuristic.name}
                         </CardTitle>
                         {heuristic.description && (
-                          <p className="text-xs text-slate-400 mt-0.5">{heuristic.description}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{heuristic.description}</p>
                         )}
                       </div>
                     </div>
@@ -396,16 +396,16 @@ export default function Heuristics() {
                   <div className="p-3 rounded-xl ringify space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-amber-400">WHEN:</span>
-                      <span className="text-xs text-slate-300">{getTriggerLabel(heuristic.triggerType)}</span>
+                      <span className="text-xs text-muted-foreground">{getTriggerLabel(heuristic.triggerType)}</span>
                     </div>
-                    <p className="text-xs text-slate-400 pl-4">{heuristic.triggerCondition}</p>
+                    <p className="text-xs text-muted-foreground pl-4">{heuristic.triggerCondition}</p>
                   </div>
                   <div className="p-3 rounded-xl ringify space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-medium text-emerald-400">THEN:</span>
-                      <span className="text-xs text-slate-300">{getActionLabel(heuristic.actionType)}</span>
+                      <span className="text-xs text-muted-foreground">{getActionLabel(heuristic.actionType)}</span>
                     </div>
-                    <p className="text-xs text-slate-400 pl-4">{heuristic.actionDetails}</p>
+                    <p className="text-xs text-muted-foreground pl-4">{heuristic.actionDetails}</p>
                   </div>
                   <div className="flex items-center justify-between pt-2">
                     <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function Heuristics() {
                         }
                         data-testid={`toggle-active-${heuristic.id}`}
                       />
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-muted-foreground">
                         {heuristic.isActive ? "Enabled" : "Disabled"}
                       </span>
                     </div>
@@ -448,8 +448,8 @@ export default function Heuristics() {
         <Card className="border-0">
           <CardContent className="p-12 text-center">
             <Brain className="h-16 w-16 mx-auto mb-4 text-slate-600" />
-            <h3 className="text-lg font-semibold text-slate-200 mb-2">No Rules Defined Yet</h3>
-            <p className="text-sm text-slate-400 mb-6 max-w-md mx-auto">
+            <h3 className="text-lg font-semibold text-foreground mb-2">No Rules Defined Yet</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
               Create coaching intelligence rules to automate decisions. For example:
               "When readiness is below 5, reduce training volume by 20%"
             </p>
@@ -463,7 +463,7 @@ export default function Heuristics() {
 
       <Card className="border-0">
         <CardHeader>
-          <CardTitle className="text-base font-semibold text-slate-100">
+          <CardTitle className="text-base font-semibold text-foreground">
             Example Rules to Get Started
           </CardTitle>
         </CardHeader>
@@ -515,11 +515,11 @@ export default function Heuristics() {
                 }}
                 data-testid={`example-rule-${index}`}
               >
-                <p className="text-sm font-medium text-slate-200">{example.name}</p>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-sm font-medium text-foreground">{example.name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   <span className="text-amber-400">When:</span> {example.trigger}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-muted-foreground">
                   <span className="text-emerald-400">Then:</span> {example.action}
                 </p>
               </div>

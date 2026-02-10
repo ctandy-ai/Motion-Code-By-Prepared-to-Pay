@@ -110,14 +110,16 @@ function DesktopLayout() {
 
   return (
     <SidebarProvider style={style as React.CSSProperties}>
-      <div className="flex h-screen w-full bg-ink-1">
+      <div className="flex h-screen w-full bg-background">
         <AppSidebar />
-        <div className="flex flex-col flex-1 overflow-hidden pl-5">
-          <header className="bglass rounded-2xl shadow-glass px-4 py-3 mr-5 mt-5">
-            <SidebarTrigger data-testid="button-sidebar-toggle" className="h-9 w-9 hover-elevate" />
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <header className="flex items-center px-4 py-3 border-b border-border">
+            <SidebarTrigger data-testid="button-sidebar-toggle" className="hover-elevate" />
           </header>
-          <main className="flex-1 overflow-y-auto p-5 pr-5">
-            <DesktopRouter />
+          <main className="flex-1 overflow-y-auto">
+            <div className="max-w-[1400px] mx-auto p-6">
+              <DesktopRouter />
+            </div>
           </main>
         </div>
       </div>

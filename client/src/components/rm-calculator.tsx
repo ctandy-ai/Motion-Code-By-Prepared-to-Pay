@@ -49,13 +49,13 @@ export function RMCalculator() {
   };
 
   return (
-    <Card className="bglass shadow-glass border-0 w-full max-w-4xl" data-testid="card-rm-calculator">
-      <CardHeader className="border-b border-white/10">
+    <Card className="w-full max-w-4xl" data-testid="card-rm-calculator">
+      <CardHeader className="border-b border-border">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-brand-400" />
-              <CardTitle className="text-lg font-semibold text-slate-100">1RM Calculator</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">1RM Calculator</CardTitle>
             </div>
             <CardDescription className="mt-1">
               Calculate your estimated one-rep max using multiple formulas
@@ -66,7 +66,7 @@ export function RMCalculator() {
       <CardContent className="pt-6 space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="weight" className="text-slate-200">Weight Lifted (lbs)</Label>
+            <Label htmlFor="weight" className="text-foreground">Weight Lifted (lbs)</Label>
             <Input
               id="weight"
               type="number"
@@ -78,7 +78,7 @@ export function RMCalculator() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="reps" className="text-slate-200">Reps Completed</Label>
+            <Label htmlFor="reps" className="text-foreground">Reps Completed</Label>
             <Input
               id="reps"
               type="number"
@@ -98,9 +98,9 @@ export function RMCalculator() {
 
         {isValid && results && (
           <>
-            <div className="pt-4 border-t border-white/10">
+            <div className="pt-4 border-t border-border">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <TrendingUp className="h-4 w-4 text-brand-400" />
                   Estimated 1RM
                 </h3>
@@ -115,8 +115,8 @@ export function RMCalculator() {
                     className="ringify p-3 rounded-lg"
                     data-testid={`result-${result.name.toLowerCase()}`}
                   >
-                    <div className="text-xs text-slate-400 mb-1">{result.name}</div>
-                    <div className="text-lg font-bold text-slate-100 font-mono">
+                    <div className="text-xs text-muted-foreground mb-1">{result.name}</div>
+                    <div className="text-lg font-bold text-foreground font-mono">
                       {result.value.toFixed(1)}
                     </div>
                   </div>
@@ -124,8 +124,8 @@ export function RMCalculator() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-white/10">
-              <h3 className="text-sm font-semibold text-slate-100 mb-4">Training Percentages</h3>
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-sm font-semibold text-foreground mb-4">Training Percentages</h3>
               <div className="space-y-2">
                 {calculatePercentages(average1RM).map((item) => (
                   <div
@@ -134,12 +134,12 @@ export function RMCalculator() {
                     data-testid={`percentage-${item.percent}`}
                   >
                     <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="w-12 justify-center font-mono text-slate-100">
+                      <Badge variant="outline" className="w-12 justify-center font-mono text-foreground">
                         {item.label}
                       </Badge>
-                      <span className="text-sm text-slate-400">{item.use}</span>
+                      <span className="text-sm text-muted-foreground">{item.use}</span>
                     </div>
-                    <span className="text-base font-bold text-slate-100 font-mono">
+                    <span className="text-base font-bold text-foreground font-mono">
                       {item.value.toFixed(1)} lbs
                     </span>
                   </div>
@@ -150,9 +150,9 @@ export function RMCalculator() {
         )}
 
         {!isValid && (
-          <div className="text-center py-8 border-2 border-dashed border-white/10 rounded-lg">
+          <div className="text-center py-8 border-2 border-dashed border-border rounded-lg">
             <Calculator className="h-12 w-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-muted-foreground">
               Enter weight and reps to calculate your 1RM
             </p>
           </div>

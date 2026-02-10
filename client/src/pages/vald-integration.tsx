@@ -470,7 +470,7 @@ export default function ValdIntegration() {
                                     Link
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent className="bglass max-w-lg">
+                                <DialogContent className="max-w-lg">
                                   <DialogHeader>
                                     <DialogTitle>Link VALD Profile</DialogTitle>
                                     <DialogDescription>

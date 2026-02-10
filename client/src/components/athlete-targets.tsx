@@ -173,7 +173,7 @@ export function AthleteTargets({ athleteId }: AthleteTargetsProps) {
   }
 
   return (
-    <Card className="bglass shadow-glass border-0">
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between gap-2">
         <CardTitle className="font-heading text-lg flex items-center gap-2">
           <Target className="w-5 h-5 text-amber-500" />

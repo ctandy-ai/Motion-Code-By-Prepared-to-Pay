@@ -231,7 +231,7 @@ export default function CoachMessages() {
       </Dialog>
 
       <div className="grid gap-6 lg:grid-cols-3 h-[calc(100vh-16rem)]">
-        <Card className="border-0 lg:col-span-1 flex flex-col">
+        <Card className="lg:col-span-1 flex flex-col">
           <CardHeader className="pb-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -261,10 +261,10 @@ export default function CoachMessages() {
                 {threads.map((thread) => (
                   <div
                     key={thread.athleteId}
-                    className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all hover-elevate ${
+                    className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all hover-elevate ${
                       selectedThread === thread.athleteId
                         ? "bg-brand-600/20 border border-brand-500/30"
-                        : "ringify"
+                        : "bg-muted/50"
                     }`}
                     onClick={() => setSelectedThread(thread.athleteId)}
                     data-testid={`thread-${thread.athleteId}`}
@@ -299,7 +299,7 @@ export default function CoachMessages() {
           </CardContent>
         </Card>
 
-        <Card className="border-0 lg:col-span-2 flex flex-col">
+        <Card className="lg:col-span-2 flex flex-col">
           {selectedThreadData ? (
             <>
               <CardHeader className="pb-2 border-b border-slate-700/50">

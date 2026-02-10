@@ -1490,6 +1490,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recentPRs = allRecords
         .sort((a, b) => new Date(b.achievedAt).getTime() - new Date(a.achievedAt).getTime())
         .slice(0, 5);
+
+      // Daily activity for last 7 days
+      const dailyActivity = Array.from({ length: 7 }, (_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - i));
+        date.setHours(0, 0, 0, 0);
+        const nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+
+        const dayLogs = allLogs.filter(log => {
+          const logDate = new Date(log.completedAt);
+          return logDate >= date && logDate < nextDate;
+        });
+
+        return {
+          date: date.toISOString().slice(0, 10),
+          workouts: dayLogs.length,
+          sets: dayLogs.reduce((sum, log) => sum + log.sets, 0),
+        };
+      });
       
       res.json({
         totalWorkouts,
@@ -1501,6 +1521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         longestStreak,
         topAthletes: athleteWorkoutCounts,
         recentPRs,
+        dailyActivity,
       });
     } catch (error) {
       console.error("Failed to calculate dashboard stats:", error);

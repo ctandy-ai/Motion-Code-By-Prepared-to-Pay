@@ -14,7 +14,7 @@ interface ExerciseCardProps {
 export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: ExerciseCardProps) {
   return (
     <Card 
-      className="overflow-hidden bglass shadow-glass border-0 magnetic-hover transition-all duration-300 group"
+      className="overflow-hidden group"
       data-testid={`exercise-card-${exercise.id}`}
     >
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
@@ -33,7 +33,7 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
           <Button
             size="icon"
             variant="secondary"
-            className="absolute bottom-2 right-2 h-10 w-10 rounded-full"
+            className="absolute bottom-2 right-2 rounded-full"
             onClick={() => onViewVideo?.(exercise)}
             data-testid={`button-play-${exercise.id}`}
           >
@@ -44,15 +44,15 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
       
       <CardHeader className="space-y-2 pb-3">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-heading text-lg font-semibold text-slate-100 line-clamp-1">
+          <h3 className="font-heading text-lg font-semibold text-foreground line-clamp-1">
             {exercise.name}
           </h3>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="text-xs text-slate-100">
+          <Badge variant="secondary" className="text-xs text-foreground">
             {exercise.category}
           </Badge>
-          <Badge variant="outline" className="text-xs text-slate-200">
+          <Badge variant="outline" className="text-xs text-foreground">
             {exercise.muscleGroup}
           </Badge>
           <Badge 
@@ -69,21 +69,21 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
       </CardHeader>
 
       <CardContent className="pb-3">
-        <p className="text-sm text-slate-400 line-clamp-2">
+        <p className="text-sm text-muted-foreground line-clamp-2">
           {exercise.instructions}
         </p>
-        <p className="text-xs text-slate-400 mt-2">
+        <p className="text-xs text-muted-foreground mt-2">
           Equipment: {exercise.equipment}
         </p>
       </CardContent>
 
       {(onEdit || onDelete) && (
-        <CardFooter className="gap-2 border-t border-slate-700/30 pt-3">
+        <CardFooter className="gap-2 border-t border-border pt-3">
           {onEdit && (
             <Button
               variant="outline"
               size="sm"
-              className="flex-1 text-slate-200"
+              className="flex-1 text-foreground"
               onClick={() => onEdit(exercise)}
               data-testid={`button-edit-${exercise.id}`}
             >
@@ -95,7 +95,7 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onViewVideo }: Exerci
             <Button
               variant="outline"
               size="sm"
-              className="text-slate-200"
+              className="text-foreground"
               onClick={() => onDelete(exercise.id)}
               data-testid={`button-delete-${exercise.id}`}
             >

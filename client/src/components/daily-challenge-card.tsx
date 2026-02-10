@@ -23,7 +23,7 @@ export function DailyChallengeCard({
 
   return (
     <div 
-      className={`p-4 rounded-xl bglass shadow-glass border-0 ${className}`}
+      className={`p-4 rounded-lg bg-card border border-border ${className}`}
       data-testid={`challenge-card-${challenge.id}`}
     >
       <div className="space-y-3">

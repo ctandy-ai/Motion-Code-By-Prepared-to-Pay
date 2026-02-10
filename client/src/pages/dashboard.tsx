@@ -23,6 +23,12 @@ import {
 import { format, subDays } from "date-fns";
 import { PageHeader } from "@/components/page-header";
 
+interface DailyActivity {
+  date: string;
+  workouts: number;
+  sets: number;
+}
+
 interface DashboardStats {
   totalWorkouts: number;
   totalSets: number;
@@ -33,6 +39,7 @@ interface DashboardStats {
   longestStreak: number;
   topAthletes: (Athlete & { workoutCount: number; xp: number })[];
   recentPRs: any[];
+  dailyActivity: DailyActivity[];
 }
 
 interface AthleteDistribution {
@@ -134,8 +141,8 @@ export default function Dashboard() {
               </Button>
             </Link>
             <div className="text-right">
-              <p className="text-xs text-slate-400">Updated</p>
-              <p className="text-sm font-medium text-slate-200">{format(new Date(), "MMM d, h:mm a")}</p>
+              <p className="text-xs text-muted-foreground">Updated</p>
+              <p className="text-sm font-medium text-foreground">{format(new Date(), "MMM d, h:mm a")}</p>
             </div>
           </>
         }
@@ -172,9 +179,9 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           <TeamPulse />
 
-          <Card className="border-0" data-testid="card-workout-trends">
+          <Card data-testid="card-workout-trends">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+              <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                 <Activity className="h-4 w-4 text-brand-400" />
                 Weekly Activity Trends
               </CardTitle>
@@ -182,16 +189,16 @@ export default function Dashboard() {
             <CardContent>
               {(dashboardStats?.totalWorkouts || 0) === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Activity className="h-8 w-8 text-slate-600 mb-2" />
-                  <p className="text-sm text-slate-400">No workout data yet</p>
-                  <p className="text-xs text-slate-500 mt-1">Activity trends will appear as athletes log workouts</p>
+                  <Activity className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">No workout data yet</p>
+                  <p className="text-xs text-muted-foreground mt-1">Activity trends will appear as athletes log workouts</p>
                 </div>
               ) : (
               <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={Array.from({ length: 7 }, (_, i) => ({
-                  date: format(subDays(new Date(), 6 - i), "EEE"),
-                  workouts: 0,
-                  sets: 0,
+                <AreaChart data={(dashboardStats?.dailyActivity || []).map(d => ({
+                  date: format(new Date(d.date + "T12:00:00"), "EEE"),
+                  workouts: d.workouts,
+                  sets: d.sets,
                 }))}>
 
                   <defs>
@@ -233,33 +240,33 @@ export default function Dashboard() {
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Card className="border-0" data-testid="card-program-status">
+            <Card data-testid="card-program-status">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                   <Target className="h-4 w-4 text-emerald-400" />
                   Program Status
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-xl ringify">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-sm text-slate-300">Active Programs</span>
+                      <span className="text-sm text-muted-foreground">Active Programs</span>
                     </div>
                     <span className="text-lg font-semibold text-emerald-400">{activePrograms}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-xl ringify">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-amber-500" />
-                      <span className="text-sm text-slate-300">Draft Programs</span>
+                      <span className="text-sm text-muted-foreground">Draft Programs</span>
                     </div>
                     <span className="text-lg font-semibold text-amber-400">0</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-xl ringify">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-2 rounded-full bg-blue-500" />
-                      <span className="text-sm text-slate-300">Total Athletes</span>
+                      <span className="text-sm text-muted-foreground">Total Athletes</span>
                     </div>
                     <span className="text-lg font-semibold text-blue-400">
                       {athletes?.length || 0}
@@ -269,9 +276,9 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-0" data-testid="card-belt-distribution">
+            <Card data-testid="card-belt-distribution">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                   <Users className="h-4 w-4 text-purple-400" />
                   Belt Distribution
                 </CardTitle>
@@ -308,14 +315,14 @@ export default function Dashboard() {
                       {athleteBeltDistribution.map((d) => (
                         <div key={d.belt} className="flex items-center gap-2">
                           <div className="h-3 w-3 rounded-full" style={{ backgroundColor: d.color }} />
-                          <span className="text-sm text-slate-300">{d.belt}</span>
-                          <span className="text-sm font-semibold text-slate-100">{d.count}</span>
+                          <span className="text-sm text-muted-foreground">{d.belt}</span>
+                          <span className="text-sm font-semibold text-foreground">{d.count}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-slate-400 text-sm">
+                  <div className="text-center py-6 text-muted-foreground text-sm">
                     No athletes classified yet
                   </div>
                 )}
@@ -323,9 +330,9 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          <Card className="border-0" data-testid="card-assigned-programs">
+          <Card data-testid="card-assigned-programs">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+              <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                 <Target className="h-4 w-4 text-brand-400" />
                 Assigned Programs
               </CardTitle>
@@ -334,7 +341,7 @@ export default function Dashboard() {
               {athletePrograms && athletePrograms.length > 0 ? (
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {athletePrograms.slice(0, 5).map((ap) => (
-                    <div key={ap.id} className="flex items-center justify-between p-3 rounded-xl ringify">
+                    <div key={ap.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-3">
                         <Link href={`/athletes/${ap.athleteId}`}>
                           <div className="h-8 w-8 rounded-full bg-brand-500/20 flex items-center justify-center hover-elevate cursor-pointer">
@@ -343,10 +350,10 @@ export default function Dashboard() {
                         </Link>
                         <div>
                           <Link href={`/athletes/${ap.athleteId}`}>
-                            <p className="text-sm font-medium text-slate-200 hover:text-brand-400 cursor-pointer" data-testid={`link-athlete-${ap.athleteId}`}>{ap.athleteName}</p>
+                            <p className="text-sm font-medium text-foreground hover:text-brand-400 cursor-pointer" data-testid={`link-athlete-${ap.athleteId}`}>{ap.athleteName}</p>
                           </Link>
                           <Link href={`/programs/${ap.programId}`}>
-                            <p className="text-xs text-slate-400 hover:text-brand-300 cursor-pointer" data-testid={`link-program-${ap.programId}`}>{ap.programName}</p>
+                            <p className="text-xs text-muted-foreground hover:text-brand-300 cursor-pointer" data-testid={`link-program-${ap.programId}`}>{ap.programName}</p>
                           </Link>
                         </div>
                       </div>
@@ -355,7 +362,7 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-slate-400 text-sm">
+                <div className="text-center py-6 text-muted-foreground text-sm">
                   No programs assigned yet
                 </div>
               )}
@@ -364,9 +371,9 @@ export default function Dashboard() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-0" data-testid="card-quick-actions">
+          <Card data-testid="card-quick-actions">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold text-slate-100">Quick Actions</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Link href="/athletes/new/ai" className="block">
@@ -396,10 +403,10 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-0" data-testid="card-messages-preview">
+          <Card data-testid="card-messages-preview">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-blue-400" />
                   Recent Messages
                 </CardTitle>
@@ -425,7 +432,7 @@ export default function Dashboard() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium text-slate-200 truncate">
+                            <span className="text-sm font-medium text-foreground truncate">
                               {thread.athleteName}
                             </span>
                             {thread.unread > 0 && (
@@ -434,7 +441,7 @@ export default function Dashboard() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-xs text-slate-400 truncate">{thread.lastMessage}</p>
+                          <p className="text-xs text-muted-foreground truncate">{thread.lastMessage}</p>
                         </div>
                       </div>
                     </Link>
@@ -442,17 +449,17 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-center py-6">
-                  <MessageSquare className="h-8 w-8 mx-auto mb-2 text-slate-600" />
-                  <p className="text-sm text-slate-400">No messages yet</p>
+                  <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No messages yet</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
           {dashboardStats && dashboardStats.topAthletes.length > 0 && (
-            <Card className="border-0" data-testid="card-top-performers">
+            <Card data-testid="card-top-performers">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+                <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-amber-400" />
                   Top Performers
                 </CardTitle>
@@ -462,7 +469,7 @@ export default function Dashboard() {
                   {dashboardStats.topAthletes.slice(0, 5).map((athlete, index) => (
                     <Link key={athlete.id} href={`/athletes/${athlete.id}`} className="block">
                       <div
-                        className="flex items-center gap-3 p-2 rounded-xl hover-elevate transition-colors cursor-pointer"
+                        className="flex items-center gap-3 p-2 rounded-lg hover-elevate transition-colors cursor-pointer"
                         data-testid={`top-athlete-${athlete.id}`}
                       >
                         <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium text-white ${
@@ -471,8 +478,8 @@ export default function Dashboard() {
                           {index + 1}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-slate-200 truncate">{athlete.name}</p>
-                          <p className="text-xs text-slate-400">{athlete.xp.toLocaleString()} XP</p>
+                          <p className="text-sm font-medium text-foreground truncate">{athlete.name}</p>
+                          <p className="text-xs text-muted-foreground">{athlete.xp.toLocaleString()} XP</p>
                         </div>
                         <div className="text-right">
                           <span className="text-xs text-emerald-400">{athlete.workoutCount} workouts</span>
@@ -485,10 +492,10 @@ export default function Dashboard() {
             </Card>
           )}
 
-          <Card className="border-0" data-testid="card-xp-level">
+          <Card data-testid="card-xp-level">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold text-slate-100">Organization Level</CardTitle>
+                <CardTitle className="text-base font-semibold text-foreground">Organization Level</CardTitle>
                 <Badge variant="outline" className="text-xs">Level {dashboardStats?.level || 1}</Badge>
               </div>
             </CardHeader>
@@ -497,7 +504,7 @@ export default function Dashboard() {
                 currentXP={dashboardStats?.totalXP || 0}
                 level={dashboardStats?.level || 1}
               />
-              <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+              <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                 <span>Total XP: {(dashboardStats?.totalXP || 0).toLocaleString()}</span>
                 <span>Streak: {dashboardStats?.currentStreak || 0} days</span>
               </div>

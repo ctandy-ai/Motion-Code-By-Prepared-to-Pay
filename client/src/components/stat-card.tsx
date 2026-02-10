@@ -16,22 +16,22 @@ export function StatCard({ title, value, description, icon: Icon, trend }: StatC
   return (
     <Card 
       data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, "-")}`}
-      className="bglass shadow-glass border-0 hover-elevate"
+      className="hover-elevate"
     >
       <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-3">
-        <CardTitle className="text-sm font-medium text-slate-400">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <div className="p-2 rounded-md bg-white/5">
+        <div className="p-2 rounded-md bg-muted/50">
           <Icon className="h-4 w-4 text-brand-400" />
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-semibold text-slate-100">
+        <div className="text-2xl font-semibold text-foreground">
           {value}
         </div>
         {description && (
-          <p className="text-xs text-slate-400 mt-1">{description}</p>
+          <p className="text-xs text-muted-foreground mt-1">{description}</p>
         )}
         {trend && (
           <p className={`text-xs mt-2 font-medium ${trend.isPositive ? "text-emerald-400" : "text-rose-400"}`}>

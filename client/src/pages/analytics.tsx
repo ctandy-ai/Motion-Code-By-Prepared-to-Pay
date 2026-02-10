@@ -105,9 +105,9 @@ export default function Analytics() {
         />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border-0 animate-pulse">
+            <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
-                <div className="h-20 bg-slate-700/50 rounded-lg" />
+                <div className="h-20 bg-muted rounded-lg" />
               </CardContent>
             </Card>
           ))}
@@ -127,15 +127,15 @@ export default function Analytics() {
       />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-        <Card className="border-0" data-testid="stat-athletes">
+        <Card data-testid="stat-athletes">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-brand-600/20">
+              <div className="p-3 rounded-lg bg-brand-600/20">
                 <Users className="h-6 w-6 text-brand-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Athletes</p>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-sm text-muted-foreground">Athletes</p>
+                <p className="text-2xl font-bold text-foreground">
                   {analytics?.summary.totalAthletes || 0}
                 </p>
               </div>
@@ -143,15 +143,15 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-0" data-testid="stat-workouts">
+        <Card data-testid="stat-workouts">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-emerald-600/20">
+              <div className="p-3 rounded-lg bg-emerald-600/20">
                 <Activity className="h-6 w-6 text-emerald-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Workouts</p>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-sm text-muted-foreground">Workouts</p>
+                <p className="text-2xl font-bold text-foreground">
                   {analytics?.summary.totalWorkouts || 0}
                 </p>
               </div>
@@ -159,15 +159,15 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-0" data-testid="stat-prs">
+        <Card data-testid="stat-prs">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-amber-600/20">
+              <div className="p-3 rounded-lg bg-amber-600/20">
                 <Trophy className="h-6 w-6 text-amber-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Personal Records</p>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-sm text-muted-foreground">Personal Records</p>
+                <p className="text-2xl font-bold text-foreground">
                   {analytics?.summary.totalPRs || 0}
                 </p>
               </div>
@@ -175,15 +175,15 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-0" data-testid="stat-surveys">
+        <Card data-testid="stat-surveys">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-purple-600/20">
+              <div className="p-3 rounded-lg bg-purple-600/20">
                 <Heart className="h-6 w-6 text-purple-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Wellness Surveys</p>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-sm text-muted-foreground">Wellness Surveys</p>
+                <p className="text-2xl font-bold text-foreground">
                   {analytics?.summary.totalSurveys || 0}
                 </p>
               </div>
@@ -191,17 +191,17 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-0" data-testid="stat-readiness">
+        <Card data-testid="stat-readiness">
           <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-cyan-600/20">
+              <div className="p-3 rounded-lg bg-cyan-600/20">
                 <TrendingUp className="h-6 w-6 text-cyan-400" />
               </div>
               <div>
-                <p className="text-sm text-slate-400">Avg Readiness</p>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-sm text-muted-foreground">Avg Readiness</p>
+                <p className="text-2xl font-bold text-foreground">
                   {analytics?.summary.avgReadiness || 0}
-                  <span className="text-sm text-slate-400 font-normal">/10</span>
+                  <span className="text-sm text-muted-foreground font-normal">/10</span>
                 </p>
               </div>
             </div>
@@ -210,9 +210,9 @@ export default function Analytics() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card className="border-0" data-testid="chart-volume">
+        <Card data-testid="chart-volume">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
               <Activity className="h-4 w-4 text-brand-400" />
               Weekly Training Volume
             </CardTitle>
@@ -257,16 +257,16 @@ export default function Analytics() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[280px] flex items-center justify-center text-slate-400">
+              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
                 <p>No volume data available yet</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Card className="border-0" data-testid="chart-wellness">
+        <Card data-testid="chart-wellness">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
               <Heart className="h-4 w-4 text-purple-400" />
               Team Wellness Trends
             </CardTitle>
@@ -330,7 +330,7 @@ export default function Analytics() {
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-[280px] flex items-center justify-center text-slate-400">
+              <div className="h-[280px] flex items-center justify-center text-muted-foreground">
                 <p>No wellness data available yet</p>
               </div>
             )}
@@ -339,9 +339,9 @@ export default function Analytics() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-0 lg:col-span-2" data-testid="chart-prs">
+        <Card className="lg:col-span-2" data-testid="chart-prs">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
               <Trophy className="h-4 w-4 text-amber-400" />
               Recent Personal Records
             </CardTitle>
@@ -352,22 +352,22 @@ export default function Analytics() {
                 {analytics.prTimeline.map((pr) => (
                   <div
                     key={pr.id}
-                    className="flex items-center gap-4 p-3 rounded-xl ringify hover-elevate transition-all"
+                    className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover-elevate transition-all"
                     data-testid={`pr-item-${pr.id}`}
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-600/20">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-600/20">
                       <Trophy className="h-5 w-5 text-amber-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-100 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {pr.exerciseName}
                       </p>
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-muted-foreground">
                         {pr.athleteName} • {pr.weight}kg x {pr.reps} reps
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-muted-foreground">
                         {pr.date ? format(new Date(pr.date), "MMM d") : "N/A"}
                       </p>
                     </div>
@@ -375,7 +375,7 @@ export default function Analytics() {
                 ))}
               </div>
             ) : (
-              <div className="h-[360px] flex items-center justify-center text-slate-400">
+              <div className="h-[360px] flex items-center justify-center text-muted-foreground">
                 <div className="text-center">
                   <Trophy className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p>No personal records logged yet</p>
@@ -386,9 +386,9 @@ export default function Analytics() {
           </CardContent>
         </Card>
 
-        <Card className="border-0" data-testid="chart-top-exercises">
+        <Card data-testid="chart-top-exercises">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-emerald-400" />
               Top Exercises by PRs
             </CardTitle>
@@ -407,16 +407,16 @@ export default function Analytics() {
                         index === 0
                           ? "bg-amber-600/30 text-amber-300"
                           : index === 1
-                          ? "bg-slate-500/30 text-slate-300"
+                          ? "bg-muted text-muted-foreground"
                           : index === 2
                           ? "bg-orange-700/30 text-orange-300"
-                          : "bg-slate-700/30 text-slate-400"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-200 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {exercise.exerciseName}
                       </p>
                     </div>
@@ -424,13 +424,13 @@ export default function Analytics() {
                       <span className="text-sm font-semibold text-emerald-400">
                         {exercise.prCount}
                       </span>
-                      <span className="text-xs text-slate-400 ml-1">PRs</span>
+                      <span className="text-xs text-muted-foreground ml-1">PRs</span>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="h-[200px] flex items-center justify-center text-slate-400">
+              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
                 <p>No exercise data yet</p>
               </div>
             )}
@@ -438,9 +438,9 @@ export default function Analytics() {
         </Card>
       </div>
 
-      <Card className="border-0" data-testid="chart-strength">
+      <Card data-testid="chart-strength">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base font-semibold text-slate-100 flex items-center gap-2">
+          <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
             <BarChart3 className="h-4 w-4 text-brand-400" />
             Strength Progression (Last 30 Days)
           </CardTitle>
@@ -521,7 +521,7 @@ export default function Analytics() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-slate-400">
+            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p>No strength data available yet</p>
