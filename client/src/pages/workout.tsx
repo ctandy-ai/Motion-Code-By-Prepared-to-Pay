@@ -17,15 +17,21 @@ import type { Athlete } from "@shared/schema";
 function InlineRestTimer({ seconds, onDone }: { seconds: number; onDone: () => void }) {
   const [remaining, setRemaining] = useState(seconds);
   const [paused, setPaused] = useState(false);
+  const stableOnDone = useCallback(onDone, [onDone]);
+
+  useEffect(() => {
+    setRemaining(seconds);
+    setPaused(false);
+  }, [seconds]);
 
   useEffect(() => {
     if (paused || remaining <= 0) {
-      if (remaining <= 0) onDone();
+      if (remaining <= 0) stableOnDone();
       return;
     }
     const t = setInterval(() => setRemaining(r => r - 1), 1000);
     return () => clearInterval(t);
-  }, [remaining, paused, onDone]);
+  }, [remaining, paused, stableOnDone]);
 
   const mins = Math.floor(remaining / 60);
   const secs = remaining % 60;
@@ -130,9 +136,9 @@ function ExerciseHistoryPanel({ athleteId, exerciseId, exerciseName }: {
         <span>Best: {lastSession.bestWeight}lbs x {lastSession.bestReps}</span>
         <span className="flex items-center gap-1">
           <Calculator className="h-3 w-3" />
-          Est 1RM: {lastSession.estimated1RM}lbs
+          Est 1RM: {lastSession.estimated1RM ?? 0}lbs
         </span>
-        <span>Vol: {lastSession.totalVolume.toLocaleString()}lbs</span>
+        <span>Vol: {(lastSession.totalVolume ?? 0).toLocaleString()}lbs</span>
         {volumeTrend !== 0 && (
           <Badge variant="outline" className={volumeTrend > 0 ? "text-emerald-400 border-emerald-400/30" : "text-red-400 border-red-400/30"}>
             {volumeTrend > 0 ? "+" : ""}{volumeTrend.toLocaleString()}lbs
@@ -156,7 +162,6 @@ export default function Workout() {
   const [prCelebration, setPrCelebration] = useState<{ exerciseName: string; weight: number; reps: number } | null>(null);
   const [lastLogResult, setLastLogResult] = useState<Record<string, LogResult>>({});
   const [activeRestTimer, setActiveRestTimer] = useState<string | null>(null);
-  const [restTimerSeconds, setRestTimerSeconds] = useState<Record<string, number>>({});
 
   const { data: athletes = [], isLoading: loadingAthletes } = useQuery<Athlete[]>({
     queryKey: ["/api/athletes"],
@@ -232,8 +237,8 @@ export default function Workout() {
 
       toast({
         title: result.isPR ? "NEW PR! Workout logged!" : "Workout logged!",
-        description: result.estimated1RM > 0
-          ? `Est. 1RM: ${result.estimated1RM}lbs | Volume: ${result.totalVolume.toLocaleString()}lbs`
+        description: (result.estimated1RM ?? 0) > 0
+          ? `Est. 1RM: ${result.estimated1RM}lbs | Volume: ${(result.totalVolume ?? 0).toLocaleString()}lbs`
           : "Great work! Keep pushing forward.",
       });
     },

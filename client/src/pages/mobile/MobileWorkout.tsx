@@ -63,7 +63,7 @@ function RestTimer({ seconds, onComplete, onSkip }: { seconds: number; onComplet
         <Button size="icon" variant="ghost" onClick={() => setPaused(!paused)} data-testid="button-pause-timer">
           {paused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
         </Button>
-        <Button size="icon" variant="ghost" onClick={() => setRemaining(seconds)} data-testid="button-reset-timer">
+        <Button size="icon" variant="ghost" onClick={() => { setRemaining(seconds); setPaused(false); }} data-testid="button-reset-timer">
           <RotateCcw className="h-5 w-5" />
         </Button>
         <Button variant="outline" size="sm" onClick={onSkip} data-testid="button-skip-timer">
