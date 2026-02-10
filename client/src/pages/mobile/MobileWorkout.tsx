@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { MobileLayout } from "@/components/mobile/MobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,12 +15,65 @@ import {
   Pause,
   SkipForward,
   Trophy,
-  Clock
+  Clock,
+  Calculator,
+  TrendingUp,
+  Zap,
+  RotateCcw
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+
+function RestTimer({ seconds, onComplete, onSkip }: { seconds: number; onComplete: () => void; onSkip: () => void }) {
+  const [remaining, setRemaining] = useState(seconds);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused || remaining <= 0) {
+      if (remaining <= 0) onComplete();
+      return;
+    }
+    const t = setInterval(() => setRemaining(r => r - 1), 1000);
+    return () => clearInterval(t);
+  }, [remaining, paused, onComplete]);
+
+  const pct = (remaining / seconds) * 100;
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-ink-1/95 backdrop-blur-lg flex flex-col items-center justify-center" data-testid="rest-timer">
+      <div className="text-sm text-slate-400 mb-4 uppercase tracking-wider">Rest Timer</div>
+      <div className="relative w-48 h-48 mb-6">
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="4" className="text-ink-3" />
+          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="4" className="text-primary"
+            strokeDasharray={`${2 * Math.PI * 45}`}
+            strokeDashoffset={`${2 * Math.PI * 45 * (1 - pct / 100)}`}
+            strokeLinecap="round"
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-4xl font-bold tabular-nums">{mins}:{secs.toString().padStart(2, "0")}</span>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Button size="icon" variant="ghost" onClick={() => setPaused(!paused)} data-testid="button-pause-timer">
+          {paused ? <Play className="h-5 w-5" /> : <Pause className="h-5 w-5" />}
+        </Button>
+        <Button size="icon" variant="ghost" onClick={() => setRemaining(seconds)} data-testid="button-reset-timer">
+          <RotateCcw className="h-5 w-5" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={onSkip} data-testid="button-skip-timer">
+          <SkipForward className="h-4 w-4 mr-1" />
+          Skip
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 interface ExerciseSet {
   setNumber: number;
@@ -50,6 +103,13 @@ export default function MobileWorkout() {
   const [completedSets, setCompletedSets] = useState<Record<string, Set<number>>>({});
   const [workoutStarted, setWorkoutStarted] = useState(false);
   const [workoutStartTime, setWorkoutStartTime] = useState<Date | null>(null);
+  const [prCelebration, setPrCelebration] = useState<{ weight: number; reps: number; est1RM: number } | null>(null);
+  const [sessionPRs, setSessionPRs] = useState<number>(0);
+  const [sessionVolume, setSessionVolume] = useState<number>(0);
+  const [restTimerActive, setRestTimerActive] = useState(false);
+  const [restTimerSeconds, setRestTimerSeconds] = useState(90);
+
+  const dismissRestTimer = useCallback(() => setRestTimerActive(false), []);
 
   const { data: todayWorkout, isLoading } = useQuery<{ exercises?: WorkoutExercise[] }>({
     queryKey: ["/api/mobile/athlete/today-workout"],
@@ -58,10 +118,34 @@ export default function MobileWorkout() {
 
   const logSetMutation = useMutation({
     mutationFn: async (data: { exerciseId: string; setNumber: number; reps: number; weight: number }) => {
-      return apiRequest("POST", "/api/mobile/athlete/log-set", data);
+      const response = await apiRequest("POST", "/api/mobile/athlete/log-set", data);
+      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/mobile/athlete/today-workout"] });
+
+      setSessionVolume(prev => prev + variables.weight * variables.reps);
+
+      if (result.isPR && result.newPR) {
+        setSessionPRs(prev => prev + 1);
+        setPrCelebration({
+          weight: result.newPR.maxWeight,
+          reps: result.newPR.reps,
+          est1RM: result.estimated1RM || 0,
+        });
+        setTimeout(() => setPrCelebration(null), 3500);
+        toast({
+          title: "NEW PR!",
+          description: `${result.newPR.maxWeight}lbs x ${result.newPR.reps} | Est 1RM: ${result.estimated1RM}lbs`,
+        });
+      } else if (result.estimated1RM > 0) {
+        toast({
+          title: "Set Logged",
+          description: `Est 1RM: ${result.estimated1RM}lbs`,
+        });
+      } else {
+        toast({ title: "Set Logged" });
+      }
     },
   });
 
@@ -125,7 +209,7 @@ export default function MobileWorkout() {
       weight: currentSet.weight,
     });
 
-    toast({ title: "Set Logged", description: `Set ${setNumber} completed` });
+    setRestTimerActive(true);
   };
 
   const handleUpdateSet = (exerciseId: string, setNumber: number, field: "reps" | "weight", value: number) => {
@@ -209,6 +293,26 @@ export default function MobileWorkout() {
   return (
     <MobileLayout hideNav>
       <div className="min-h-screen flex flex-col">
+        {restTimerActive && (
+          <RestTimer
+            seconds={restTimerSeconds}
+            onComplete={dismissRestTimer}
+            onSkip={dismissRestTimer}
+          />
+        )}
+
+        {prCelebration && (
+          <div className="fixed inset-x-0 top-4 z-50 flex justify-center px-4" data-testid="mobile-pr-celebration">
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black px-5 py-3 rounded-md shadow-lg flex items-center gap-2 animate-bounce w-full max-w-sm">
+              <Trophy className="h-5 w-5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="font-bold text-sm">NEW PR!</div>
+                <div className="text-xs">{prCelebration.weight}lbs x {prCelebration.reps} | Est 1RM: {prCelebration.est1RM}lbs</div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <header className="sticky top-0 z-40 bg-ink-1/95 backdrop-blur-lg border-b border-ink-3 p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -217,7 +321,21 @@ export default function MobileWorkout() {
                 {workoutStartTime ? formatDuration(workoutStartTime) : "0:00"}
               </span>
             </div>
-            <Badge variant="secondary">{completedSetCount}/{totalSets} Sets</Badge>
+            <div className="flex items-center gap-2">
+              {sessionVolume > 0 && (
+                <div className="flex items-center gap-1 text-xs text-slate-400" data-testid="mobile-session-volume">
+                  <TrendingUp className="h-3 w-3 text-emerald-400" />
+                  <span>{sessionVolume.toLocaleString()}lbs</span>
+                </div>
+              )}
+              {sessionPRs > 0 && (
+                <Badge variant="outline" className="text-amber-400 border-amber-400/30 text-xs" data-testid="mobile-session-prs">
+                  <Trophy className="h-3 w-3 mr-1" />
+                  {sessionPRs} PR{sessionPRs !== 1 ? "s" : ""}
+                </Badge>
+              )}
+              <Badge variant="secondary">{completedSetCount}/{totalSets} Sets</Badge>
+            </div>
           </div>
           <div className="h-2 bg-ink-3 rounded-full overflow-hidden">
             <div 
@@ -267,54 +385,65 @@ export default function MobileWorkout() {
                         reps: set.targetReps, 
                         weight: set.targetWeight || 0 
                       };
+                      const setEst1RM = currentData.weight > 0 && currentData.reps > 0
+                        ? Math.round(currentData.weight * (1 + currentData.reps / 30))
+                        : 0;
 
                       return (
                         <div 
                           key={set.setNumber}
-                          className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                          className={`p-3 rounded-xl transition-all ${
                             completed ? 'bg-green-500/10 border border-green-500/30' : 'bg-ink-3/50'
                           }`}
                           data-testid={`set-${exercise.id}-${set.setNumber}`}
                         >
-                          <div className="w-8 h-8 rounded-full bg-ink-2 flex items-center justify-center text-sm font-bold">
-                            {set.setNumber}
-                          </div>
-                          
-                          <div className="flex-1 flex items-center gap-2">
-                            <div className="flex-1">
-                              <label className="text-[10px] text-slate-500 uppercase">Weight</label>
-                              <Input
-                                type="number"
-                                value={currentData.weight}
-                                onChange={(e) => handleUpdateSet(exercise.id, set.setNumber, "weight", parseInt(e.target.value) || 0)}
-                                className="h-10 text-center text-lg font-bold bg-ink-2 border-0"
-                                disabled={completed}
-                                data-testid={`input-weight-${set.setNumber}`}
-                              />
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-ink-2 flex items-center justify-center text-sm font-bold">
+                              {set.setNumber}
                             </div>
-                            <div className="flex-1">
-                              <label className="text-[10px] text-slate-500 uppercase">Reps</label>
-                              <Input
-                                type="number"
-                                value={currentData.reps}
-                                onChange={(e) => handleUpdateSet(exercise.id, set.setNumber, "reps", parseInt(e.target.value) || 0)}
-                                className="h-10 text-center text-lg font-bold bg-ink-2 border-0"
-                                disabled={completed}
-                                data-testid={`input-reps-${set.setNumber}`}
-                              />
+                            
+                            <div className="flex-1 flex items-center gap-2">
+                              <div className="flex-1">
+                                <label className="text-[10px] text-slate-500 uppercase">Weight</label>
+                                <Input
+                                  type="number"
+                                  value={currentData.weight}
+                                  onChange={(e) => handleUpdateSet(exercise.id, set.setNumber, "weight", parseInt(e.target.value) || 0)}
+                                  className="h-10 text-center text-lg font-bold bg-ink-2 border-0"
+                                  disabled={completed}
+                                  data-testid={`input-weight-${set.setNumber}`}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-[10px] text-slate-500 uppercase">Reps</label>
+                                <Input
+                                  type="number"
+                                  value={currentData.reps}
+                                  onChange={(e) => handleUpdateSet(exercise.id, set.setNumber, "reps", parseInt(e.target.value) || 0)}
+                                  className="h-10 text-center text-lg font-bold bg-ink-2 border-0"
+                                  disabled={completed}
+                                  data-testid={`input-reps-${set.setNumber}`}
+                                />
+                              </div>
                             </div>
-                          </div>
 
-                          <Button
-                            size="icon"
-                            variant={completed ? "default" : "outline"}
-                            className={completed ? "bg-green-500 hover:bg-green-600" : ""}
-                            onClick={() => !completed && handleCompleteSet(exercise.id, set.setNumber)}
-                            disabled={completed}
-                            data-testid={`button-complete-set-${set.setNumber}`}
-                          >
-                            <Check className="w-5 h-5" />
-                          </Button>
+                            <Button
+                              size="icon"
+                              variant={completed ? "default" : "outline"}
+                              className={completed ? "bg-green-500" : ""}
+                              onClick={() => !completed && handleCompleteSet(exercise.id, set.setNumber)}
+                              disabled={completed}
+                              data-testid={`button-complete-set-${set.setNumber}`}
+                            >
+                              <Check className="w-5 h-5" />
+                            </Button>
+                          </div>
+                          {!completed && setEst1RM > 0 && (
+                            <div className="mt-2 flex items-center gap-1 text-xs text-slate-500 pl-11" data-testid={`est-1rm-${exercise.id}-${set.setNumber}`}>
+                              <Calculator className="h-3 w-3" />
+                              Est 1RM: {setEst1RM}lbs
+                            </div>
+                          )}
                         </div>
                       );
                     })}

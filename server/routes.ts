@@ -1641,9 +1641,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validated = insertWorkoutLogSchema.parse(req.body);
       const log = await storage.createWorkoutLog(validated);
-      res.status(201).json(log);
+
+      const weights = validated.weightPerSet.split(",").map(Number).filter(w => w > 0);
+      const reps = validated.repsPerSet.split(",").map(Number);
+
+      let bestSetWeight = 0;
+      let bestSetReps = 0;
+      let totalVolume = 0;
+      let estimated1RM = 0;
+
+      weights.forEach((w, i) => {
+        const r = reps[i] || 0;
+        totalVolume += w * r;
+        if (w > bestSetWeight) {
+          bestSetWeight = w;
+          bestSetReps = r;
+        }
+      });
+
+      if (bestSetWeight > 0 && bestSetReps > 0) {
+        estimated1RM = Math.round(bestSetWeight * (1 + bestSetReps / 30));
+      }
+
+      let isPR = false;
+      let newPR = null;
+
+      if (bestSetWeight > 0 && validated.athleteId) {
+        const existingRecords = await storage.getPersonalRecords(validated.athleteId);
+        const exerciseRecords = existingRecords.filter(pr => pr.exerciseId === validated.exerciseId);
+        const maxPrevWeight = exerciseRecords.reduce((max, pr) => Math.max(max, pr.maxWeight || 0), 0);
+
+        if (bestSetWeight > maxPrevWeight) {
+          isPR = true;
+          newPR = await storage.createPersonalRecord({
+            athleteId: validated.athleteId,
+            exerciseId: validated.exerciseId,
+            maxWeight: bestSetWeight,
+            reps: bestSetReps,
+          });
+        }
+      }
+
+      res.status(201).json({
+        ...log,
+        isPR,
+        newPR: newPR ? { maxWeight: newPR.maxWeight, reps: newPR.reps } : null,
+        estimated1RM,
+        totalVolume,
+      });
     } catch (error) {
       res.status(400).json({ error: "Invalid workout log data" });
+    }
+  });
+
+  app.get("/api/workout-logs/:athleteId/exercise-history/:exerciseId", async (req, res) => {
+    try {
+      const { athleteId, exerciseId } = req.params;
+      const allLogs = await storage.getWorkoutLogs(athleteId);
+      const exerciseLogs = allLogs
+        .filter(l => l.exerciseId === exerciseId)
+        .sort((a, b) => {
+          const da = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+          const db = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+          return db - da;
+        })
+        .slice(0, 10)
+        .map(l => {
+          const weights = l.weightPerSet.split(",").map(Number);
+          const reps = l.repsPerSet.split(",").map(Number);
+          const bestWeight = Math.max(...weights.filter(w => w > 0), 0);
+          const bestReps = reps[weights.indexOf(bestWeight)] || 0;
+          const totalVolume = weights.reduce((sum, w, i) => sum + w * (reps[i] || 0), 0);
+          const est1RM = bestWeight > 0 && bestReps > 0 ? Math.round(bestWeight * (1 + bestReps / 30)) : 0;
+          return {
+            id: l.id,
+            date: l.completedAt,
+            sets: l.sets,
+            repsPerSet: l.repsPerSet,
+            weightPerSet: l.weightPerSet,
+            bestWeight,
+            bestReps,
+            totalVolume,
+            estimated1RM: est1RM,
+            notes: l.notes,
+          };
+        });
+      res.json(exerciseLogs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch exercise history" });
     }
   });
 
@@ -3189,6 +3274,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      const est1RM = weight > 0 && reps > 0 ? Math.round(weight * (1 + reps / 30)) : 0;
+
       res.json({ 
         success: true, 
         setNumber, 
@@ -3197,6 +3284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         workoutLogId: workoutLog.id,
         isPR,
         newPR: newPR ? { maxWeight: newPR.maxWeight, reps: newPR.reps } : null,
+        estimated1RM: est1RM,
       });
     } catch (error) {
       console.error("Failed to log set:", error);
