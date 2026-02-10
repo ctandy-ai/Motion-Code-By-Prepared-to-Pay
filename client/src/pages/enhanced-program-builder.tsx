@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, Settings, Layers, LayoutGrid, Calendar, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Users, Settings, Calendar, Sparkles, Loader2 } from "lucide-react";
 import { ExerciseSidebar } from "@/components/builder/exercise-sidebar";
 import { WeekDayGrid } from "@/components/builder/week-day-grid";
 import { ProgramTimeline } from "@/components/builder/program-timeline";
@@ -38,7 +38,8 @@ export default function EnhancedProgramBuilder() {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | undefined>();
   const [phase, setPhase] = useState("PRESEASON_A");
   const [waveWeek, setWaveWeek] = useState(1);
-  const [showTimeline, setShowTimeline] = useState(true);
+  const [showTimeline, setShowTimeline] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const { data: program, isLoading: loadingProgram } = useQuery<Program>({
     queryKey: ["/api/programs", programId],
@@ -360,8 +361,8 @@ export default function EnhancedProgramBuilder() {
 
   return (
     <div className="h-screen flex flex-col bg-background" data-testid="enhanced-program-builder">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-900/50">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between gap-3 px-4 py-2 border-b border-slate-700/50 bg-slate-900/60">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -370,27 +371,25 @@ export default function EnhancedProgramBuilder() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h1 className="text-lg font-semibold text-slate-100">
-              {program?.name || "Program Builder"}
-            </h1>
-            <p className="text-xs text-slate-400">
-              {program?.duration || 12} weeks
-            </p>
-          </div>
+          <h1 className="text-sm font-semibold text-slate-100 truncate max-w-[200px]">
+            {program?.name || "Program Builder"}
+          </h1>
+          <Badge variant="outline" className="text-[10px] shrink-0">{program?.duration || 12}w</Badge>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button
-            variant={showTimeline ? "secondary" : "ghost"}
-            size="sm"
-            onClick={() => setShowTimeline(!showTimeline)}
-            className="gap-1.5"
-            data-testid="toggle-timeline"
-          >
-            <Calendar className="h-4 w-4" />
-            Timeline
-          </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Select value={selectedAthleteId || "none"} onValueChange={(v) => setSelectedAthleteId(v === "none" ? undefined : v)}>
+            <SelectTrigger className="h-8 w-[160px] text-xs bg-slate-800/50 border-slate-700" data-testid="select-athlete">
+              <Users className="h-3 w-3 mr-1 text-slate-500 shrink-0" />
+              <SelectValue placeholder="Select athlete" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No athlete (generic)</SelectItem>
+              {athletes.map((a) => (
+                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Button
             variant="outline"
@@ -403,60 +402,68 @@ export default function EnhancedProgramBuilder() {
               autofillMutation.mutate();
             }}
             disabled={autofillMutation.isPending || !programId}
-            className="gap-1.5 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-500/30"
+            className="gap-1 border-purple-500/30 text-xs"
             data-testid="button-ai-autofill"
           >
             {autofillMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Sparkles className="h-4 w-4 text-purple-400" />
+              <Sparkles className="h-3.5 w-3.5 text-purple-400" />
             )}
-            AI Autofill Week {selectedWeek}
+            AI Fill
           </Button>
-          
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-slate-500" />
-            <Select value={selectedAthleteId || "none"} onValueChange={(v) => setSelectedAthleteId(v === "none" ? undefined : v)}>
-              <SelectTrigger className="h-8 w-[180px] text-xs bg-slate-800/50 border-slate-600" data-testid="select-athlete">
-                <SelectValue placeholder="Select athlete" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No athlete (generic)</SelectItem>
-                {athletes.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4 text-slate-500" />
-            <Select value={phase} onValueChange={setPhase}>
-              <SelectTrigger className="h-8 w-[140px] text-xs bg-slate-800/50 border-slate-600" data-testid="select-phase">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {engineOptions?.phases.map((p) => (
-                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={String(waveWeek)} onValueChange={(v) => setWaveWeek(parseInt(v))}>
-              <SelectTrigger className="h-8 w-[100px] text-xs bg-slate-800/50 border-slate-600" data-testid="select-wave">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {engineOptions?.waveWeeks.map((w) => (
-                  <SelectItem key={w.value} value={String(w.value)}>W{w.value}: {w.description}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Button
+            variant={showSettings ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowSettings(!showSettings)}
+            className="gap-1 text-xs"
+            data-testid="toggle-settings"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Engine
+          </Button>
+
+          <Button
+            variant={showTimeline ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setShowTimeline(!showTimeline)}
+            className="gap-1 text-xs"
+            data-testid="toggle-timeline"
+          >
+            <Calendar className="h-3.5 w-3.5" />
+            Timeline
+          </Button>
         </div>
       </header>
 
-      {selectedAthleteId && (
+      {showSettings && (
+        <div className="flex items-center gap-3 px-4 py-1.5 border-b border-slate-700/30 bg-slate-900/40 flex-wrap">
+          <span className="text-[11px] text-slate-500 uppercase tracking-wider">Engine:</span>
+          <Select value={phase} onValueChange={setPhase}>
+            <SelectTrigger className="h-7 w-[130px] text-xs bg-slate-800/50 border-slate-700" data-testid="select-phase">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {engineOptions?.phases.map((p) => (
+                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={String(waveWeek)} onValueChange={(v) => setWaveWeek(parseInt(v))}>
+            <SelectTrigger className="h-7 w-[90px] text-xs bg-slate-800/50 border-slate-700" data-testid="select-wave">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {engineOptions?.waveWeeks.map((w) => (
+                <SelectItem key={w.value} value={String(w.value)}>W{w.value}: {w.description}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {selectedAthleteId && showSettings && (
         <InlineEngineGuidance
           athleteId={selectedAthleteId}
           phase={phase}
@@ -468,7 +475,7 @@ export default function EnhancedProgramBuilder() {
       )}
 
       {showTimeline && program && (
-        <div className="px-4 py-2 border-b border-slate-700/50">
+        <div className="px-4 py-1.5 border-b border-slate-700/30">
           <ProgramTimeline
             program={program}
             programExercises={programExercises}
@@ -479,7 +486,7 @@ export default function EnhancedProgramBuilder() {
       )}
 
       <div className="flex-1 flex min-h-0">
-        <div className="w-72 shrink-0">
+        <div className="w-64 shrink-0 border-r border-slate-700/30">
           <ExerciseSidebar
             onExerciseSelect={(exercise) => {
               addExerciseMutation.mutate({ exercise, day: 1 });
