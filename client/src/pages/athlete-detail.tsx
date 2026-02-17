@@ -4,14 +4,24 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt, Team } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers, FlaskConical, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers, FlaskConical, BarChart3, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
 import { AthleteTrainingProfileCard } from "@/components/athlete-training-profile";
 import { AthleteTargets } from "@/components/athlete-targets";
 import { BodyComposition } from "@/components/body-composition";
 import { NormativeComparison } from "@/components/normative-comparison";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts";
 import {
   Dialog,
   DialogContent,
@@ -332,23 +342,44 @@ export default function AthleteDetail() {
     );
   }
 
+  const initials = athlete.name.split(' ').map(n => n[0]).join('').slice(0, 2);
+  const hasActiveProgram = athletePrograms?.some(ap => ap.status === "active");
+
   return (
     <div className="space-y-6">
+      <Breadcrumb data-testid="breadcrumb-nav">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/athletes" data-testid="breadcrumb-athletes">Athletes</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{athlete.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       {/* Header - always visible */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation("/athletes")}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+          <Avatar className="h-14 w-14" data-testid="athlete-avatar">
+            <AvatarFallback className="bg-brand-600 text-white text-xl font-bold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {athlete.name}
-            </h1>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-semibold text-foreground">
+                {athlete.name}
+              </h1>
+              <Badge
+                variant={hasActiveProgram ? "default" : "secondary"}
+                className="text-xs"
+                data-testid="badge-athlete-status"
+              >
+                {hasActiveProgram ? "In Program" : athlete.status || "Registered"}
+              </Badge>
+            </div>
             <p className="text-sm text-muted-foreground mt-1">
               {athlete.team && athlete.position
                 ? `${athlete.team} • ${athlete.position}`
@@ -356,7 +387,7 @@ export default function AthleteDetail() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button 
             variant="outline"
             onClick={() => setLocation(`/athletes/${athleteId}/report`)}
@@ -643,7 +674,7 @@ export default function AthleteDetail() {
               <div className="space-y-3">
                 {valdData!.tests.map((test) => {
                   const results = valdData!.latestResults[test.id] || [];
-                  const keyMetrics = results.slice(0, 4);
+                  const keyMetrics = results.slice(0, 6);
                   
                   return (
                     <Card 
@@ -658,28 +689,41 @@ export default function AthleteDetail() {
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span className="font-medium text-foreground">
                                 {test.testName || test.testType}
                               </span>
                               <Badge variant="secondary" className="text-xs capitalize">
                                 {test.deviceType}
                               </Badge>
+                              {results.length > 0 && (
+                                <span className="text-xs text-muted-foreground">
+                                  {results.length} metric{results.length !== 1 ? "s" : ""}
+                                </span>
+                              )}
                             </div>
                             
                             {keyMetrics.length > 0 && (
-                              <div className="flex flex-wrap gap-3 mt-2">
-                                {keyMetrics.map((metric, idx) => (
-                                  <div key={idx} className="text-xs">
-                                    <span className="text-muted-foreground">{metric.metricName}: </span>
-                                    <span className="text-muted-foreground font-medium">
-                                      {typeof metric.metricValue === 'number' 
-                                        ? metric.metricValue.toFixed(2) 
-                                        : metric.metricValue}
-                                      {metric.metricUnit && ` ${metric.metricUnit}`}
-                                    </span>
-                                  </div>
-                                ))}
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
+                                {keyMetrics.map((metric, idx) => {
+                                  const val = typeof metric.metricValue === 'number' ? metric.metricValue : parseFloat(String(metric.metricValue));
+                                  const formatted = !isNaN(val) ? val.toFixed(2) : metric.metricValue;
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className="rounded-md bg-muted/50 px-2.5 py-1.5"
+                                      data-testid={`metric-${test.id}-${idx}`}
+                                    >
+                                      <p className="text-[10px] text-muted-foreground truncate">{metric.metricName}</p>
+                                      <p className="text-sm font-semibold text-foreground">
+                                        {formatted}
+                                        {metric.metricUnit && (
+                                          <span className="text-xs font-normal text-muted-foreground ml-0.5">{metric.metricUnit}</span>
+                                        )}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
@@ -997,6 +1041,73 @@ export default function AthleteDetail() {
                 Wellness & Readiness
               </h2>
             </div>
+
+            {wellnessSurveys.length >= 2 && (() => {
+              const safeNum = (val: number | null | undefined, fallback = 5) => {
+                const num = Number(val);
+                return isNaN(num) ? fallback : num;
+              };
+              const trendData = wellnessSurveys.slice(0, 14).map(s => ({
+                date: s.surveyDate ? new Date(s.surveyDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '?',
+                score: Math.round((
+                  safeNum(s.sleepQuality) * 0.20 +
+                  (11 - safeNum(s.muscleSoreness)) * 0.15 +
+                  safeNum(s.energyLevel) * 0.20 +
+                  (11 - safeNum(s.stressLevel)) * 0.15 +
+                  safeNum(s.mood) * 0.10 +
+                  safeNum(s.overallReadiness) * 0.20
+                ) * 10),
+              })).reverse();
+              return (
+                <Card className="border-0 mb-4" data-testid="wellness-trend-chart">
+                  <CardContent className="p-4">
+                    <p className="text-xs text-muted-foreground mb-2 font-medium">Readiness Trend</p>
+                    <div className="h-[120px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={trendData}>
+                          <defs>
+                            <linearGradient id="wellnessGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <YAxis
+                            domain={[0, 100]}
+                            tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                            axisLine={false}
+                            tickLine={false}
+                            width={28}
+                          />
+                          <RechartsTooltip
+                            contentStyle={{
+                              background: 'hsl(var(--card))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '6px',
+                              fontSize: '12px',
+                            }}
+                            labelStyle={{ color: 'hsl(var(--foreground))' }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="score"
+                            stroke="hsl(var(--chart-2))"
+                            fill="url(#wellnessGrad)"
+                            strokeWidth={2}
+                            dot={{ r: 3, fill: 'hsl(var(--chart-2))' }}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
             
             {wellnessSurveys.length > 0 ? (
               <div className="space-y-3">
