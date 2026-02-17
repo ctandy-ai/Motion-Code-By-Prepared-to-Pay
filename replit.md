@@ -18,7 +18,7 @@ The UI features an enterprise dark theme with an "Ocean Depth" color palette (de
 ### Technical Implementations & Feature Specifications
 - **Program Templates System**: A library of 30 templates, including 24 "plug and play" pathway templates (e.g., ACL, Hamstring) with clinically-vetted exercises and a 52-week athletic performance program. Templates are searchable, filterable, and copyable for program creation.
 - **Program Management (Elite Periodization System)**: A tri-pane workspace with a 52-week macro periodization timeline, a drag-and-drop weekly planner, and a sophisticated block composer. Supports CRUD operations for program elements with performance optimizations.
-- **Athlete Management**: Comprehensive profiles, team/position tracking, program assignment, and CSV import.
+- **Athlete Management**: Comprehensive profiles, team/position tracking, program assignment, and CSV import. Athlete detail page uses a **tabbed layout** with 5 tabs: Testing (default), Overview, Programs, Training, Wellness. Testing tab is the default/first tab for quick coach access to VALD data and normative benchmarks. Summary stat cards (Belt, Active Programs, VALD Tests, Workouts, Wellness Score) remain visible above tabs.
 - **Exercise System**: Includes a read-only Master Exercise Database (1,769 exercises), a custom Exercise Library with CRUD, an AI Exercise Classifier (GPT-4.1) for categorization by belt level and risk, and an RM Calculator.
 - **Workout Logging**: Intuitive athlete interface for logging workouts, tracking sets/reps/weights, and auto-detecting Personal Records (PRs).
 - **Progress Tracking & Analytics**: Real data dashboard, XP/level system, calendar integration, and charts for strength progression and PR history.

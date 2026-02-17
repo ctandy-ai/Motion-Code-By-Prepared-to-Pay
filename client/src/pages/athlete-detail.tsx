@@ -4,8 +4,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt, Team } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers } from "lucide-react";
+import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers, FlaskConical, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
 import { AthleteTrainingProfileCard } from "@/components/athlete-training-profile";
 import { AthleteTargets } from "@/components/athlete-targets";
@@ -311,6 +312,9 @@ export default function AthleteDetail() {
     }
   };
 
+  const hasValdData = valdData && (valdData.profile || valdData.tests.length > 0);
+  const testCount = valdData?.tests?.length || 0;
+
   if (loadingAthlete) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -329,7 +333,8 @@ export default function AthleteDetail() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      {/* Header - always visible */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-4">
           <Button
@@ -465,11 +470,12 @@ export default function AthleteDetail() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-4">
+      {/* Summary stat cards - always visible */}
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
         <Card className="border-0" data-testid="card-belt-classification">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between gap-2">
-              Belt Classification
+              Belt
               <Button
                 variant="ghost"
                 size="sm"
@@ -491,7 +497,6 @@ export default function AthleteDetail() {
                     {getBeltIcon(beltClassification.belt)}
                     <span className="ml-1">{beltClassification.belt}</span>
                   </Badge>
-                  <span className="text-xs text-muted-foreground">{beltClassification.confidence}% confidence</span>
                 </div>
                 {beltClassification.isOverridden ? (
                   <p className="text-xs text-yellow-400 flex items-center gap-1">
@@ -501,7 +506,7 @@ export default function AthleteDetail() {
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">
-                <p>Not classified yet</p>
+                <p>Not classified</p>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -516,7 +521,7 @@ export default function AthleteDetail() {
             )}
           </CardContent>
         </Card>
-        <Card className="border-0">
+        <Card className="border-0" data-testid="card-active-programs">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground">Active Programs</CardTitle>
           </CardHeader>
@@ -524,507 +529,595 @@ export default function AthleteDetail() {
             <div className="text-2xl font-bold text-foreground">
               {athletePrograms?.filter((ap) => ap.status === "active").length || 0}
             </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Completed Programs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {athletePrograms?.filter((ap) => ap.status === "completed").length || 0}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-0">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Programs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-foreground">
-              {athletePrograms?.length || 0}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="border-0">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between gap-2">
-            <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
-              <Users className="h-5 w-5 text-brand-500" />
-              Team Memberships
-            </CardTitle>
-            {availableTeamsToAdd.length > 0 && (
-              <Select
-                onValueChange={(teamId) => addTeamMutation.mutate(teamId)}
-              >
-                <SelectTrigger className="w-[180px]" data-testid="select-add-team">
-                  <SelectValue placeholder="Add to team..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableTeamsToAdd.map((team) => (
-                    <SelectItem key={team.id} value={team.id}>
-                      {team.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {athleteTeams.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Not assigned to any teams yet.</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {athleteTeams.map((team) => (
-                <Badge
-                  key={team.id}
-                  variant="secondary"
-                  className="flex items-center gap-1"
-                  data-testid={`team-badge-${team.id}`}
-                >
-                  {team.name}
-                  <button
-                    onClick={() => removeTeamMutation.mutate(team.id)}
-                    className="ml-1 rounded-full p-0.5 hover-elevate"
-                    data-testid={`button-remove-team-${team.id}`}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {athleteId && (
-        <>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AthleteTrainingProfileCard 
-              athleteId={athleteId}
-              athleteName={athlete?.name}
-            />
-            <ProgramEngineGuidance 
-              athleteId={athleteId} 
-              athleteName={athlete?.name}
-              trainingDaysPerWeek={3}
-            />
-          </div>
-          <AthleteTargets athleteId={athleteId} />
-          <BodyComposition athleteId={athleteId} />
-        </>
-      )}
-
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Assigned Programs</h2>
-        {loadingPrograms ? (
-          <div className="grid gap-6 md:grid-cols-2">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-[180px] rounded-lg bg-muted animate-pulse" />
-            ))}
-          </div>
-        ) : athletePrograms && athletePrograms.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2">
-            {athletePrograms.map((ap) => (
-              <Card key={ap.id} className="border-0" data-testid={`assignment-card-${ap.id}`}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base font-semibold text-foreground">
-                      {getProgramName(ap.programId)}
-                    </CardTitle>
-                    <Badge variant={getStatusColor(ap.status)} className="shrink-0">
-                      {ap.status}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>Started {new Date(ap.startDate).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Trophy className="h-4 w-4" />
-                    <span>{getProgramDuration(ap.programId)} weeks</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 pt-2">
-                    <Button
-                      size="sm"
-                      onClick={() => setLocation(`/programs/${ap.programId}`)}
-                      data-testid={`button-open-program-${ap.id}`}
-                    >
-                      <Layers className="h-3.5 w-3.5 mr-1.5" />
-                      Open Program
-                    </Button>
-                    {ap.status === "active" && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateStatusMutation.mutate({ id: ap.id, status: "paused" })}
-                          data-testid={`button-pause-${ap.id}`}
-                        >
-                          Pause
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => updateStatusMutation.mutate({ id: ap.id, status: "completed" })}
-                          data-testid={`button-complete-${ap.id}`}
-                        >
-                          Complete
-                        </Button>
-                      </>
-                    )}
-                    {ap.status === "paused" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => updateStatusMutation.mutate({ id: ap.id, status: "active" })}
-                        data-testid={`button-resume-${ap.id}`}
-                      >
-                        Resume
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h3 className="text-base font-semibold text-foreground mb-2">
-              No programs assigned
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Assign a training program to get started
+            <p className="text-xs text-muted-foreground mt-1">
+              {athletePrograms?.length || 0} total
             </p>
-            <Button onClick={() => setIsDialogOpen(true)} data-testid="button-assign-first-program">
-              <Plus className="h-4 w-4 mr-2" />
-              Assign First Program
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <ClipboardList className="w-5 h-5 text-primary" />
-            Recent Workout Logs
-          </h2>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setLocation(`/athlete/${athleteId}/portal`)}
-            data-testid="button-view-portal"
-          >
-            <Eye className="w-4 h-4 mr-1" />
-            View Portal
-          </Button>
-        </div>
-        
-        {workoutLogs.length > 0 ? (
-          <div className="space-y-3">
-            {workoutLogs.slice(0, 10).map((log) => {
-              const reps = log.repsPerSet ? log.repsPerSet.split(',').map(Number).filter(n => !isNaN(n)) : [];
-              const weights = log.weightPerSet ? log.weightPerSet.split(',').map(Number).filter(n => !isNaN(n)) : [];
-              const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
-              const totalVolume = reps.reduce((sum, r, i) => sum + (r * (weights[i] || 0)), 0);
-              
+          </CardContent>
+        </Card>
+        <Card className="border-0" data-testid="card-vald-tests">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">VALD Tests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <div className="text-2xl font-bold text-foreground">{testCount}</div>
+              {hasValdData && (
+                <Badge variant="secondary" className="text-xs">
+                  <Zap className="w-3 h-3 mr-1" />
+                  Synced
+                </Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-0" data-testid="card-workout-count">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Workouts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">
+              {workoutLogs.length}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">logged sessions</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0" data-testid="card-wellness-score">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Wellness</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {wellnessSurveys.length > 0 ? (() => {
+              const latest = wellnessSurveys[0];
+              const safeNum = (val: number | null | undefined, fallback = 5) => {
+                const num = Number(val);
+                return isNaN(num) ? fallback : num;
+              };
+              const score = Math.round((
+                safeNum(latest.sleepQuality) * 0.20 +
+                (11 - safeNum(latest.muscleSoreness)) * 0.15 +
+                safeNum(latest.energyLevel) * 0.20 +
+                (11 - safeNum(latest.stressLevel)) * 0.15 +
+                safeNum(latest.mood) * 0.10 +
+                safeNum(latest.overallReadiness) * 0.20
+              ) * 10);
               return (
-                <Card 
-                  key={log.id} 
-                  className="border-0"
-                  data-testid={`workout-log-${log.id}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
-                        <Dumbbell className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-foreground truncate">
-                          {getExerciseName(log.exerciseId)}
-                        </p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                          <span>{log.sets} sets</span>
-                          <span>Max: {maxWeight}kg</span>
-                          <span>Volume: {totalVolume.toLocaleString()}kg</span>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs text-muted-foreground">
-                          {log.completedAt ? new Date(log.completedAt).toLocaleDateString() : 'Today'}
-                        </p>
-                        {log.notes && (
-                          <Badge variant="secondary" className="mt-1 text-xs">
-                            Has notes
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    {log.notes && (
-                      <div className="mt-3 pt-3 border-t border-ink-3">
-                        <p className="text-sm text-muted-foreground italic">"{log.notes}"</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                <div className="flex items-center gap-2">
+                  <span className={`text-2xl font-bold ${score >= 80 ? 'text-green-400' : score >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {score}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/100</span>
+                </div>
               );
-            })}
-            
-            {workoutLogs.length > 10 && (
-              <p className="text-center text-sm text-muted-foreground py-2">
-                + {workoutLogs.length - 10} more logs
-              </p>
+            })() : (
+              <div className="text-2xl font-bold text-muted-foreground">--</div>
             )}
-          </div>
-        ) : (
-          <Card className="border-0">
-            <CardContent className="p-8 text-center">
-              <Dumbbell className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-muted-foreground mb-1">No Workout Logs Yet</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                This athlete hasn't logged any workouts yet
-              </p>
-              <Button 
-                variant="outline"
-                onClick={() => setLocation(`/athlete/${athleteId}/log-workout`)}
-                data-testid="button-log-workout-cta"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Log First Workout
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+          </CardContent>
+        </Card>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Heart className="w-5 h-5 text-rose-400" />
-            Wellness & Readiness
-          </h2>
-        </div>
-        
-        {wellnessSurveys.length > 0 ? (
-          <div className="space-y-3">
-            {wellnessSurveys.slice(0, 7).map((survey) => {
-              const calculateReadinessScore = () => {
-                const weights = {
-                  sleepQuality: 0.20,
-                  muscleSoreness: 0.15,
-                  energyLevel: 0.20,
-                  stressLevel: 0.15,
-                  mood: 0.10,
-                  overallReadiness: 0.20,
-                };
-                const safeNum = (val: number | null | undefined, fallback = 5) => {
-                  const num = Number(val);
-                  return isNaN(num) ? fallback : num;
-                };
-                let score = 0;
-                score += safeNum(survey.sleepQuality) * weights.sleepQuality;
-                score += (11 - safeNum(survey.muscleSoreness)) * weights.muscleSoreness;
-                score += safeNum(survey.energyLevel) * weights.energyLevel;
-                score += (11 - safeNum(survey.stressLevel)) * weights.stressLevel;
-                score += safeNum(survey.mood) * weights.mood;
-                score += safeNum(survey.overallReadiness) * weights.overallReadiness;
-                return Math.round(score * 10);
-              };
-              
-              const readinessScore = calculateReadinessScore();
-              const getScoreColor = () => {
-                if (readinessScore >= 80) return "text-green-400";
-                if (readinessScore >= 60) return "text-amber-400";
-                return "text-red-400";
-              };
-              const getStatusIcon = () => {
-                if (readinessScore >= 80) return CheckCircle2;
-                return AlertCircle;
-              };
-              const StatusIcon = getStatusIcon();
-              
-              return (
-                <Card 
-                  key={survey.id} 
-                  className="border-0"
-                  data-testid={`wellness-survey-${survey.id}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                        readinessScore >= 80 ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20' :
-                        readinessScore >= 60 ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20' :
-                        'bg-gradient-to-br from-red-500/20 to-orange-500/20'
-                      }`}>
-                        <span className={`text-xl font-display font-bold ${getScoreColor()}`}>
-                          {readinessScore}
-                        </span>
-                      </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <StatusIcon className={`w-4 h-4 ${getScoreColor()}`} />
-                          <span className={`font-medium ${getScoreColor()}`}>
-                            {readinessScore >= 80 ? 'Ready to Train' : readinessScore >= 60 ? 'Moderate Readiness' : 'Consider Recovery'}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Moon className="w-3 h-3" />
-                            Sleep: {survey.sleepHours ?? 7}h ({survey.sleepQuality ?? 5}/10)
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Battery className="w-3 h-3" />
-                            Energy: {survey.energyLevel ?? 5}/10
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Brain className="w-3 h-3" />
-                            Stress: {survey.stressLevel ?? 5}/10
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="text-right shrink-0">
-                        <p className="text-xs text-muted-foreground">
-                          {survey.surveyDate ? new Date(survey.surveyDate).toLocaleDateString() : 'Today'}
-                        </p>
-                        {survey.notes && (
-                          <Badge variant="secondary" className="mt-1 text-xs">
-                            Has notes
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    {survey.notes && (
-                      <div className="mt-3 pt-3 border-t border-ink-3">
-                        <p className="text-sm text-muted-foreground italic">"{survey.notes}"</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-            
-            {wellnessSurveys.length > 7 && (
-              <p className="text-center text-sm text-muted-foreground py-2">
-                + {wellnessSurveys.length - 7} more surveys
-              </p>
+      {/* Tabbed content area */}
+      <Tabs defaultValue="testing" className="w-full" data-testid="athlete-tabs">
+        <TabsList className="w-full justify-start gap-1" data-testid="athlete-tabs-list">
+          <TabsTrigger value="testing" className="gap-1.5" data-testid="tab-testing">
+            <FlaskConical className="w-4 h-4" />
+            Testing
+            {testCount > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs px-1.5 py-0">{testCount}</Badge>
             )}
-          </div>
-        ) : (
-          <Card className="border-0">
-            <CardContent className="p-8 text-center">
-              <Heart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-muted-foreground mb-1">No Wellness Data Yet</h3>
-              <p className="text-sm text-muted-foreground">
-                This athlete hasn't submitted any wellness surveys yet
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+          </TabsTrigger>
+          <TabsTrigger value="overview" className="gap-1.5" data-testid="tab-overview">
+            <Users className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="programs" className="gap-1.5" data-testid="tab-programs">
+            <Layers className="w-4 h-4" />
+            Programs
+          </TabsTrigger>
+          <TabsTrigger value="training" className="gap-1.5" data-testid="tab-training">
+            <Dumbbell className="w-4 h-4" />
+            Training
+          </TabsTrigger>
+          <TabsTrigger value="wellness" className="gap-1.5" data-testid="tab-wellness">
+            <Heart className="w-4 h-4" />
+            Wellness
+          </TabsTrigger>
+        </TabsList>
 
-      {valdData && (valdData.profile || valdData.tests.length > 0) && (
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Zap className="w-5 h-5 text-cyan-400" />
-              VALD Testing Data
-            </h2>
-            {valdData.profile && (
-              <Badge className="bg-cyan-500/20 text-cyan-400">
-                Connected
-              </Badge>
-            )}
-          </div>
+        {/* TESTING & PERFORMANCE TAB - first-class citizen */}
+        <TabsContent value="testing" className="space-y-6 mt-4" data-testid="tab-content-testing">
+          {/* VALD Testing Data */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Zap className="w-5 h-5 text-cyan-400" />
+                VALD Testing Data
+              </h2>
+              {hasValdData && valdData?.profile && (
+                <Badge className="bg-cyan-500/20 text-cyan-400">
+                  Connected
+                </Badge>
+              )}
+            </div>
 
-          {valdData.tests.length > 0 ? (
-            <div className="space-y-3">
-              {valdData.tests.slice(0, 5).map((test) => {
-                const results = valdData.latestResults[test.id] || [];
-                const keyMetrics = results.slice(0, 3);
-                
-                return (
-                  <Card 
-                    key={test.id} 
-                    className="border-0"
-                    data-testid={`vald-test-${test.id}`}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center">
-                          <Activity className="w-6 h-6 text-cyan-400" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-foreground">
-                              {test.testName || test.testType}
-                            </span>
-                            <Badge variant="secondary" className="text-xs capitalize">
-                              {test.deviceType}
-                            </Badge>
+            {hasValdData && valdData!.tests.length > 0 ? (
+              <div className="space-y-3">
+                {valdData!.tests.map((test) => {
+                  const results = valdData!.latestResults[test.id] || [];
+                  const keyMetrics = results.slice(0, 4);
+                  
+                  return (
+                    <Card 
+                      key={test.id} 
+                      className="border-0"
+                      data-testid={`vald-test-${test.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 flex items-center justify-center shrink-0">
+                            <Activity className="w-6 h-6 text-cyan-400" />
                           </div>
                           
-                          {keyMetrics.length > 0 && (
-                            <div className="flex flex-wrap gap-3 mt-2">
-                              {keyMetrics.map((metric, idx) => (
-                                <div key={idx} className="text-xs">
-                                  <span className="text-muted-foreground">{metric.metricName}: </span>
-                                  <span className="text-muted-foreground font-medium">
-                                    {typeof metric.metricValue === 'number' 
-                                      ? metric.metricValue.toFixed(2) 
-                                      : metric.metricValue}
-                                    {metric.metricUnit && ` ${metric.metricUnit}`}
-                                  </span>
-                                </div>
-                              ))}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-foreground">
+                                {test.testName || test.testType}
+                              </span>
+                              <Badge variant="secondary" className="text-xs capitalize">
+                                {test.deviceType}
+                              </Badge>
                             </div>
-                          )}
+                            
+                            {keyMetrics.length > 0 && (
+                              <div className="flex flex-wrap gap-3 mt-2">
+                                {keyMetrics.map((metric, idx) => (
+                                  <div key={idx} className="text-xs">
+                                    <span className="text-muted-foreground">{metric.metricName}: </span>
+                                    <span className="text-muted-foreground font-medium">
+                                      {typeof metric.metricValue === 'number' 
+                                        ? metric.metricValue.toFixed(2) 
+                                        : metric.metricValue}
+                                      {metric.metricUnit && ` ${metric.metricUnit}`}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="text-right shrink-0">
+                            <p className="text-xs text-muted-foreground">
+                              {test.recordedAt 
+                                ? new Date(test.recordedAt).toLocaleDateString() 
+                                : 'Unknown date'}
+                            </p>
+                          </div>
                         </div>
-                        
-                        <div className="text-right shrink-0">
-                          <p className="text-xs text-muted-foreground">
-                            {test.recordedAt 
-                              ? new Date(test.recordedAt).toLocaleDateString() 
-                              : 'Unknown date'}
-                          </p>
-                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <Card className="border-0">
+                <CardContent className="p-8 text-center">
+                  <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-1">No VALD Tests Yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Connect to VALD Hub to sync force plate, NordBord, and other testing data for this athlete.
+                  </p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setLocation("/vald")}
+                    data-testid="button-go-vald-hub"
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Go to VALD Hub
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Normative Benchmarks */}
+          {athleteId && (
+            <NormativeComparison athleteId={athleteId} />
+          )}
+        </TabsContent>
+
+        {/* OVERVIEW TAB */}
+        <TabsContent value="overview" className="space-y-6 mt-4" data-testid="tab-content-overview">
+          <Card className="border-0">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-lg font-medium text-foreground flex items-center gap-2">
+                  <Users className="h-5 w-5 text-brand-500" />
+                  Team Memberships
+                </CardTitle>
+                {availableTeamsToAdd.length > 0 && (
+                  <Select
+                    onValueChange={(teamId) => addTeamMutation.mutate(teamId)}
+                  >
+                    <SelectTrigger className="w-[180px]" data-testid="select-add-team">
+                      <SelectValue placeholder="Add to team..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableTeamsToAdd.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {athleteTeams.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Not assigned to any teams yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {athleteTeams.map((team) => (
+                    <Badge
+                      key={team.id}
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                      data-testid={`team-badge-${team.id}`}
+                    >
+                      {team.name}
+                      <button
+                        onClick={() => removeTeamMutation.mutate(team.id)}
+                        className="ml-1 rounded-full p-0.5 hover-elevate"
+                        data-testid={`button-remove-team-${team.id}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {athleteId && (
+            <>
+              <div className="grid gap-4 md:grid-cols-2">
+                <AthleteTrainingProfileCard 
+                  athleteId={athleteId}
+                  athleteName={athlete?.name}
+                />
+                <ProgramEngineGuidance 
+                  athleteId={athleteId} 
+                  athleteName={athlete?.name}
+                  trainingDaysPerWeek={3}
+                />
+              </div>
+              <AthleteTargets athleteId={athleteId} />
+              <BodyComposition athleteId={athleteId} />
+            </>
+          )}
+        </TabsContent>
+
+        {/* PROGRAMS TAB */}
+        <TabsContent value="programs" className="space-y-6 mt-4" data-testid="tab-content-programs">
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Assigned Programs</h2>
+            {loadingPrograms ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-[180px] rounded-lg bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : athletePrograms && athletePrograms.length > 0 ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                {athletePrograms.map((ap) => (
+                  <Card key={ap.id} className="border-0" data-testid={`assignment-card-${ap.id}`}>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-base font-semibold text-foreground">
+                          {getProgramName(ap.programId)}
+                        </CardTitle>
+                        <Badge variant={getStatusColor(ap.status)} className="shrink-0">
+                          {ap.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>Started {new Date(ap.startDate).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Trophy className="h-4 w-4" />
+                        <span>{getProgramDuration(ap.programId)} weeks</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          onClick={() => setLocation(`/programs/${ap.programId}`)}
+                          data-testid={`button-open-program-${ap.id}`}
+                        >
+                          <Layers className="h-3.5 w-3.5 mr-1.5" />
+                          Open Program
+                        </Button>
+                        {ap.status === "active" && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateStatusMutation.mutate({ id: ap.id, status: "paused" })}
+                              data-testid={`button-pause-${ap.id}`}
+                            >
+                              Pause
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => updateStatusMutation.mutate({ id: ap.id, status: "completed" })}
+                              data-testid={`button-complete-${ap.id}`}
+                            >
+                              Complete
+                            </Button>
+                          </>
+                        )}
+                        {ap.status === "paused" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateStatusMutation.mutate({ id: ap.id, status: "active" })}
+                            data-testid={`button-resume-${ap.id}`}
+                          >
+                            Resume
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })}
-              
-              {valdData.tests.length > 5 && (
-                <p className="text-center text-sm text-muted-foreground py-2">
-                  + {valdData.tests.length - 5} more tests
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                <h3 className="text-base font-semibold text-foreground mb-2">
+                  No programs assigned
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Assign a training program to get started
                 </p>
-              )}
-            </div>
-          ) : (
-            <Card className="border-0">
-              <CardContent className="p-8 text-center">
-                <Zap className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <h3 className="font-semibold text-muted-foreground mb-1">No VALD Tests Yet</h3>
-                <p className="text-sm text-muted-foreground">
-                  Sync tests from VALD Hub to see testing data here
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+                <Button onClick={() => setIsDialogOpen(true)} data-testid="button-assign-first-program">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Assign First Program
+                </Button>
+              </div>
+            )}
+          </div>
+        </TabsContent>
 
-      {athleteId && (
-        <NormativeComparison athleteId={athleteId} />
-      )}
+        {/* TRAINING LOGS TAB */}
+        <TabsContent value="training" className="space-y-6 mt-4" data-testid="tab-content-training">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-primary" />
+                Recent Workout Logs
+              </h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setLocation(`/athlete/${athleteId}/portal`)}
+                data-testid="button-view-portal"
+              >
+                <Eye className="w-4 h-4 mr-1" />
+                View Portal
+              </Button>
+            </div>
+            
+            {workoutLogs.length > 0 ? (
+              <div className="space-y-3">
+                {workoutLogs.slice(0, 10).map((log) => {
+                  const reps = log.repsPerSet ? log.repsPerSet.split(',').map(Number).filter(n => !isNaN(n)) : [];
+                  const weights = log.weightPerSet ? log.weightPerSet.split(',').map(Number).filter(n => !isNaN(n)) : [];
+                  const maxWeight = weights.length > 0 ? Math.max(...weights) : 0;
+                  const totalVolume = reps.reduce((sum, r, i) => sum + (r * (weights[i] || 0)), 0);
+                  
+                  return (
+                    <Card 
+                      key={log.id} 
+                      className="border-0"
+                      data-testid={`workout-log-${log.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+                            <Dumbbell className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate">
+                              {getExerciseName(log.exerciseId)}
+                            </p>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              <span>{log.sets} sets</span>
+                              <span>Max: {maxWeight}kg</span>
+                              <span>Volume: {totalVolume.toLocaleString()}kg</span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs text-muted-foreground">
+                              {log.completedAt ? new Date(log.completedAt).toLocaleDateString() : 'Today'}
+                            </p>
+                            {log.notes && (
+                              <Badge variant="secondary" className="mt-1 text-xs">
+                                Has notes
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {log.notes && (
+                          <div className="mt-3 pt-3 border-t border-ink-3">
+                            <p className="text-sm text-muted-foreground italic">"{log.notes}"</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                
+                {workoutLogs.length > 10 && (
+                  <p className="text-center text-sm text-muted-foreground py-2">
+                    + {workoutLogs.length - 10} more logs
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Card className="border-0">
+                <CardContent className="p-8 text-center">
+                  <Dumbbell className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-1">No Workout Logs Yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    This athlete hasn't logged any workouts yet
+                  </p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setLocation(`/athlete/${athleteId}/log-workout`)}
+                    data-testid="button-log-workout-cta"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Log First Workout
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* WELLNESS TAB */}
+        <TabsContent value="wellness" className="space-y-6 mt-4" data-testid="tab-content-wellness">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Heart className="w-5 h-5 text-rose-400" />
+                Wellness & Readiness
+              </h2>
+            </div>
+            
+            {wellnessSurveys.length > 0 ? (
+              <div className="space-y-3">
+                {wellnessSurveys.slice(0, 7).map((survey) => {
+                  const calculateReadinessScore = () => {
+                    const weights = {
+                      sleepQuality: 0.20,
+                      muscleSoreness: 0.15,
+                      energyLevel: 0.20,
+                      stressLevel: 0.15,
+                      mood: 0.10,
+                      overallReadiness: 0.20,
+                    };
+                    const safeNum = (val: number | null | undefined, fallback = 5) => {
+                      const num = Number(val);
+                      return isNaN(num) ? fallback : num;
+                    };
+                    let score = 0;
+                    score += safeNum(survey.sleepQuality) * weights.sleepQuality;
+                    score += (11 - safeNum(survey.muscleSoreness)) * weights.muscleSoreness;
+                    score += safeNum(survey.energyLevel) * weights.energyLevel;
+                    score += (11 - safeNum(survey.stressLevel)) * weights.stressLevel;
+                    score += safeNum(survey.mood) * weights.mood;
+                    score += safeNum(survey.overallReadiness) * weights.overallReadiness;
+                    return Math.round(score * 10);
+                  };
+                  
+                  const readinessScore = calculateReadinessScore();
+                  const getScoreColor = () => {
+                    if (readinessScore >= 80) return "text-green-400";
+                    if (readinessScore >= 60) return "text-amber-400";
+                    return "text-red-400";
+                  };
+                  const getStatusIcon = () => {
+                    if (readinessScore >= 80) return CheckCircle2;
+                    return AlertCircle;
+                  };
+                  const StatusIcon = getStatusIcon();
+                  
+                  return (
+                    <Card 
+                      key={survey.id} 
+                      className="border-0"
+                      data-testid={`wellness-survey-${survey.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
+                            readinessScore >= 80 ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20' :
+                            readinessScore >= 60 ? 'bg-gradient-to-br from-amber-500/20 to-yellow-500/20' :
+                            'bg-gradient-to-br from-red-500/20 to-orange-500/20'
+                          }`}>
+                            <span className={`text-xl font-display font-bold ${getScoreColor()}`}>
+                              {readinessScore}
+                            </span>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <StatusIcon className={`w-4 h-4 ${getScoreColor()}`} />
+                              <span className={`font-medium ${getScoreColor()}`}>
+                                {readinessScore >= 80 ? 'Ready to Train' : readinessScore >= 60 ? 'Moderate Readiness' : 'Consider Recovery'}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Moon className="w-3 h-3" />
+                                Sleep: {survey.sleepHours ?? 7}h ({survey.sleepQuality ?? 5}/10)
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Battery className="w-3 h-3" />
+                                Energy: {survey.energyLevel ?? 5}/10
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Brain className="w-3 h-3" />
+                                Stress: {survey.stressLevel ?? 5}/10
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="text-right shrink-0">
+                            <p className="text-xs text-muted-foreground">
+                              {survey.surveyDate ? new Date(survey.surveyDate).toLocaleDateString() : 'Today'}
+                            </p>
+                            {survey.notes && (
+                              <Badge variant="secondary" className="mt-1 text-xs">
+                                Has notes
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {survey.notes && (
+                          <div className="mt-3 pt-3 border-t border-ink-3">
+                            <p className="text-sm text-muted-foreground italic">"{survey.notes}"</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+                
+                {wellnessSurveys.length > 7 && (
+                  <p className="text-center text-sm text-muted-foreground py-2">
+                    + {wellnessSurveys.length - 7} more surveys
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Card className="border-0">
+                <CardContent className="p-8 text-center">
+                  <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-1">No Wellness Data Yet</h3>
+                  <p className="text-sm text-muted-foreground">
+                    This athlete hasn't submitted any wellness surveys yet
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
