@@ -2687,7 +2687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         let processed = 0;
         for (const apiProfile of apiProfiles) {
-          const existing = await storage.getValdProfileByValdId(apiProfile.id);
+          const existing = await storage.getValdProfileByValdId(apiProfile.profileId);
           if (!existing) {
             const insertData = valdHubService.transformProfileToInsert(apiProfile, tenantId);
             await storage.createValdProfile(insertData);
@@ -2780,7 +2780,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         let processed = 0;
         for (const apiTest of apiTests) {
-          const existingTest = await storage.getValdTestByValdId(apiTest.id);
+          const existingTest = await storage.getValdTestByValdId(apiTest.testId);
           if (existingTest) continue;
 
           const valdProfile = await storage.getValdProfileByValdId(apiTest.profileId);

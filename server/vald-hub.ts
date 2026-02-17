@@ -12,24 +12,27 @@ interface ValdTokenResponse {
 }
 
 interface ValdApiProfile {
-  id?: string;
-  profileId?: string;
-  externalId?: string;
-  firstName?: string;
-  lastName?: string;
-  givenName?: string;
-  familyName?: string;
+  profileId: string;
+  syncId?: string;
+  givenName: string;
+  familyName: string;
   email?: string;
   dateOfBirth?: string;
+  externalId?: string;
 }
 
 interface ValdApiTest {
-  id: string;
+  testId: string;
+  tenantId: string;
   profileId: string;
-  testTypeId: string;
-  testTypeName: string;
-  recordedUtc: string;
-  teamId?: string;
+  recordingId?: string;
+  modifiedDateUtc: string;
+  recordedDateUtc: string;
+  testType: string;
+  notes?: string;
+  weight?: number;
+  parameter?: { resultId: number; value: number };
+  extendedParameters?: Array<{ resultId: number; value: number }>;
 }
 
 interface ValdApiTrial {
@@ -50,12 +53,22 @@ interface ValdApiTrial {
   }>;
 }
 
-type ValdRegion = 'AUE' | 'WEU' | 'EUS';
+type ValdRegion = 'AUE' | 'EUW' | 'USE';
 
-const VALD_REGIONS: Record<ValdRegion, { name: string; baseUrl: string }> = {
-  AUE: { name: 'Australia', baseUrl: 'prd-aue-api' },
-  WEU: { name: 'Europe', baseUrl: 'prd-weu-api' },
-  EUS: { name: 'North America', baseUrl: 'prd-eus-api' },
+const VALD_REGIONS: Record<ValdRegion, { name: string; regionCode: string }> = {
+  AUE: { name: 'Australia', regionCode: 'aue' },
+  EUW: { name: 'Europe', regionCode: 'euw' },
+  USE: { name: 'North America', regionCode: 'use' },
+};
+
+const VALD_SERVICE_URLS: Record<string, string> = {
+  tenants: 'externaltenants',
+  profile: 'externalprofile',
+  forcedecks: 'extforcedecks',
+  nordbord: 'externalnordbord',
+  dynamo: 'externaldynamo',
+  smartspeed: 'externalsmartspeed',
+  forceframe: 'externalforceframe',
 };
 
 const VALD_DEVICE_TYPES = [
@@ -72,7 +85,7 @@ type ValdDeviceType = typeof VALD_DEVICE_TYPES[number];
 class ValdHubService {
   private clientId: string | null = null;
   private clientSecret: string | null = null;
-  private region: ValdRegion = 'EUS';
+  private region: ValdRegion = 'USE';
   private tenantId: string | null = null;
   private accessToken: string | null = null;
   private tokenExpiresAt: number = 0;
@@ -84,8 +97,18 @@ class ValdHubService {
   private loadCredentials() {
     this.clientId = process.env.VALD_CLIENT_ID || null;
     this.clientSecret = process.env.VALD_CLIENT_SECRET || null;
-    this.region = (process.env.VALD_REGION as ValdRegion) || 'EUS';
     this.tenantId = process.env.VALD_TENANT_ID || null;
+
+    const regionEnv = (process.env.VALD_REGION || '').toLowerCase();
+    if (regionEnv === 'australia' || regionEnv === 'aue') {
+      this.region = 'AUE';
+    } else if (regionEnv === 'europe' || regionEnv === 'euw') {
+      this.region = 'EUW';
+    } else if (regionEnv === 'north america' || regionEnv === 'use' || regionEnv === 'us') {
+      this.region = 'USE';
+    } else {
+      this.region = 'USE';
+    }
   }
 
   isConfigured(): boolean {
@@ -134,8 +157,9 @@ class ValdHubService {
   }
 
   private getApiUrl(service: string, path: string): string {
-    const baseUrl = VALD_REGIONS[this.region].baseUrl;
-    return `https://${baseUrl}-external-${service}.valdperformance.com${path}`;
+    const regionCode = VALD_REGIONS[this.region].regionCode;
+    const serviceSuffix = VALD_SERVICE_URLS[service] || `external${service}`;
+    return `https://prd-${regionCode}-api-${serviceSuffix}.valdperformance.com${path}`;
   }
 
   private async apiRequest<T>(service: string, path: string, params?: Record<string, string>): Promise<T> {
@@ -148,6 +172,8 @@ class ValdHubService {
       });
     }
 
+    console.log(`VALD API request: ${url.toString()}`);
+
     const response = await fetch(url.toString(), {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -155,9 +181,13 @@ class ValdHubService {
       },
     });
 
+    if (response.status === 204) {
+      return [] as unknown as T;
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`VALD API error: ${response.status} - ${errorText}`);
+      throw new Error(`VALD API error (${url.hostname}${path}): ${response.status} - ${errorText}`);
     }
 
     return response.json();
@@ -168,7 +198,7 @@ class ValdHubService {
       return this.tenantId;
     }
 
-    const tenants = await this.apiRequest<Array<{ id: string; name: string }>>('tenant', '/tenants');
+    const tenants = await this.apiRequest<Array<{ id: string; name: string }>>('tenants', '/tenants');
     
     if (tenants.length === 0) {
       throw new Error('No VALD tenants found for this account');
@@ -180,27 +210,14 @@ class ValdHubService {
 
   async getProfiles(): Promise<ValdApiProfile[]> {
     const tenantId = await this.getTenantId();
-    const response = await this.apiRequest<ValdApiProfile[] | { data: ValdApiProfile[]; items: ValdApiProfile[] }>('profile', '/profiles', { tenantId });
-    
-    // Handle different API response formats
+    const response = await this.apiRequest<any>('profile', '/profiles', { tenantId });
     if (Array.isArray(response)) {
       return response;
     }
-    if (response && typeof response === 'object') {
-      // Some APIs return { data: [...] } or { items: [...] }
-      if ('data' in response && Array.isArray(response.data)) {
-        return response.data;
-      }
-      if ('items' in response && Array.isArray(response.items)) {
-        return response.items;
-      }
-      // Check for any array property
-      const arrayProp = Object.values(response).find(v => Array.isArray(v));
-      if (arrayProp) {
-        return arrayProp as ValdApiProfile[];
-      }
+    if (response && typeof response === 'object' && Array.isArray(response.profiles)) {
+      return response.profiles;
     }
-    console.log('VALD API profiles response format:', JSON.stringify(response).substring(0, 500));
+    console.warn('VALD profiles response unexpected format:', JSON.stringify(response).substring(0, 500));
     return [];
   }
 
@@ -213,13 +230,12 @@ class ValdHubService {
     const params: Record<string, string> = {
       tenantId,
       profileId,
+      modifiedFromUtc: modifiedFromUtc || '2020-01-01T00:00:00.000Z',
     };
-    
-    if (modifiedFromUtc) {
-      params.modifiedFromUtc = modifiedFromUtc;
-    }
 
-    return this.apiRequest<ValdApiTest[]>(deviceType, '/tests', params);
+    return this.parseTestsResponse(
+      await this.apiRequest<any>(deviceType, '/tests', params)
+    );
   }
 
   async getTrialsForTest(
@@ -238,31 +254,38 @@ class ValdHubService {
     modifiedFromUtc?: string
   ): Promise<ValdApiTest[]> {
     const tenantId = await this.getTenantId();
-    const params: Record<string, string> = { tenantId };
-    
-    if (modifiedFromUtc) {
-      params.modifiedFromUtc = modifiedFromUtc;
-    }
+    const params: Record<string, string> = {
+      tenantId,
+      modifiedFromUtc: modifiedFromUtc || '2020-01-01T00:00:00.000Z',
+    };
 
-    return this.apiRequest<ValdApiTest[]>(deviceType, '/tests', params);
+    return this.parseTestsResponse(
+      await this.apiRequest<any>(deviceType, '/tests', params)
+    );
+  }
+
+  private parseTestsResponse(response: any): ValdApiTest[] {
+    if (Array.isArray(response)) {
+      return response;
+    }
+    if (response && typeof response === 'object' && Array.isArray(response.tests)) {
+      return response.tests;
+    }
+    console.warn('VALD tests response unexpected format:', JSON.stringify(response).substring(0, 500));
+    return [];
   }
 
   transformProfileToInsert(profile: ValdApiProfile, tenantId: string): InsertValdProfile {
-    // Handle different API field naming conventions
-    const profileId = profile.id || profile.profileId || profile.externalId;
-    const firstName = profile.firstName || profile.givenName || '';
-    const lastName = profile.lastName || profile.familyName || '';
-    
-    if (!profileId) {
-      console.log('VALD profile missing ID, raw data:', JSON.stringify(profile).substring(0, 300));
-      throw new Error('VALD profile missing required ID field');
+    if (!profile.profileId) {
+      console.warn('VALD profile missing profileId:', JSON.stringify(profile).substring(0, 300));
+      throw new Error('VALD profile missing required profileId field');
     }
     
     return {
-      valdProfileId: profileId,
+      valdProfileId: profile.profileId,
       valdTenantId: tenantId,
-      firstName,
-      lastName,
+      firstName: profile.givenName || '',
+      lastName: profile.familyName || '',
       email: profile.email || null,
       dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : null,
       athleteId: null,
@@ -278,12 +301,17 @@ class ValdHubService {
     return {
       valdProfileId,
       athleteId,
-      valdTestId: test.id,
-      testType: test.testTypeName || test.testTypeId,
+      valdTestId: test.testId,
+      testType: test.testType || deviceType,
       deviceType,
-      testName: test.testTypeName,
-      recordedAt: new Date(test.recordedUtc),
-      metadata: JSON.stringify({ teamId: test.teamId }),
+      testName: test.testType,
+      recordedAt: new Date(test.recordedDateUtc),
+      metadata: JSON.stringify({
+        tenantId: test.tenantId,
+        recordingId: test.recordingId,
+        weight: test.weight,
+        notes: test.notes,
+      }),
     };
   }
 
