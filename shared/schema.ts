@@ -682,6 +682,13 @@ export const athleteTrainingProfiles = pgTable("athlete_training_profiles", {
   athleteId: varchar("athlete_id").notNull().unique(),
   dateOfBirth: timestamp("date_of_birth"),
   trainingAgeYears: real("training_age_years").default(0),
+
+  sex: text("sex"),
+  sport: text("sport"),
+  trainingLevel: text("training_level"),
+  dominantLimb: text("dominant_limb"),
+  bodyMassKg: real("body_mass_kg"),
+  heightCm: real("height_cm"),
   
   // Injury flags - Soft tissue
   recurrentHamstring: integer("recurrent_hamstring").default(0),
@@ -1134,3 +1141,58 @@ export const insertSessionParticipantSchema = createInsertSchema(sessionParticip
 });
 export type InsertSessionParticipant = z.infer<typeof insertSessionParticipantSchema>;
 export type SessionParticipant = typeof sessionParticipants.$inferSelect;
+
+export const normativeCohorts = pgTable("normative_cohorts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  deviceType: text("device_type").notNull(),
+  testType: text("test_type").notNull(),
+  sex: text("sex"),
+  sport: text("sport"),
+  ageMin: integer("age_min"),
+  ageMax: integer("age_max"),
+  trainingLevel: text("training_level"),
+  populationNotes: text("population_notes"),
+  sourceCitation: text("source_citation"),
+  sampleSize: integer("sample_size"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  deviceTestIdx: index("normative_cohorts_device_test_idx").on(table.deviceType, table.testType),
+}));
+
+export const insertNormativeCohortSchema = createInsertSchema(normativeCohorts).omit({
+  id: true,
+  createdAt: true,
+});
+export type InsertNormativeCohort = z.infer<typeof insertNormativeCohortSchema>;
+export type NormativeCohort = typeof normativeCohorts.$inferSelect;
+
+export const normativeMetrics = pgTable("normative_metrics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  cohortId: varchar("cohort_id").notNull().references(() => normativeCohorts.id, { onDelete: 'cascade' }),
+  metricName: text("metric_name").notNull(),
+  metricUnit: text("metric_unit").notNull(),
+  method: text("method").notNull().default('percentile'),
+  p5: real("p5"),
+  p10: real("p10"),
+  p25: real("p25"),
+  p50: real("p50"),
+  p75: real("p75"),
+  p90: real("p90"),
+  p95: real("p95"),
+  mean: real("mean"),
+  sd: real("sd"),
+  riskThresholdLow: real("risk_threshold_low"),
+  riskThresholdHigh: real("risk_threshold_high"),
+  riskLabel: text("risk_label"),
+  trendDirection: text("trend_direction").default('positive'),
+}, (table) => ({
+  cohortIdx: index("normative_metrics_cohort_idx").on(table.cohortId),
+  metricNameIdx: index("normative_metrics_name_idx").on(table.metricName),
+}));
+
+export const insertNormativeMetricSchema = createInsertSchema(normativeMetrics).omit({
+  id: true,
+});
+export type InsertNormativeMetric = z.infer<typeof insertNormativeMetricSchema>;
+export type NormativeMetric = typeof normativeMetrics.$inferSelect;

@@ -2865,6 +2865,116 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Normative Data Routes
+  app.get("/api/normative/cohorts", async (req, res) => {
+    try {
+      const filters: any = {};
+      if (req.query.deviceType) filters.deviceType = req.query.deviceType as string;
+      if (req.query.testType) filters.testType = req.query.testType as string;
+      if (req.query.sex) filters.sex = req.query.sex as string;
+      if (req.query.sport) filters.sport = req.query.sport as string;
+      const cohorts = await storage.getNormativeCohorts(Object.keys(filters).length > 0 ? filters : undefined);
+      res.json(cohorts);
+    } catch (error) {
+      console.error("Failed to fetch normative cohorts:", error);
+      res.status(500).json({ error: "Failed to fetch normative cohorts" });
+    }
+  });
+
+  app.get("/api/normative/cohorts/:cohortId/metrics", async (req, res) => {
+    try {
+      const metrics = await storage.getNormativeMetrics(req.params.cohortId);
+      res.json(metrics);
+    } catch (error) {
+      console.error("Failed to fetch normative metrics:", error);
+      res.status(500).json({ error: "Failed to fetch normative metrics" });
+    }
+  });
+
+  app.post("/api/normative/compare", async (req, res) => {
+    try {
+      const { compareAthleteToNorms } = await import("./normative-service");
+      const { z } = await import("zod");
+      const compareSchema = z.object({
+        athleteId: z.string().optional(),
+        testType: z.string(),
+        deviceType: z.string(),
+        testResults: z.record(z.string(), z.number()),
+        sex: z.string().optional().nullable(),
+        sport: z.string().optional().nullable(),
+        age: z.number().optional().nullable(),
+        cohortId: z.string().optional().nullable(),
+      });
+      const parseResult = compareSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: "Invalid request body", details: parseResult.error.errors });
+      }
+      const { athleteId, testType, deviceType, testResults, sex, sport, age, cohortId } = parseResult.data;
+      const result = await compareAthleteToNorms({
+        athleteId: athleteId || 'unknown',
+        testType,
+        deviceType,
+        testResults,
+        sex,
+        sport,
+        age,
+        cohortId,
+      });
+      if (!result) {
+        return res.status(404).json({ error: "No matching normative cohort found" });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error("Failed to compare to norms:", error);
+      res.status(500).json({ error: "Failed to compare to normative data" });
+    }
+  });
+
+  app.get("/api/vald/athletes/:athleteId/norms", async (req, res) => {
+    try {
+      const { compareAthleteToNorms } = await import("./normative-service");
+      const athleteId = req.params.athleteId;
+      const valdData = await storage.getAthleteValdData(athleteId);
+      if (!valdData || !valdData.tests.length) {
+        return res.json({ comparisons: [] });
+      }
+      const profile = await storage.getAthleteTrainingProfile(athleteId);
+      const comparisons = [];
+      for (const test of valdData.tests) {
+        const results = await storage.getValdTrialResults(test.id);
+        if (!results.length) continue;
+        const testResults: Record<string, number> = {};
+        for (const r of results) {
+          if (r.metricName && r.metricValue !== null) {
+            testResults[r.metricName] = parseFloat(String(r.metricValue));
+          }
+        }
+        if (Object.keys(testResults).length === 0) continue;
+        const comparison = await compareAthleteToNorms({
+          athleteId,
+          testType: test.testType || 'CMJ',
+          deviceType: test.deviceType || 'forcedecks',
+          testResults,
+          sex: profile?.sex,
+          sport: profile?.sport,
+          age: null,
+          cohortId: req.query.cohortId as string || null,
+        });
+        if (comparison) {
+          comparisons.push({
+            testId: test.id,
+            recordedAt: test.recordedAt,
+            ...comparison,
+          });
+        }
+      }
+      res.json({ comparisons });
+    } catch (error) {
+      console.error("Failed to get normative comparisons:", error);
+      res.status(500).json({ error: "Failed to get normative comparisons" });
+    }
+  });
+
   // Belt Classification System Routes
   const { 
     classifyBelt, 

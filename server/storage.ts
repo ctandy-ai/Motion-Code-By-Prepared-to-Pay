@@ -83,6 +83,8 @@ import {
   type InsertTeamSession,
   type SessionParticipant,
   type InsertSessionParticipant,
+  type NormativeCohort,
+  type NormativeMetric,
   users,
   exercises,
   athletes,
@@ -126,6 +128,8 @@ import {
   customSurveys,
   teamSessions,
   sessionParticipants,
+  normativeCohorts,
+  normativeMetrics,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, gte, lt } from "drizzle-orm";
@@ -327,6 +331,12 @@ export interface IStorage {
   updateSessionParticipant(id: string, participant: Partial<InsertSessionParticipant>): Promise<SessionParticipant | undefined>;
   removeSessionParticipant(sessionId: string, athleteId: string): Promise<boolean>;
   checkInParticipant(sessionId: string, athleteId: string): Promise<SessionParticipant | undefined>;
+
+  // Normative Data
+  getNormativeCohorts(filters?: { deviceType?: string; testType?: string; sex?: string; sport?: string }): Promise<NormativeCohort[]>;
+  getNormativeCohort(id: string): Promise<NormativeCohort | undefined>;
+  getNormativeMetrics(cohortId: string): Promise<NormativeMetric[]>;
+  getMatchingCohorts(params: { deviceType: string; testType: string; sex?: string | null; sport?: string | null; age?: number | null }): Promise<NormativeCohort[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2146,6 +2156,49 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(sessionParticipants.sessionId, sessionId), eq(sessionParticipants.athleteId, athleteId)))
       .returning();
     return updated || undefined;
+  }
+
+  async getNormativeCohorts(filters?: { deviceType?: string; testType?: string; sex?: string; sport?: string }): Promise<NormativeCohort[]> {
+    const conditions = [];
+    if (filters?.deviceType) conditions.push(eq(normativeCohorts.deviceType, filters.deviceType));
+    if (filters?.testType) conditions.push(eq(normativeCohorts.testType, filters.testType));
+    if (filters?.sex) conditions.push(eq(normativeCohorts.sex, filters.sex));
+    if (filters?.sport) conditions.push(eq(normativeCohorts.sport, filters.sport));
+    if (conditions.length === 0) return db.select().from(normativeCohorts);
+    return db.select().from(normativeCohorts).where(and(...conditions));
+  }
+
+  async getNormativeCohort(id: string): Promise<NormativeCohort | undefined> {
+    const [cohort] = await db.select().from(normativeCohorts).where(eq(normativeCohorts.id, id));
+    return cohort || undefined;
+  }
+
+  async getNormativeMetrics(cohortId: string): Promise<NormativeMetric[]> {
+    return db.select().from(normativeMetrics).where(eq(normativeMetrics.cohortId, cohortId));
+  }
+
+  async getMatchingCohorts(params: { deviceType: string; testType: string; sex?: string | null; sport?: string | null; age?: number | null }): Promise<NormativeCohort[]> {
+    const conditions = [
+      eq(normativeCohorts.deviceType, params.deviceType),
+      eq(normativeCohorts.testType, params.testType),
+    ];
+    if (params.sex) conditions.push(eq(normativeCohorts.sex, params.sex));
+    const allCohorts = await db.select().from(normativeCohorts).where(and(...conditions));
+    return allCohorts.filter(c => {
+      if (c.sport) {
+        if (!params.sport) return false;
+        if (c.sport !== params.sport) return false;
+      }
+      if (params.age !== undefined && params.age !== null) {
+        if (c.ageMin && params.age < c.ageMin) return false;
+        if (c.ageMax && params.age > c.ageMax) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      const aSpecificity = (a.sport ? 2 : 0) + (a.ageMin && a.ageMax ? 1 : 0);
+      const bSpecificity = (b.sport ? 2 : 0) + (b.ageMin && b.ageMax ? 1 : 0);
+      return bSpecificity - aSpecificity;
+    });
   }
 }
 

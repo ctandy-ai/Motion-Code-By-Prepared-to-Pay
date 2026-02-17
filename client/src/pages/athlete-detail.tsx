@@ -10,6 +10,7 @@ import { ProgramEngineGuidance } from "@/components/program-engine-guidance";
 import { AthleteTrainingProfileCard } from "@/components/athlete-training-profile";
 import { AthleteTargets } from "@/components/athlete-targets";
 import { BodyComposition } from "@/components/body-composition";
+import { NormativeComparison } from "@/components/normative-comparison";
 import {
   Dialog,
   DialogContent,
@@ -1019,6 +1020,10 @@ export default function AthleteDetail() {
             </Card>
           )}
         </div>
+      )}
+
+      {athleteId && (
+        <NormativeComparison athleteId={athleteId} />
       )}
     </div>
   );
