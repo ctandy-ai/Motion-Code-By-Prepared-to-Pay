@@ -215,7 +215,7 @@ class ValdHubService {
       });
     }
 
-    console.log(`VALD API request: ${url.toString()}`);
+    console.log(`VALD API request: ${url.pathname}`);
 
     const response = await fetch(url.toString(), {
       headers: {
