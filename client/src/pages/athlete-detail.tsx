@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt, Team } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Plus, Calendar, Trophy, Dumbbell, ClipboardList, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers, FlaskConical } from "lucide-react";
+import { Plus, Calendar, Trophy, Dumbbell, ClipboardList, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers, FlaskConical, Pencil } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -45,6 +45,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertAthleteProgramSchema } from "@shared/schema";
@@ -56,6 +60,13 @@ export default function AthleteDetail() {
   const { athleteId } = useParams<{ athleteId: string }>();
   const [, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isWellnessDialogOpen, setIsWellnessDialogOpen] = useState(false);
+  const [isWorkoutDialogOpen, setIsWorkoutDialogOpen] = useState(false);
+  const [wellnessValues, setWellnessValues] = useState({
+    sleepQuality: 7, sleepHours: 7, muscleSoreness: 3, energyLevel: 7,
+    stressLevel: 3, mood: 7, overallReadiness: 7, notes: "",
+  });
   const { toast } = useToast();
 
   const formSchema = z.object({
@@ -256,10 +267,7 @@ export default function AthleteDetail() {
         startDate: new Date(data.startDate),
         status: data.status,
       };
-      console.log("Sending payload:", payload);
-      const result = await apiRequest("POST", "/api/athlete-programs", payload);
-      console.log("Response:", result);
-      return result;
+      return await apiRequest("POST", "/api/athlete-programs", payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/athletes", athleteId, "programs"] });
@@ -276,7 +284,6 @@ export default function AthleteDetail() {
       });
     },
     onError: (error: any) => {
-      console.error("Assignment error:", error);
       toast({
         title: "Failed to assign program",
         description: error.message || "An error occurred while assigning the program.",
@@ -294,6 +301,126 @@ export default function AthleteDetail() {
         title: "Status updated",
         description: "The program status has been updated.",
       });
+    },
+  });
+
+  const editAthleteSchema = z.object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email().optional().or(z.literal("")),
+    phone: z.string().optional().or(z.literal("")),
+    team: z.string().optional().or(z.literal("")),
+    position: z.string().optional().or(z.literal("")),
+    status: z.string().optional(),
+    notes: z.string().optional().or(z.literal("")),
+  });
+
+  type EditAthleteValues = z.infer<typeof editAthleteSchema>;
+
+  const editForm = useForm<EditAthleteValues>({
+    resolver: zodResolver(editAthleteSchema),
+    defaultValues: {
+      name: athlete?.name || "",
+      email: athlete?.email || "",
+      phone: athlete?.phone || "",
+      team: athlete?.team || "",
+      position: athlete?.position || "",
+      status: athlete?.status || "Registered",
+      notes: athlete?.notes || "",
+    },
+  });
+
+  const editAthleteMutation = useMutation({
+    mutationFn: async (data: EditAthleteValues) => {
+      return await apiRequest("PATCH", `/api/athletes/${athleteId}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes", athleteId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes"] });
+      setIsEditDialogOpen(false);
+      toast({ title: "Athlete updated", description: "Details have been saved." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to update", description: error.message || "An error occurred.", variant: "destructive" });
+    },
+  });
+
+  const overrideBeltMutation = useMutation({
+    mutationFn: async (belt: string) => {
+      return await apiRequest("POST", `/api/athletes/${athleteId}/belt/override`, {
+        belt,
+        reason: "Manual coach override",
+        overriddenBy: "coach",
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes", athleteId, "belt"] });
+      toast({ title: "Belt updated", description: "Classification has been overridden." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to override belt", description: error.message || "An error occurred.", variant: "destructive" });
+    },
+  });
+
+  const wellnessMutation = useMutation({
+    mutationFn: async (data: typeof wellnessValues) => {
+      return await apiRequest("POST", "/api/readiness-surveys", {
+        athleteId,
+        sleepQuality: data.sleepQuality,
+        sleepHours: data.sleepHours,
+        muscleSoreness: data.muscleSoreness,
+        energyLevel: data.energyLevel,
+        stressLevel: data.stressLevel,
+        mood: data.mood,
+        overallReadiness: data.overallReadiness,
+        notes: data.notes || undefined,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/athletes", athleteId, "readiness-surveys"] });
+      setIsWellnessDialogOpen(false);
+      setWellnessValues({ sleepQuality: 7, sleepHours: 7, muscleSoreness: 3, energyLevel: 7, stressLevel: 3, mood: 7, overallReadiness: 7, notes: "" });
+      toast({ title: "Wellness recorded", description: "Check-in has been saved." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to record", description: error.message || "An error occurred.", variant: "destructive" });
+    },
+  });
+
+  const workoutSchema = z.object({
+    exerciseId: z.string().min(1, "Select an exercise"),
+    sets: z.number().min(1).max(20),
+    repsPerSet: z.string().min(1, "Enter reps"),
+    weightPerSet: z.string().min(1, "Enter weights"),
+    notes: z.string().optional(),
+  });
+
+  type WorkoutValues = z.infer<typeof workoutSchema>;
+
+  const workoutForm = useForm<WorkoutValues>({
+    resolver: zodResolver(workoutSchema),
+    defaultValues: { exerciseId: "", sets: 3, repsPerSet: "8,8,8", weightPerSet: "60,60,60", notes: "" },
+  });
+
+  const logWorkoutMutation = useMutation({
+    mutationFn: async (data: WorkoutValues) => {
+      return await apiRequest("POST", "/api/workout-logs", {
+        athleteId,
+        exerciseId: data.exerciseId,
+        programExerciseId: "coach-manual-entry",
+        sets: data.sets,
+        repsPerSet: data.repsPerSet,
+        weightPerSet: data.weightPerSet,
+        notes: data.notes || undefined,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/workout-logs", athleteId] });
+      setIsWorkoutDialogOpen(false);
+      workoutForm.reset();
+      toast({ title: "Workout logged", description: "The workout entry has been recorded." });
+    },
+    onError: (error: any) => {
+      toast({ title: "Failed to log workout", description: error.message || "An error occurred.", variant: "destructive" });
     },
   });
 
@@ -337,7 +464,7 @@ export default function AthleteDetail() {
     return (
       <div className="text-center py-16">
         <h2 className="text-xl font-semibold mb-4">Athlete not found</h2>
-        <Button onClick={() => setLocation("/athletes")}>Back to Athletes</Button>
+        <Button onClick={() => setLocation("/athletes")} data-testid="button-back-to-athletes">Back to Athletes</Button>
       </div>
     );
   }
@@ -390,6 +517,25 @@ export default function AthleteDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button 
+            variant="outline"
+            onClick={() => {
+              editForm.reset({
+                name: athlete.name || "",
+                email: athlete.email || "",
+                phone: athlete.phone || "",
+                team: athlete.team || "",
+                position: athlete.position || "",
+                status: athlete.status || "Registered",
+                notes: athlete.notes || "",
+              });
+              setIsEditDialogOpen(true);
+            }}
+            data-testid="button-edit-athlete"
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
           <Button 
             variant="outline"
             onClick={() => setLocation(`/athletes/${athleteId}/report`)}
@@ -525,12 +671,28 @@ export default function AthleteDetail() {
               <div className="animate-pulse h-8 bg-muted rounded" />
             ) : beltClassification ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge className={`${getBeltColor(beltClassification.belt)} px-3 py-1 text-sm font-semibold`}>
-                    {getBeltIcon(beltClassification.belt)}
-                    <span className="ml-1">{beltClassification.belt}</span>
-                  </Badge>
-                </div>
+                <Select
+                  value={beltClassification.belt}
+                  onValueChange={(val) => overrideBeltMutation.mutate(val)}
+                >
+                  <SelectTrigger className="w-auto border-0 p-0 h-auto shadow-none focus:ring-0" data-testid="select-belt-override">
+                    <Badge className={`${getBeltColor(beltClassification.belt)} px-3 py-1 text-sm font-semibold cursor-pointer`}>
+                      {getBeltIcon(beltClassification.belt)}
+                      <span className="ml-1">{beltClassification.belt}</span>
+                    </Badge>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="WHITE">
+                      <span className="flex items-center gap-1.5"><Shield className="w-4 h-4" /> White Belt</span>
+                    </SelectItem>
+                    <SelectItem value="BLUE">
+                      <span className="flex items-center gap-1.5"><Award className="w-4 h-4" /> Blue Belt</span>
+                    </SelectItem>
+                    <SelectItem value="BLACK">
+                      <span className="flex items-center gap-1.5"><Trophy className="w-4 h-4" /> Black Belt</span>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
                 {beltClassification.isOverridden ? (
                   <p className="text-xs text-yellow-400 flex items-center gap-1">
                     <Info className="w-3 h-3" /> Staff override
@@ -981,15 +1143,28 @@ export default function AthleteDetail() {
                 <ClipboardList className="w-5 h-5 text-primary" />
                 Recent Workout Logs
               </h2>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setLocation(`/athlete/${athleteId}/portal`)}
-                data-testid="button-view-portal"
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                View Portal
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm"
+                  onClick={() => {
+                    workoutForm.reset({ exerciseId: "", sets: 3, repsPerSet: "8,8,8", weightPerSet: "60,60,60", notes: "" });
+                    setIsWorkoutDialogOpen(true);
+                  }}
+                  data-testid="button-log-workout"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Log Workout
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setLocation(`/athlete/${athleteId}/portal`)}
+                  data-testid="button-view-portal"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View Portal
+                </Button>
+              </div>
             </div>
             
             {workoutLogs.length > 0 ? (
@@ -1058,7 +1233,10 @@ export default function AthleteDetail() {
                   </p>
                   <Button 
                     variant="outline"
-                    onClick={() => setLocation(`/athlete/${athleteId}/log-workout`)}
+                    onClick={() => {
+                      workoutForm.reset({ exerciseId: "", sets: 3, repsPerSet: "8,8,8", weightPerSet: "60,60,60", notes: "" });
+                      setIsWorkoutDialogOpen(true);
+                    }}
                     data-testid="button-log-workout-cta"
                   >
                     <Plus className="w-4 h-4 mr-1" />
@@ -1078,6 +1256,17 @@ export default function AthleteDetail() {
                 <Heart className="w-5 h-5 text-rose-400" />
                 Wellness & Readiness
               </h2>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setWellnessValues({ sleepQuality: 7, sleepHours: 7, muscleSoreness: 3, energyLevel: 7, stressLevel: 3, mood: 7, overallReadiness: 7, notes: "" });
+                  setIsWellnessDialogOpen(true);
+                }}
+                data-testid="button-record-wellness"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Record Check-in
+              </Button>
             </div>
 
             {wellnessSurveys.length >= 2 && (() => {
@@ -1258,15 +1447,260 @@ export default function AthleteDetail() {
                 <CardContent className="p-8 text-center">
                   <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
                   <h3 className="font-semibold text-foreground mb-1">No Wellness Data Yet</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground mb-4">
                     This athlete hasn't submitted any wellness surveys yet
                   </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setWellnessValues({ sleepQuality: 7, sleepHours: 7, muscleSoreness: 3, energyLevel: 7, stressLevel: 3, mood: 7, overallReadiness: 7, notes: "" });
+                      setIsWellnessDialogOpen(true);
+                    }}
+                    data-testid="button-record-wellness-cta"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Record First Check-in
+                  </Button>
                 </CardContent>
               </Card>
             )}
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-lg" data-testid="dialog-edit-athlete">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Edit Athlete</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit((data) => editAthleteMutation.mutate(data))} className="space-y-4">
+              <FormField control={editForm.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl><Input {...field} data-testid="input-edit-name" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={editForm.control} name="email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl><Input type="email" {...field} data-testid="input-edit-email" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editForm.control} name="phone" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl><Input {...field} data-testid="input-edit-phone" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField control={editForm.control} name="team" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Team</FormLabel>
+                    <FormControl><Input {...field} data-testid="input-edit-team" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={editForm.control} name="position" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Position</FormLabel>
+                    <FormControl><Input {...field} data-testid="input-edit-position" /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+              <FormField control={editForm.control} name="status" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-edit-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Registered">Registered</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Injured">Injured</SelectItem>
+                      <SelectItem value="Released">Released</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={editForm.control} name="notes" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl><Textarea {...field} rows={3} data-testid="input-edit-notes" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} data-testid="button-cancel-edit">Cancel</Button>
+                <Button type="submit" disabled={editAthleteMutation.isPending} data-testid="button-save-athlete">
+                  {editAthleteMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isWellnessDialogOpen} onOpenChange={setIsWellnessDialogOpen}>
+        <DialogContent className="max-w-lg" data-testid="dialog-wellness-checkin">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Record Wellness Check-in</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-5">
+            {[
+              { key: "sleepQuality" as const, label: "Sleep Quality", min: 1, max: 10, icon: Moon },
+              { key: "energyLevel" as const, label: "Energy Level", min: 1, max: 10, icon: Battery },
+              { key: "mood" as const, label: "Mood", min: 1, max: 10, icon: Heart },
+              { key: "overallReadiness" as const, label: "Overall Readiness", min: 1, max: 10, icon: Activity },
+              { key: "muscleSoreness" as const, label: "Muscle Soreness", min: 1, max: 10, icon: AlertCircle },
+              { key: "stressLevel" as const, label: "Stress Level", min: 1, max: 10, icon: Brain },
+            ].map(({ key, label, min, max, icon: Icon }) => (
+              <div key={key} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-1.5 text-sm">
+                    <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                    {label}
+                  </Label>
+                  <span className="text-sm font-semibold tabular-nums w-6 text-right" data-testid={`value-${key}`}>
+                    {wellnessValues[key]}
+                  </span>
+                </div>
+                <Slider
+                  min={min}
+                  max={max}
+                  step={1}
+                  value={[wellnessValues[key]]}
+                  onValueChange={([v]) => setWellnessValues(prev => ({ ...prev, [key]: v }))}
+                  data-testid={`slider-${key}`}
+                />
+              </div>
+            ))}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  <Moon className="w-3.5 h-3.5 text-muted-foreground" />
+                  Sleep Hours
+                </Label>
+                <span className="text-sm font-semibold tabular-nums" data-testid="value-sleepHours">
+                  {wellnessValues.sleepHours}h
+                </span>
+              </div>
+              <Slider
+                min={0}
+                max={12}
+                step={0.5}
+                value={[wellnessValues.sleepHours]}
+                onValueChange={([v]) => setWellnessValues(prev => ({ ...prev, sleepHours: v }))}
+                data-testid="slider-sleepHours"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm">Notes (optional)</Label>
+              <Textarea
+                value={wellnessValues.notes}
+                onChange={(e) => setWellnessValues(prev => ({ ...prev, notes: e.target.value }))}
+                rows={2}
+                placeholder="Any additional notes..."
+                data-testid="input-wellness-notes"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsWellnessDialogOpen(false)} data-testid="button-cancel-wellness">Cancel</Button>
+            <Button
+              onClick={() => wellnessMutation.mutate(wellnessValues)}
+              disabled={wellnessMutation.isPending}
+              data-testid="button-save-wellness"
+            >
+              {wellnessMutation.isPending ? "Saving..." : "Record Check-in"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isWorkoutDialogOpen} onOpenChange={setIsWorkoutDialogOpen}>
+        <DialogContent className="max-w-lg" data-testid="dialog-log-workout">
+          <DialogHeader>
+            <DialogTitle className="text-lg">Log Workout</DialogTitle>
+          </DialogHeader>
+          <Form {...workoutForm}>
+            <form onSubmit={workoutForm.handleSubmit((data) => logWorkoutMutation.mutate(data))} className="space-y-4">
+              <FormField control={workoutForm.control} name="exerciseId" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Exercise</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-workout-exercise">
+                        <SelectValue placeholder="Select exercise" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {exercises.map((ex) => (
+                        <SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={workoutForm.control} name="sets" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sets</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={field.value}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      data-testid="input-workout-sets"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={workoutForm.control} name="repsPerSet" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Reps per Set (comma-separated)</FormLabel>
+                  <FormControl><Input {...field} placeholder="8,8,8" data-testid="input-workout-reps" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={workoutForm.control} name="weightPerSet" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Weight per Set in kg (comma-separated)</FormLabel>
+                  <FormControl><Input {...field} placeholder="60,60,60" data-testid="input-workout-weight" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={workoutForm.control} name="notes" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes (optional)</FormLabel>
+                  <FormControl><Textarea {...field} rows={2} data-testid="input-workout-notes" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsWorkoutDialogOpen(false)} data-testid="button-cancel-workout">Cancel</Button>
+                <Button type="submit" disabled={logWorkoutMutation.isPending} data-testid="button-save-workout">
+                  {logWorkoutMutation.isPending ? "Logging..." : "Log Workout"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
