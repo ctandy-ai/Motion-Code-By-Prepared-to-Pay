@@ -771,7 +771,7 @@ export default function Athletes() {
                 {filteredAthletes.map((athlete) => (
                   <TableRow
                     key={athlete.id}
-                    className={`hover-elevate cursor-pointer ${selectedAthletes.has(athlete.id) ? 'bg-brand-500/10' : ''}`}
+                    className={`cursor-pointer ${selectedAthletes.has(athlete.id) ? 'bg-brand-500/10' : ''}`}
                     data-testid={`row-athlete-${athlete.id}`}
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>

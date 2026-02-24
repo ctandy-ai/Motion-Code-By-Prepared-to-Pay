@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Athlete, AthleteProgram, Program, InsertAthleteProgram, WorkoutLog, Exercise, ReadinessSurvey, ValdTest, ValdProfile, ValdTrialResult, AthleteBeltClassification, Belt, Team } from "@shared/schema";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers, FlaskConical, BarChart3, ChevronRight } from "lucide-react";
+import { Plus, Calendar, Trophy, Dumbbell, ClipboardList, TrendingUp, Eye, Heart, Moon, Battery, Brain, AlertCircle, CheckCircle2, Zap, Activity, FileBarChart, Shield, RefreshCw, Award, Info, X, Users, Layers, FlaskConical, BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -350,7 +350,9 @@ export default function AthleteDetail() {
       <Breadcrumb data-testid="breadcrumb-nav">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/athletes" data-testid="breadcrumb-athletes">Athletes</BreadcrumbLink>
+            <BreadcrumbLink asChild data-testid="breadcrumb-athletes">
+              <a onClick={(e) => { e.preventDefault(); setLocation("/athletes"); }} href="/athletes" role="link" style={{ cursor: "pointer" }}>Athletes</a>
+            </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -708,13 +710,33 @@ export default function AthleteDetail() {
                                 {keyMetrics.map((metric, idx) => {
                                   const val = typeof metric.metricValue === 'number' ? metric.metricValue : parseFloat(String(metric.metricValue));
                                   const formatted = !isNaN(val) ? val.toFixed(2) : metric.metricValue;
+                                  const name = (metric.metricName || '').toLowerCase();
+                                  const isAsymmetry = name.includes('asymmetry') || name.includes('imbalance') || name.includes('deficit');
+                                  const isRsi = name.includes('rsi') || name.includes('reactive');
+                                  let qualityColor = 'bg-muted/50';
+                                  let dotColor = '';
+                                  if (!isNaN(val)) {
+                                    if (isAsymmetry) {
+                                      const absVal = Math.abs(val);
+                                      if (absVal <= 10) { qualityColor = 'bg-emerald-500/10'; dotColor = 'bg-emerald-500'; }
+                                      else if (absVal <= 15) { qualityColor = 'bg-amber-500/10'; dotColor = 'bg-amber-500'; }
+                                      else { qualityColor = 'bg-red-500/10'; dotColor = 'bg-red-500'; }
+                                    } else if (isRsi) {
+                                      if (val >= 2.0) { qualityColor = 'bg-emerald-500/10'; dotColor = 'bg-emerald-500'; }
+                                      else if (val >= 1.2) { qualityColor = 'bg-amber-500/10'; dotColor = 'bg-amber-500'; }
+                                      else { qualityColor = 'bg-red-500/10'; dotColor = 'bg-red-500'; }
+                                    }
+                                  }
                                   return (
                                     <div
                                       key={idx}
-                                      className="rounded-md bg-muted/50 px-2.5 py-1.5"
+                                      className={`rounded-md ${qualityColor} px-2.5 py-1.5`}
                                       data-testid={`metric-${test.id}-${idx}`}
                                     >
-                                      <p className="text-[10px] text-muted-foreground truncate">{metric.metricName}</p>
+                                      <div className="flex items-center gap-1">
+                                        {dotColor && <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotColor} shrink-0`} />}
+                                        <p className="text-[10px] text-muted-foreground truncate">{metric.metricName}</p>
+                                      </div>
                                       <p className="text-sm font-semibold text-foreground">
                                         {formatted}
                                         {metric.metricUnit && (
