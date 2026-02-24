@@ -53,6 +53,49 @@ interface ValdApiTrial {
   }>;
 }
 
+const FORCEDECKS_METRICS: Record<number, { name: string; unit: string }> = {
+  1: { name: 'Jump Height (Imp-Mom)', unit: 'cm' },
+  2: { name: 'Jump Height (Flight Time)', unit: 'cm' },
+  3: { name: 'Braking Phase Duration', unit: 'ms' },
+  4: { name: 'Propulsive Phase Duration', unit: 'ms' },
+  5: { name: 'Contraction Time', unit: 'ms' },
+  6: { name: 'RSI-modified', unit: 'm/s' },
+  7: { name: 'Peak Braking Force', unit: 'N' },
+  8: { name: 'Peak Propulsive Force', unit: 'N' },
+  9: { name: 'Peak Landing Force', unit: 'N' },
+  10: { name: 'Force at Zero Velocity', unit: 'N' },
+  11: { name: 'Peak Braking Velocity', unit: 'm/s' },
+  12: { name: 'Peak Propulsive Velocity', unit: 'm/s' },
+  13: { name: 'Peak Power', unit: 'W' },
+  14: { name: 'Concentric Mean Force', unit: 'N' },
+  15: { name: 'Eccentric Mean Force', unit: 'N' },
+  16: { name: 'Concentric Peak Force', unit: 'N' },
+  17: { name: 'Eccentric Peak Force', unit: 'N' },
+  18: { name: 'Concentric Impulse', unit: 'N·s' },
+  19: { name: 'Eccentric Impulse', unit: 'N·s' },
+  20: { name: 'Concentric Mean Power', unit: 'W' },
+  21: { name: 'Eccentric Mean Power', unit: 'W' },
+  22: { name: 'Concentric Peak Power', unit: 'W' },
+  23: { name: 'Body Weight', unit: 'kg' },
+  24: { name: 'Concentric RFD', unit: 'N/s' },
+  25: { name: 'Eccentric RFD', unit: 'N/s' },
+  26: { name: 'Start of Movement', unit: 'ms' },
+  27: { name: 'Countermovement Depth', unit: 'cm' },
+  28: { name: 'Braking Phase Mean Force', unit: 'N' },
+  29: { name: 'Force at Peak Power', unit: 'N' },
+  30: { name: 'Velocity at Peak Power', unit: 'm/s' },
+  31: { name: 'L/R Braking Force Asymmetry', unit: '%' },
+  32: { name: 'L/R Propulsive Force Asymmetry', unit: '%' },
+  33: { name: 'L/R Landing Force Asymmetry', unit: '%' },
+  34: { name: 'L/R Impulse Asymmetry', unit: '%' },
+  35: { name: 'Peak Braking Power', unit: 'W' },
+  36: { name: 'Concentric Duration', unit: 'ms' },
+  37: { name: 'Eccentric Duration', unit: 'ms' },
+  38: { name: 'Landing Phase Duration', unit: 'ms' },
+  39: { name: 'Relative Concentric Peak Force', unit: 'N/kg' },
+  40: { name: 'Relative Concentric Peak Power', unit: 'W/kg' },
+};
+
 type ValdRegion = 'AUE' | 'EUW' | 'USE';
 
 const VALD_REGIONS: Record<ValdRegion, { name: string; regionCode: string }> = {
@@ -249,6 +292,42 @@ class ValdHubService {
     );
   }
 
+  async getTestResults(
+    testId: string,
+    deviceType: ValdDeviceType = 'forcedecks'
+  ): Promise<ValdApiTrial[]> {
+    try {
+      const tenantId = await this.getTenantId();
+      const response = await this.apiRequest<any>(
+        deviceType,
+        `/tests/${testId}/trials`,
+        { tenantId }
+      );
+      if (Array.isArray(response)) return response;
+      if (response?.trials && Array.isArray(response.trials)) return response.trials;
+      return [];
+    } catch (err: any) {
+      console.log(`VALD trials fetch failed for test ${testId}: ${err.message?.substring(0, 200)}`);
+      return [];
+    }
+  }
+
+  async getAllTestsWithResults(
+    deviceType: ValdDeviceType = 'forcedecks',
+    modifiedFromUtc?: string
+  ): Promise<ValdApiTest[]> {
+    const tenantId = await this.getTenantId();
+    const params: Record<string, string> = {
+      tenantId,
+      modifiedFromUtc: modifiedFromUtc || '2020-01-01T00:00:00.000Z',
+      includeResults: 'true',
+    };
+
+    return this.parseTestsResponse(
+      await this.apiRequest<any>(deviceType, '/tests', params)
+    );
+  }
+
   async getAllTests(
     deviceType: ValdDeviceType = 'forcedecks',
     modifiedFromUtc?: string
@@ -313,6 +392,30 @@ class ValdHubService {
         notes: test.notes,
       }),
     };
+  }
+
+  extractMetricsFromTest(test: ValdApiTest, valdTestId: string): InsertValdTrialResult[] {
+    const results: InsertValdTrialResult[] = [];
+    const params = test.extendedParameters || [];
+    if (test.parameter) {
+      params.unshift(test.parameter);
+    }
+    for (const param of params) {
+      const def = FORCEDECKS_METRICS[param.resultId];
+      if (!def) continue;
+      if (results.some(r => r.metricName === def.name)) continue;
+      results.push({
+        valdTestId,
+        trialNumber: 1,
+        limb: 'both',
+        metricName: def.name,
+        metricValue: param.value,
+        metricUnit: def.unit,
+        startTime: null,
+        endTime: null,
+      });
+    }
+    return results;
   }
 
   transformTrialToInserts(trial: ValdApiTrial, valdTestId: string, trialNumber: number): InsertValdTrialResult[] {

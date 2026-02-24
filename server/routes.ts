@@ -2776,12 +2776,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
+        const allProfiles = await storage.getValdProfiles();
+        const allAthletes = await storage.getAthletes();
+        let autoLinked = 0;
+        for (const profile of allProfiles) {
+          if (profile.athleteId) continue;
+          const fullName = `${(profile.firstName || '').trim()} ${(profile.lastName || '').trim()}`.trim();
+          if (!fullName) continue;
+          const match = allAthletes.find(a => a.name.toLowerCase().trim() === fullName.toLowerCase());
+          if (match) {
+            const existingLink = allProfiles.find(p => p.athleteId === match.id);
+            if (!existingLink) {
+              await storage.linkValdProfileToAthlete(profile.id, match.id);
+              const profileTests = await storage.getValdTestsForProfile(profile.id);
+              for (const test of profileTests) {
+                if (!test.athleteId) {
+                  await storage.updateValdTestAthleteLink(test.id, match.id);
+                }
+              }
+              autoLinked++;
+            }
+          }
+        }
+        if (autoLinked > 0) {
+          console.log(`VALD: Auto-linked ${autoLinked} profiles to athletes by name match`);
+        }
+
         const apiTests = await valdHubService.getAllTests(deviceType, modifiedFromUtc);
         
         let processed = 0;
+        let metricsStored = 0;
+        
         for (const apiTest of apiTests) {
           const existingTest = await storage.getValdTestByValdId(apiTest.testId);
-          if (existingTest) continue;
+          if (existingTest) {
+            if (!existingTest.athleteId) {
+              const profile = await storage.getValdProfileByValdId(apiTest.profileId);
+              if (profile?.athleteId) {
+                await storage.updateValdTestAthleteLink(existingTest.id, profile.athleteId);
+              }
+            }
+            const existingResults = await storage.getValdTrialResults(existingTest.id);
+            if (existingResults.length === 0) {
+              const metrics = valdHubService.extractMetricsFromTest(apiTest, existingTest.id);
+              if (metrics.length > 0) {
+                await storage.bulkCreateValdTrialResults(metrics);
+                metricsStored++;
+              }
+            }
+            continue;
+          }
 
           const valdProfile = await storage.getValdProfileByValdId(apiTest.profileId);
           if (!valdProfile) continue;
@@ -2792,9 +2836,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             valdProfile.athleteId,
             deviceType
           );
-          await storage.createValdTest(insertData);
+          const newTest = await storage.createValdTest(insertData);
+          
+          const metrics = valdHubService.extractMetricsFromTest(apiTest, newTest.id);
+          if (metrics.length > 0) {
+            await storage.bulkCreateValdTrialResults(metrics);
+            metricsStored++;
+          }
+          
           processed++;
         }
+        
+        console.log(`VALD sync complete: ${processed} new tests, ${metricsStored} tests with inline metrics, ${autoLinked} auto-linked profiles`);
 
         await storage.updateValdSyncLog(log.id, {
           status: 'completed',

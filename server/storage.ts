@@ -1701,10 +1701,19 @@ export class DatabaseStorage implements IStorage {
     latestResults: Map<string, ValdTrialResult[]>;
   }> {
     const profile = await this.getValdProfileByAthleteId(athleteId);
-    const tests = await this.getValdTestsForAthlete(athleteId);
+    let tests = await this.getValdTestsForAthlete(athleteId);
+    
+    if (tests.length === 0 && profile) {
+      tests = await this.getValdTestsForProfile(profile.id);
+      for (const test of tests) {
+        if (!test.athleteId) {
+          await this.updateValdTestAthleteLink(test.id, athleteId);
+        }
+      }
+    }
     
     const latestResults = new Map<string, ValdTrialResult[]>();
-    for (const test of tests.slice(0, 5)) {
+    for (const test of tests.slice(0, 10)) {
       const results = await this.getValdTrialResults(test.id);
       latestResults.set(test.id, results);
     }

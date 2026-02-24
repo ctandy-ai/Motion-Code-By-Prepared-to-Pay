@@ -677,6 +677,17 @@ export default function AthleteDetail() {
                 {valdData!.tests.map((test) => {
                   const results = valdData!.latestResults[test.id] || [];
                   const keyMetrics = results.slice(0, 6);
+                  const testTypeLabels: Record<string, string> = {
+                    CMJ: 'Countermovement Jump', SJ: 'Squat Jump', DJ: 'Drop Jump', IMTP: 'Isometric Mid-Thigh Pull',
+                    SLDJ: 'Single Leg Drop Jump', SLCMJ: 'Single Leg CMJ', SQT: 'Squat', LCMJ: 'Loaded CMJ',
+                    HJ: 'Hurdle Jump', SLLAH: 'SL Land & Hold', ISOT: 'Isometric Test', SLHJ: 'SL Hurdle Jump',
+                  };
+                  const testLabel = testTypeLabels[test.testType] || test.testName || test.testType;
+                  let metaWeight: number | null = null;
+                  try {
+                    const meta = typeof test.metadata === 'string' ? JSON.parse(test.metadata) : test.metadata;
+                    if (meta?.weight) metaWeight = meta.weight;
+                  } catch {}
                   
                   return (
                     <Card 
@@ -693,11 +704,16 @@ export default function AthleteDetail() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1 flex-wrap">
                               <span className="font-medium text-foreground">
-                                {test.testName || test.testType}
+                                {testLabel}
                               </span>
-                              <Badge variant="secondary" className="text-xs capitalize">
-                                {test.deviceType}
+                              <Badge variant="secondary" className="text-xs">
+                                {test.testType}
                               </Badge>
+                              {metaWeight && (
+                                <span className="text-xs text-muted-foreground">
+                                  {metaWeight.toFixed(1)} kg
+                                </span>
+                              )}
                               {results.length > 0 && (
                                 <span className="text-xs text-muted-foreground">
                                   {results.length} metric{results.length !== 1 ? "s" : ""}
