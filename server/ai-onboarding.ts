@@ -15,13 +15,15 @@ interface ParsedAthleteData {
   sport?: string;
   dateOfBirth?: string;
   trainingAgeYears?: number;
-  movementQualityScore?: number;
+  movementQualityScore?: number | number[];
   recurrentHamstring?: boolean;
   recurrentCalf?: boolean;
   recurrentGroin?: boolean;
   notes?: string;
   goals?: string[];
   coachingAssessment?: string;
+  injuryHistory?: string[];
+  chronologicalAgeYears?: number;
 }
 
 interface OnboardingResponse {
@@ -51,9 +53,9 @@ MINIMUM REQUIRED to mark complete:
 NICE TO HAVE (extract if mentioned, but NOT required):
 - Team/Sport context
 - Position
-- Training age (years of structured training)
-- Movement quality (1-5 scale)
-- Any injury history (especially hamstring, calf, or groin issues)
+- Training age (years of structured training, as a single number)
+- Movement quality (single integer 1-5, NOT a range or array)
+- Any injury history (especially hamstring, calf, or groin issues — set recurrentHamstring/recurrentCalf/recurrentGroin booleans if relevant, plus include details in coachingAssessment)
 - Current training goals
 
 IMPORTANT: Set isComplete to TRUE as soon as you have at least a name. Do NOT ask unnecessary follow-up questions. Extract what's provided and let the coach decide when they're ready to create.
@@ -144,17 +146,35 @@ export async function createAthleteFromOnboarding(
       notes: [
         data.coachingAssessment,
         data.goals?.length ? `Goals: ${data.goals.join(", ")}` : null,
+        data.injuryHistory?.length ? `Injury History: ${data.injuryHistory.join(", ")}` : null,
         data.sport ? `Sport: ${data.sport}` : null,
         !data.email ? `(Email auto-generated during AI onboarding)` : null,
       ].filter(Boolean).join("\n") || undefined,
       status: "Registered",
     });
 
-    if (athlete && (data.trainingAgeYears !== undefined || data.movementQualityScore !== undefined)) {
+    const safeInt = (val: any, fallback: number): number => {
+      if (val === undefined || val === null) return fallback;
+      if (Array.isArray(val)) val = val[0];
+      const num = Number(val);
+      return isNaN(num) ? fallback : Math.round(num);
+    };
+
+    const safeFloat = (val: any, fallback: number): number => {
+      if (val === undefined || val === null) return fallback;
+      if (Array.isArray(val)) val = val[0];
+      const num = Number(val);
+      return isNaN(num) ? fallback : num;
+    };
+
+    const hasProfileData = data.trainingAgeYears !== undefined || data.movementQualityScore !== undefined
+      || data.recurrentHamstring || data.recurrentCalf || data.recurrentGroin;
+
+    if (athlete && hasProfileData) {
       await storage.upsertAthleteTrainingProfile({
         athleteId: athlete.id,
-        trainingAgeYears: data.trainingAgeYears || 0,
-        movementQualityScore: data.movementQualityScore || 3,
+        trainingAgeYears: safeFloat(data.trainingAgeYears, 0),
+        movementQualityScore: safeInt(data.movementQualityScore, 3),
         recurrentHamstring: data.recurrentHamstring ? 1 : 0,
         recurrentCalf: data.recurrentCalf ? 1 : 0,
         recurrentGroin: data.recurrentGroin ? 1 : 0,
