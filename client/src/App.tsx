@@ -25,6 +25,7 @@ import Heuristics from "@/pages/heuristics";
 import CoachTools from "@/pages/coach-tools";
 import AIClassifierTest from "@/pages/ai-classifier-test";
 import RMCalculatorPage from "@/pages/rm-calculator-page";
+import McProPlanner from "@/pages/mc-pro-planner";
 import ValdIntegration from "@/pages/vald-integration";
 import AthleteReport from "@/pages/athlete-report";
 import AIOnboardingPage from "@/pages/ai-onboarding";
@@ -80,6 +81,7 @@ function DesktopRouter() {
       <Route path="/video-library" component={VideoLibrary} />
       <Route path="/survey-builder" component={SurveyBuilder} />
       <Route path="/team-training" component={TeamTraining} />
+      <Route path="/mc-pro-planner" component={McProPlanner} />
       <Route component={NotFound} />
     </Switch>
   );

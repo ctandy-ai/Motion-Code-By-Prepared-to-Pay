@@ -4086,6 +4086,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ─── MC Pro Engine Routes ─────────────────────────────────────────────────
+
+  app.get("/api/mc-pro/plan", async (req, res) => {
+    try {
+      const {
+        buildWeeklyPlan,
+        classifyBelt,
+        getWeeklyBudgets,
+        UNIT_LIBRARY,
+      } = await import("./mc-pro-engine");
+
+      const { athleteId, phase, waveWeek } = req.query as {
+        athleteId?: string;
+        phase?: string;
+        waveWeek?: string;
+      };
+
+      // Default meta — in production this comes from athlete DB record
+      let meta = {
+        ageYears: 25,
+        trainingAgeYears: 2,
+        movementQualityScore: 3 as 1 | 2 | 3 | 4 | 5,
+        injuryFlags: {},
+        recentExposure14d: { speedTouches: 1, highDecelSessions: 1 },
+        availability: { daysPerWeek: 3, gymAccess: true },
+      };
+
+      // Pull athlete data from storage if athleteId provided
+      if (athleteId) {
+        try {
+          const athlete = await storage.getAthlete(athleteId);
+          if (athlete) {
+            meta = {
+              ageYears: athlete.age ?? 25,
+              trainingAgeYears: (athlete as any).trainingAge ?? 2,
+              movementQualityScore: ((athlete as any).movementQualityScore ?? 3) as 1 | 2 | 3 | 4 | 5,
+              injuryFlags: (athlete as any).injuryFlags ?? {},
+              recentExposure14d: (athlete as any).recentExposure14d ?? { speedTouches: 1, highDecelSessions: 1 },
+              availability: {
+                daysPerWeek: (athlete as any).daysPerWeek ?? 3,
+                gymAccess: (athlete as any).gymAccess ?? true,
+              },
+            };
+          }
+        } catch (_) {
+          // Use defaults if athlete not found
+        }
+      }
+
+      const validPhases = [
+        "PRESEASON_A", "XMAS_BLOCK", "PRESEASON_B", "PRECOMP",
+        "INSEASON_EARLY", "INSEASON_MID", "INSEASON_LATE", "BYE_WEEK",
+      ];
+      const resolvedPhase = validPhases.includes(phase ?? "") ? phase! : "PRESEASON_A";
+      const resolvedWaveWeek = ([1, 2, 3].includes(Number(waveWeek)) ? Number(waveWeek) : 1) as 1 | 2 | 3;
+
+      const plan = buildWeeklyPlan(meta as any, resolvedPhase as any, resolvedWaveWeek);
+
+      res.json(plan);
+    } catch (error) {
+      console.error("[MC Pro] Plan generation error:", error);
+      res.status(500).json({ error: "Failed to generate MC Pro plan" });
+    }
+  });
+
+  app.get("/api/mc-pro/units", async (req, res) => {
+    try {
+      const { UNIT_LIBRARY } = await import("./mc-pro-engine");
+      res.json({ units: UNIT_LIBRARY });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to load unit library" });
+    }
+  });
+
+  app.get("/api/mc-pro/classify", async (req, res) => {
+    try {
+      const { classifyBelt } = await import("./mc-pro-engine");
+      const meta = req.query.meta ? JSON.parse(req.query.meta as string) : null;
+      if (!meta) return res.status(400).json({ error: "meta query param required (JSON)" });
+      res.json(classifyBelt(meta));
+    } catch (error) {
+      res.status(500).json({ error: "Failed to classify belt" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -17,6 +17,7 @@ import {
   Megaphone,
   Users2,
   SlidersHorizontal,
+  Activity,
 } from "lucide-react";
 import {
   Sidebar,
@@ -49,6 +50,7 @@ const coreItems = [
 
 const planItems = [
   { title: "Calendar", url: "/calendar", icon: Calendar },
+  { title: "MC Pro Planner", url: "/mc-pro-planner", icon: Activity },
   { title: "Team Training", url: "/team-training", icon: Users2 },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Leaderboards", url: "/leaderboards", icon: Trophy },
