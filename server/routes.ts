@@ -31,6 +31,11 @@ import {
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check (no auth required)
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
   // Setup authentication BEFORE registering other routes
   await setupAuth(app);
   registerAuthRoutes(app);
