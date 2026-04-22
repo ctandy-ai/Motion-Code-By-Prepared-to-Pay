@@ -1,8 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
-import { authMiddleware, getPermissions, USER_ROLES, requireHeadCoach, requireCoach } from "./auth";
+import { ObjectStorageService } from "./objectStorage";
+import { ThumbnailService } from "./thumbnailService";
+import { generateBlueprint, getBeltFromSessions, getBeltProgress, getWhyItWorks } from "./lib/blueprint-generator";
+import { setupStripeRoutes } from "./stripeRoutes";
+import { z } from "zod";
+import { db } from "./db";
+import { eq, and, or, desc, inArray } from "drizzle-orm";
+import { setupAuth } from "./auth";
+import { authMiddleware, requireAuth, getPermissions, USER_ROLES, requireHeadCoach, requireCoach } from "./auth";
 import {
   insertExerciseSchema,
   insertAthleteSchema,
@@ -28,6 +35,20 @@ import {
   insertCustomSurveySchema,
   insertTeamSessionSchema,
   insertSessionParticipantSchema,
+  // Replit-only schema imports
+  insertOrganizationSchema,
+  insertProWaitlistSchema,
+  insertClinicReferralSchema,
+  proWaitlist,
+  coachMessages,
+  trainingBlocks,
+  blockExercises,
+  programPhases,
+  programWeeks,
+  wellnessCheckins,
+  auditLogs,
+  users,
+  athleteSessionCompletions,
 } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -38,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup authentication BEFORE registering other routes
   await setupAuth(app);
-  registerAuthRoutes(app);
+  
   
   // Auth middleware must come AFTER passport session setup
   app.use(authMiddleware);
@@ -4176,6 +4197,2006 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // REPLIT ATHLETE APP ROUTES
+  // Consumer-facing routes: auth, organizations, athlete profiles, community,
+  // education, clinics, NSO, partner orgs, Stripe, video/storage, etc.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  app.get("/api/exercises", async (req, res) => {
+    try {
+      const { 
+        component, 
+        beltLevel, 
+        search,
+        skillFocus,
+        trainingPhase,
+        progressionLevel,
+        weekIntroduced,
+        complexityRating 
+      } = req.query;
+      
+      // Build filter object for enhanced filtering
+      const filters: any = {};
+      if (component && typeof component === "string") filters.component = component;
+      if (beltLevel && typeof beltLevel === "string") filters.beltLevel = beltLevel;
+      if (skillFocus && typeof skillFocus === "string") filters.skillFocus = skillFocus.split(',');
+      if (trainingPhase && typeof trainingPhase === "string") filters.trainingPhase = trainingPhase;
+      if (progressionLevel && typeof progressionLevel === "string") filters.progressionLevel = parseInt(progressionLevel);
+      if (weekIntroduced && typeof weekIntroduced === "string") filters.weekIntroduced = parseInt(weekIntroduced);
+      if (complexityRating && typeof complexityRating === "string") filters.complexityRating = parseInt(complexityRating);
+
+      let exercises;
+      if (search && typeof search === "string") {
+        exercises = await storage.searchExercises(search, filters);
+      } else if (Object.keys(filters).length > 0) {
+        exercises = await storage.getExercisesWithFilters(filters);
+      } else {
+        exercises = await storage.getAllExercises();
+      }
+      
+      res.json(exercises);  
+    } catch (error: any) {
+      console.error("Error fetching exercises:", error);
+      res.status(500).json({ error: "Failed to fetch exercises" });
+    }
+  });
+  
+  // Single exercise by ID (must come before component routes to avoid conflicts)
+  app.get("/api/exercises/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid exercise ID" });
+      }
+      const exercise = await storage.getExerciseById(id);
+      if (!exercise) {
+        return res.status(404).json({ error: "Exercise not found" });
+      }
+      res.json(exercise);
+    } catch (error: any) {
+      console.error("Error fetching exercise:", error);
+      res.status(500).json({ error: "Failed to fetch exercise" });
+    }
+  });
+
+  // Component-specific exercise routes (for frontend API calls)
+  app.get("/api/exercises/:component/:beltLevel?", async (req, res) => {
+    try {
+      const { component, beltLevel } = req.params;
+      const { search } = req.query;
+      
+      let exercises;
+      if (search && typeof search === "string") {
+        exercises = await storage.searchExercises(search);
+      } else if (beltLevel && beltLevel !== "all") {
+        exercises = await storage.getExercisesByComponentAndBeltLevel(component, beltLevel);
+      } else {
+        exercises = await storage.getExercisesByComponent(component);
+      }
+      
+      res.json(exercises);
+    } catch (error: any) {
+      console.error("Error fetching exercises by component:", error);
+      res.status(500).json({ error: "Failed to fetch exercises" });
+    }
+  });
+
+  // Custom exercise creation (protected)
+  app.post("/api/exercises", requireAuth, requireValidSubscription, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.organizationId || (user.role !== "coach" && user.role !== "admin")) {
+        return res.status(403).json({ error: "Only coaches can create custom exercises" });
+      }
+
+      const exerciseData = insertExerciseSchema.parse({
+        ...req.body,
+        isCustom: true,
+        createdByUserId: userId,
+        organizationId: user.organizationId
+      });
+
+      const exercise = await storage.createExercise(exerciseData);
+      res.status(201).json(exercise);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid exercise data", details: error.errors });
+      }
+      console.error("Error creating exercise:", error);
+      res.status(500).json({ error: "Failed to create exercise" });
+    }
+  });
+
+  // ─── MOVEMENT BLUEPRINT ────────────────────────────────────────────────────
+
+  // GET /api/athlete/blueprint — personalised 7-day training plan
+  app.get("/api/athlete/blueprint", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const profile = await storage.getAthleteProfile(userId);
+      if (!profile) {
+        return res.status(404).json({ error: "Athlete profile not found. Complete onboarding first." });
+      }
+      const user = await storage.getUser(userId);
+      const tier = user?.subscriptionTier || "starter";
+      const blueprint = await generateBlueprint(profile, tier);
+
+      // Add "Why this works" paragraph
+      const whyText = getWhyItWorks(profile.sport || "general", profile.position || "default");
+
+      res.json({ blueprint, whyItWorks: whyText, tier, belt: getBeltFromSessions(profile.totalSessionsCompleted || 0) });
+    } catch (error: any) {
+      console.error("Blueprint error:", error);
+      res.status(500).json({ error: "Failed to generate blueprint" });
+    }
+  });
+
+  // ─── EXERCISE ADMIN (Chris edits without code changes) ──────────────────────
+
+  // GET /api/admin/exercises — all exercises for admin management
+  app.get("/api/admin/exercises", requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const allExercises = await storage.getAllExercises();
+      res.json(allExercises);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch exercises" });
+    }
+  });
+
+  // POST /api/admin/exercises — create exercise via admin UI
+  app.post("/api/admin/exercises", requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const exercise = await storage.createExercise({
+        ...req.body,
+        isCustom: false,
+      });
+      res.status(201).json(exercise);
+    } catch (error: any) {
+      console.error("Admin create exercise error:", error);
+      res.status(500).json({ error: "Failed to create exercise" });
+    }
+  });
+
+  // PATCH /api/admin/exercises/:id — update exercise via admin UI
+  app.patch("/api/admin/exercises/:id", requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const id = parseInt(req.params.id);
+      const updated = await storage.updateExercise(id, req.body);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to update exercise" });
+    }
+  });
+
+  // DELETE /api/admin/exercises/:id — delete exercise
+  app.delete("/api/admin/exercises/:id", requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const id = parseInt(req.params.id);
+      await storage.deleteExercise(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to delete exercise" });
+    }
+  });
+
+  // ─── ATHLETE PROGRESS (real data) ──────────────────────────────────────────
+
+  // Organization routes
+  app.post("/api/organizations", requireAuth, requireValidSubscription, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (user.organizationId) {
+        return res.status(400).json({ error: "User already belongs to an organization" });
+      }
+
+      const orgData = insertOrganizationSchema.parse(req.body);
+      const organization = await storage.createOrganization(orgData);
+      
+      // Update user to be admin of the new organization
+      await storage.upsertUser({
+        id: userId,
+        email: user.email,
+        firstName: user.firstName || null,
+        lastName: user.lastName || null,
+        profileImageUrl: user.profileImageUrl || null,
+        role: "admin",
+        organizationId: organization.id,
+      });
+
+      res.status(201).json(organization);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid organization data", details: error.errors });
+      }
+      console.error("Error creating organization:", error);
+      res.status(500).json({ error: "Failed to create organization" });
+    }
+  });
+
+  // Get organization users (coaches and athletes)
+  app.get("/api/organization/users", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(404).json({ error: "User not part of an organization" });
+      }
+
+      const users = await storage.getUsersInOrganization(user.organizationId);
+      res.json(users);
+    } catch (error: any) {
+      console.error("Error fetching organization users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Coach gets their athletes
+  app.get("/api/athletes", requireAuth, requireValidSubscription, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== "coach" && user.role !== "admin")) {
+        return res.status(403).json({ error: "Only coaches can view athletes" });
+      }
+
+      const athletes = await storage.getAthletesForCoach(userId);
+      res.json(athletes);
+    } catch (error: any) {
+      console.error("Error fetching athletes:", error);
+      res.status(500).json({ error: "Failed to fetch athletes" });
+    }
+  });
+
+  // Program routes
+  app.post("/api/programs", requireAuth, requireValidSubscription, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId || (user.role !== "coach" && user.role !== "admin")) {
+        return res.status(403).json({ error: "Only coaches can create programs" });
+      }
+
+      const programData = insertProgramSchema.parse({
+        ...req.body,
+        createdByUserId: userId,
+        organizationId: user.organizationId
+      });
+
+      const program = await storage.createProgram(programData);
+      res.status(201).json(program);
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "Invalid program data", details: error.errors });
+      }
+      console.error("Error creating program:", error);
+      res.status(500).json({ error: "Failed to create program" });
+    }
+  });
+
+  app.get("/api/programs", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user?.organizationId) {
+        return res.status(404).json({ error: "User not part of an organization" });
+      }
+
+      const programs = await storage.getProgramsByOrganization(user.organizationId);
+      res.json(programs);
+    } catch (error: any) {
+      console.error("Error fetching programs:", error);
+      res.status(500).json({ error: "Failed to fetch programs" });
+    }
+  });
+
+  // Assign program to athlete
+  app.post("/api/programs/:programId/assign", requireAuth, requireValidSubscription, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      const { programId } = req.params;
+      const { athleteId, startDate, endDate } = req.body;
+      
+      if (!user || (user.role !== "coach" && user.role !== "admin")) {
+        return res.status(403).json({ error: "Only coaches can assign programs" });
+      }
+
+      const assignment = await storage.assignProgramToAthlete({
+        athleteId,
+        programId: parseInt(programId),
+        assignedByUserId: userId,
+        startDate: new Date(startDate),
+        endDate: endDate ? new Date(endDate) : undefined,
+        status: "active"
+      });
+
+      res.status(201).json(assignment);
+    } catch (error: any) {
+      console.error("Error assigning program:", error);
+      res.status(500).json({ error: "Failed to assign program" });
+    }
+  });
+
+  // Public program templates (SpeedPowerPlay-style) - NO subscription required
+  app.get("/api/program-templates", async (req, res) => {
+    try {
+      const programTemplates = [
+        {
+          id: "any-place-any-time",
+          name: "Any Place, Any Time",
+          description: "Work on your Athleticism & Robustness, wherever you are. No equipment needed. Perfect for at home training or traveling athletes.",
+          duration: "9-12 weeks",
+          sessions: 9,
+          exercises: 70,
+          level: "Beginner to Advanced",
+          focus: ["Strength", "Stability", "Coordination", "Robustness"],
+          features: [
+            "No equipment needed",
+            "Progressive overload system", 
+            "Complete home training solution",
+            "Perfect for traveling athletes",
+            "Hip-knee coordination focus",
+            "Core stability development"
+          ],
+          programType: "foundation",
+          totalWeeks: 9,
+          sessionsPerWeek: 3,
+          targetPopulation: ["field-sports", "court-sports"],
+          skillEmphasis: ["strength", "stability", "coordination"],
+          equipmentRequired: ["bodyweight"],
+          difficultyLevel: "beginner",
+          isFree: true
+        },
+        {
+          id: "speed-foundations",
+          name: "Speed Foundations", 
+          description: "Build fundamental speed mechanics through structured acceleration, deceleration, and change of direction training.",
+          duration: "12 weeks",
+          sessions: 12,
+          exercises: 85,
+          level: "Beginner",
+          focus: ["Acceleration", "Deceleration", "Movement Mechanics"],
+          features: [
+            "Progressive belt system (White to Blue)",
+            "Movement pattern mastery",
+            "Ground contact time optimization",
+            "Force production development"
+          ],
+          programType: "development",
+          totalWeeks: 12,
+          sessionsPerWeek: 3,
+          targetPopulation: ["field-sports", "court-sports"],
+          skillEmphasis: ["power", "agility"],
+          equipmentRequired: ["basic"],
+          difficultyLevel: "intermediate",
+          price: 79
+        },
+        {
+          id: "elite-speed",
+          name: "Elite Speed Development",
+          description: "Advanced speed training for field and court sport athletes focusing on maximum velocity and reactive strength.",
+          duration: "16 weeks", 
+          sessions: 16,
+          exercises: 120,
+          level: "Advanced",
+          focus: ["Maximum Speed", "Reactive Strength", "Elite Performance"],
+          features: [
+            "Black belt exercises only",
+            "Sub-120ms contact times",
+            "Competition preparation", 
+            "Advanced plyometrics",
+            "Sport-specific applications"
+          ],
+          programType: "peak",
+          totalWeeks: 16,
+          sessionsPerWeek: 4,
+          targetPopulation: ["field-sports", "court-sports"],
+          skillEmphasis: ["power", "agility", "coordination"],
+          equipmentRequired: ["advanced"],
+          difficultyLevel: "advanced",
+          price: 149
+        }
+      ];
+      
+      res.json(programTemplates);
+    } catch (error: any) {
+      console.error("Error fetching program templates:", error);
+      res.status(500).json({ error: "Failed to fetch program templates" });
+    }
+  });
+
+  // Athlete gets their assigned programs
+  app.get("/api/my-programs", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const programs = await storage.getAthletePrograms(userId);
+      res.json(programs);
+    } catch (error: any) {
+      console.error("Error fetching athlete programs:", error);
+      res.status(500).json({ error: "Failed to fetch programs" });
+    }
+  });
+
+  // List all videos from object storage
+  app.get("/api/storage/videos", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Check if user is coach or admin
+      if (!user || (user.role !== 'coach' && user.role !== 'admin')) {
+        return res.status(403).json({ error: "Only coaches and admins can access video storage" });
+      }
+
+      const objectStorageService = new ObjectStorageService();
+      const result = await objectStorageService.listObjects();
+      
+      if (!result.ok) {
+        return res.status(500).json({ error: "Failed to list videos" });
+      }
+
+      // Component mapping
+      const componentMapping: Record<string, string> = {
+        'Starting': 'acceleration',
+        'Stopping': 'deceleration',
+        'Stepping': 'change-direction',
+        'Sprinting': 'top-speed'
+      };
+
+      // Filter and format video files - accept any video file by extension
+      const videoFiles = result.value
+        .filter((obj: any) => 
+          !obj.name.endsWith('.zip') &&
+          (obj.name.toLowerCase().endsWith('.mov') || 
+           obj.name.toLowerCase().endsWith('.mp4') ||
+           obj.name.toLowerCase().endsWith('.m4v'))
+        )
+        .map((obj: any) => {
+          const pathParts = obj.name.split('/');
+          const videoFileName = pathParts[pathParts.length - 1];
+          
+          // Look for component-belt folder pattern in any path segment
+          let component = '';
+          let beltLevel = '';
+          
+          // Try pattern 1: "Component - belt level" (e.g., "Starting - white belt")
+          for (let i = pathParts.length - 2; i >= 0; i--) {
+            const folderMatch = pathParts[i].match(/^(.+?)\s*-\s*(.+?)$/);
+            if (folderMatch) {
+              const [, componentName, beltLevelName] = folderMatch;
+              const mappedComponent = componentMapping[componentName.trim()];
+              if (mappedComponent) {
+                component = mappedComponent;
+                beltLevel = beltLevelName.trim().replace(/ belt$/i, '').toLowerCase() || '';
+                break;
+              }
+            }
+          }
+          
+          // Try pattern 2: separate component and belt folders if pattern 1 didn't work
+          if (!component && pathParts.length >= 3) {
+            for (let i = pathParts.length - 2; i >= 0; i--) {
+              const mappedComponent = componentMapping[pathParts[i].trim()];
+              if (mappedComponent) {
+                component = mappedComponent;
+                // Look for belt level in adjacent segments
+                const beltNames = ['white', 'blue', 'black', 'White', 'Blue', 'Black'];
+                for (let j = Math.max(0, i - 1); j < Math.min(pathParts.length, i + 2); j++) {
+                  const segment = pathParts[j].toLowerCase().trim();
+                  if (beltNames.some(b => segment === b.toLowerCase())) {
+                    beltLevel = segment;
+                    break;
+                  }
+                }
+                break;
+              }
+            }
+          }
+
+          // Clean up video name
+          const cleanName = videoFileName
+            .replace(/\.[^.]+$/, '')
+            .replace(/_/g, ' ')
+            .trim();
+
+          return {
+            name: obj.name,
+            path: obj.name,
+            component,
+            beltLevel,
+            cleanName
+          };
+        });
+
+      res.json(videoFiles);
+    } catch (error) {
+      console.error("Error listing videos:", error);
+      res.status(500).json({ error: "Failed to list videos from storage" });
+    }
+  });
+
+  // Thumbnail generation route
+  app.get("/api/thumbnails/:exerciseId", async (req, res) => {
+    const { exerciseId } = req.params;
+    
+    try {
+      // Get exercise from database by numeric ID
+      const exercise = await storage.getExerciseById(parseInt(exerciseId));
+      
+      if (!exercise) {
+        return res.status(404).json({ error: "Exercise not found" });
+      }
+      
+      if (!exercise.videoUrl) {
+        return res.status(404).json({ error: "No video available for this exercise" });
+      }
+      
+      // For now, return a simple SVG placeholder instead of generating thumbnails
+      // This allows the video player to work while we set up FFmpeg properly
+      const svg = `
+        <svg width="640" height="360" xmlns="http://www.w3.org/2000/svg">
+          <rect width="640" height="360" fill="#1e293b"/>
+          <circle cx="320" cy="180" r="50" fill="#3b82f6" opacity="0.3"/>
+          <path d="M 300 160 L 340 180 L 300 200 Z" fill="#3b82f6"/>
+          <text x="320" y="250" text-anchor="middle" fill="#94a3b8" font-family="Arial" font-size="16">
+            ${exercise.name}
+          </text>
+          <text x="320" y="280" text-anchor="middle" fill="#64748b" font-family="Arial" font-size="12">
+            ${exercise.component.toUpperCase()} • ${exercise.beltLevel.toUpperCase()} BELT
+          </text>
+        </svg>
+      `;
+      
+      res.set({
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'public, max-age=3600',
+      });
+      
+      res.send(svg);
+    } catch (error) {
+      console.error("Error generating thumbnail:", error);
+      res.status(500).json({ error: "Failed to generate thumbnail" });
+    }
+  });
+
+  // Video upload route for coaches/admins
+  app.post("/api/exercises/:exerciseId/upload-video", requireAuth, async (req: any, res) => {
+    try {
+      const { exerciseId } = req.params;
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Check if user is coach or admin
+      if (!user || (user.role !== 'coach' && user.role !== 'admin')) {
+        return res.status(403).json({ error: "Only coaches and admins can upload videos" });
+      }
+
+      // Get the exercise to update
+      const exercise = await storage.getExerciseById(parseInt(exerciseId));
+      if (!exercise) {
+        return res.status(404).json({ error: "Exercise not found" });
+      }
+
+      // Generate paths for video and thumbnail
+      const videoPath = `videos/${exercise.component}/${exercise.beltLevel}/${exercise.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.mp4`;
+      
+      res.json({ 
+        uploadPath: videoPath,
+        message: "Upload path generated successfully",
+        exerciseId: exercise.id,
+        videoUrl: `/objects/${videoPath}`,
+        thumbnailUrl: `/api/thumbnails/${exercise.id}`
+      });
+    } catch (error) {
+      console.error("Error preparing video upload:", error);
+      res.status(500).json({ error: "Failed to prepare video upload" });
+    }
+  });
+
+  // Update exercise with video URLs after upload
+  app.patch("/api/exercises/:exerciseId/video-urls", requireAuth, async (req: any, res) => {
+    try {
+      const { exerciseId } = req.params;
+      const { videoUrl, thumbnailUrl } = req.body;
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Check if user is coach or admin
+      if (!user || (user.role !== 'coach' && user.role !== 'admin')) {
+        return res.status(403).json({ error: "Only coaches and admins can update video URLs" });
+      }
+
+      // Update exercise with video URLs
+      const updatedExercise = await storage.updateExerciseVideoUrls(parseInt(exerciseId), videoUrl, thumbnailUrl);
+      
+      res.json(updatedExercise);
+    } catch (error) {
+      console.error("Error updating exercise video URLs:", error);
+      res.status(500).json({ error: "Failed to update video URLs" });
+    }
+  });
+
+  // Object storage routes for serving public videos and thumbnails with range support
+  app.get("/public-objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "File not found" });
+      }
+      objectStorageService.downloadObject(file, req, res);
+    } catch (error) {
+      console.error("Error searching for public object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Handle /objects/ routes for user's video files with range request support
+  app.get("/objects/:filePath(*)", async (req, res) => {
+    const filePath = req.params.filePath;
+    const objectStorageService = new ObjectStorageService();
+    try {
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        return res.status(404).json({ error: "Video file not found" });
+      }
+      objectStorageService.downloadObject(file, req, res);
+    } catch (error) {
+      console.error("Error serving video object:", error);
+      return res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Admin routes for managing complimentary access
+  app.get("/api/admin/users", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can access this
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { email } = req.query;
+      
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({ error: "Email parameter required" });
+      }
+
+      const searchResults = await storage.getUserByEmail(email);
+      if (!searchResults) {
+        return res.json({ user: null, organization: null });
+      }
+
+      let organization = null;
+      if (searchResults.organizationId) {
+        organization = await storage.getOrganization(searchResults.organizationId);
+      }
+
+      res.json({ 
+        user: {
+          id: searchResults.id,
+          email: searchResults.email,
+          firstName: searchResults.firstName,
+          lastName: searchResults.lastName,
+          role: searchResults.role,
+          organizationId: searchResults.organizationId
+        },
+        organization: organization ? {
+          id: organization.id,
+          name: organization.name,
+          subscriptionStatus: organization.subscriptionStatus,
+          subscriptionTier: organization.subscriptionTier,
+          trialEndsAt: organization.trialEndsAt
+        } : null
+      });
+    } catch (error) {
+      console.error("Error searching users:", error);
+      res.status(500).json({ error: "Failed to search users" });
+    }
+  });
+
+  app.post("/api/admin/grant-access", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can access this
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { targetUserId } = req.body;
+      
+      if (!targetUserId) {
+        return res.status(400).json({ error: "targetUserId required" });
+      }
+
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      if (!targetUser.organizationId) {
+        return res.status(400).json({ error: "User does not have an organization" });
+      }
+
+      const organization = await storage.getOrganization(targetUser.organizationId);
+      if (!organization) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+
+      // Update organization to active status with no expiration
+      const updatedOrg = await storage.updateOrganization(organization.id, {
+        subscriptionStatus: 'active',
+        trialEndsAt: null // No expiration for complimentary access
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Complimentary access granted successfully",
+        organization: updatedOrg
+      });
+    } catch (error) {
+      console.error("Error granting access:", error);
+      res.status(500).json({ error: "Failed to grant access" });
+    }
+  });
+
+  app.post("/api/admin/update-role", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      // Only admins can access this
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { targetUserId, newRole } = req.body;
+      
+      if (!targetUserId || !newRole) {
+        return res.status(400).json({ error: "targetUserId and newRole required" });
+      }
+
+      if (!['admin', 'coach', 'athlete'].includes(newRole)) {
+        return res.status(400).json({ error: "Invalid role. Must be 'admin', 'coach', or 'athlete'" });
+      }
+
+      const targetUser = await storage.getUser(targetUserId);
+      if (!targetUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Update the user's role
+      await storage.upsertUser({
+        id: targetUser.id,
+        email: targetUser.email,
+        password: targetUser.password,
+        firstName: targetUser.firstName,
+        lastName: targetUser.lastName,
+        role: newRole,
+        organizationId: targetUser.organizationId,
+        profileImageUrl: targetUser.profileImageUrl,
+        isActive: targetUser.isActive,
+      });
+
+      res.json({ 
+        success: true, 
+        message: `User role updated to ${newRole}`,
+        newRole
+      });
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  // Motion Code Pro waitlist signup (public endpoint)
+  app.post("/api/pro-waitlist", async (req, res) => {
+    try {
+      const validatedData = insertProWaitlistSchema.parse(req.body);
+      
+      await db.insert(proWaitlist).values(validatedData);
+
+      res.json({ 
+        success: true, 
+        message: "Successfully joined the waitlist!" 
+      });
+    } catch (error: any) {
+      // Handle unique constraint violation (duplicate email)
+      if (error.code === '23505') {
+        return res.status(409).json({ 
+          error: "This email is already on the waitlist" 
+        });
+      }
+      
+      // Handle validation errors
+      if (error.name === 'ZodError') {
+        return res.status(400).json({ 
+          error: "Invalid form data", 
+          details: error.errors 
+        });
+      }
+
+      console.error("Error adding to waitlist:", error);
+      res.status(500).json({ error: "Failed to join waitlist" });
+    }
+  });
+
+  // ========== ROLE & ONBOARDING ROUTES ==========
+
+  // Update user role (self-service during onboarding)
+  app.patch("/api/auth/user/role", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { role } = req.body;
+
+      if (!role || !['athlete', 'coach', 'clinician'].includes(role)) {
+        return res.status(400).json({ error: "Valid role required: athlete, coach, or clinician" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      await storage.upsertUser({
+        ...user,
+        role: role
+      });
+
+      res.json({ success: true, role });
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ error: "Failed to update role" });
+    }
+  });
+
+  // ========== ATHLETE PROFILE ROUTES ==========
+
+  // Get athlete profile
+  app.get("/api/athlete/profile", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const profile = await storage.getAthleteProfile(userId);
+      
+      if (!profile) {
+        return res.json(null);
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching athlete profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  // Create/Update athlete profile
+  app.post("/api/athlete/profile", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { age, sport, playingLevel, position, injuryHistory, trainingFrequency, seasonPhase, onboardingCompleted } = req.body;
+      
+      const profileData = {
+        userId,
+        age: age || null,
+        sport: sport || "netball",
+        playingLevel: playingLevel || null,
+        position: position || null,
+        injuryHistory: Array.isArray(injuryHistory) ? injuryHistory : null,
+        trainingFrequency: trainingFrequency || null,
+        seasonPhase: seasonPhase || null,
+        onboardingCompleted: onboardingCompleted === true
+      };
+
+      const profile = await storage.upsertAthleteProfile(profileData);
+      res.json({ success: true, profile });
+    } catch (error) {
+      console.error("Error saving athlete profile:", error);
+      res.status(500).json({ error: "Failed to save profile" });
+    }
+  });
+
+  // Get today's session for athlete
+  app.get("/api/athlete/today-session", requireAuth, async (req: any, res) => {
+    try {
+      const session = await storage.getTodaySession(req.user.id);
+      res.json(session);
+    } catch (error) {
+      console.error("Error fetching today's session:", error);
+      res.status(500).json({ error: "Failed to fetch session" });
+    }
+  });
+
+  // Get week progress
+  app.get("/api/athlete/week-progress", requireAuth, async (req: any, res) => {
+    try {
+      const progress = await storage.getWeekProgress(req.user.id);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching week progress:", error);
+      res.status(500).json({ error: "Failed to fetch progress" });
+    }
+  });
+
+  // ========== CLINIC DIRECTORY ROUTES ==========
+
+  // Get all clinics with optional filters
+  app.get("/api/clinics", async (req, res) => {
+    try {
+      const { state, services, search } = req.query;
+      const clinics = await storage.getClinics({
+        state: state as string,
+        services: services ? (services as string).split(",") : undefined,
+        search: search as string
+      });
+      res.json(clinics);
+    } catch (error) {
+      console.error("Error fetching clinics:", error);
+      res.status(500).json({ error: "Failed to fetch clinics" });
+    }
+  });
+
+  // Get single clinic
+  app.get("/api/clinics/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const clinic = await storage.getClinicById(id);
+      if (!clinic) {
+        return res.status(404).json({ error: "Clinic not found" });
+      }
+      res.json(clinic);
+    } catch (error) {
+      console.error("Error fetching clinic:", error);
+      res.status(500).json({ error: "Failed to fetch clinic" });
+    }
+  });
+
+  // ========== COACH ROUTES ==========
+
+  // Get coach compliance data
+  app.get("/api/coach/compliance", requireAuth, async (req: any, res) => {
+    try {
+      const data = await storage.getCoachComplianceData(req.user.id);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching coach compliance:", error);
+      res.status(500).json({ error: "Failed to fetch compliance data" });
+    }
+  });
+
+  // Get coach teams with member counts
+  app.get("/api/coach/teams", requireAuth, async (req: any, res) => {
+    try {
+      const teams = await storage.getCoachTeamsWithMembers(req.user.id);
+      res.json(teams);
+    } catch (error) {
+      console.error("Error fetching coach teams:", error);
+      res.status(500).json({ error: "Failed to fetch teams" });
+    }
+  });
+
+  // Get coach stats
+  app.get("/api/coach/stats", requireAuth, async (req: any, res) => {
+    try {
+      const stats = await storage.getCoachStats(req.user.id);
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching coach stats:", error);
+      res.status(500).json({ error: "Failed to fetch stats" });
+    }
+  });
+
+  // CSV export of compliance data
+  app.get("/api/coach/report/csv", requireAuth, async (req: any, res) => {
+    try {
+      const data = await storage.getCoachComplianceData(req.user.id);
+      const headers = ["Name", "Club", "Belt Level", "This Week", "Week -1", "Week -2", "Week -3", "Week -4", "Compliance %", "Status", "Last Active"];
+      const rows = data.athletes.map(a => [
+        `${a.firstName || ''} ${a.lastName || ''}`.trim(),
+        a.club || '',
+        a.beltLevel,
+        a.weeklyCompleted.toString(),
+        ...(a.monthlyCompleted || [0, 0, 0, 0]).map(String),
+        `${a.compliancePercent}%`,
+        a.status,
+        a.lastActive ? new Date(a.lastActive).toLocaleDateString() : 'Never'
+      ]);
+      const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=compliance-report.csv');
+      res.send(csv);
+    } catch (error) {
+      console.error("Error generating CSV report:", error);
+      res.status(500).json({ error: "Failed to generate report" });
+    }
+  });
+
+  // Create team
+  app.post("/api/coach/teams", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const teamData = {
+        ...req.body,
+        coachId: userId,
+        teamCode: generateTeamCode()
+      };
+      
+      const team = await storage.createTeam(teamData);
+      res.json({ success: true, team });
+    } catch (error) {
+      console.error("Error creating team:", error);
+      res.status(500).json({ error: "Failed to create team" });
+    }
+  });
+
+  // ========== COMMUNITY ROUTES ==========
+
+  // Get all boards accessible to user
+  app.get("/api/community/boards", requireAuth, async (req: any, res) => {
+    try {
+      const userRole = req.user.role || 'athlete';
+      const boards = await storage.getCommunityBoards(userRole);
+      res.json(boards);
+    } catch (error) {
+      console.error("Error fetching boards:", error);
+      res.status(500).json({ error: "Failed to fetch boards" });
+    }
+  });
+
+  // Get board by slug
+  app.get("/api/community/boards/:slug", requireAuth, async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const board = await storage.getBoardBySlug(slug);
+      
+      if (!board) {
+        return res.status(404).json({ error: "Board not found" });
+      }
+      
+      res.json(board);
+    } catch (error) {
+      console.error("Error fetching board:", error);
+      res.status(500).json({ error: "Failed to fetch board" });
+    }
+  });
+
+  // Get posts for a board
+  app.get("/api/community/boards/:slug/posts", requireAuth, async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const { limit = 20, offset = 0 } = req.query;
+      
+      const board = await storage.getBoardBySlug(slug);
+      if (!board) {
+        return res.status(404).json({ error: "Board not found" });
+      }
+      
+      const posts = await storage.getBoardPosts(board.id, Number(limit), Number(offset));
+      res.json(posts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
+      res.status(500).json({ error: "Failed to fetch posts" });
+    }
+  });
+
+  // Get single post with comments
+  app.get("/api/community/posts/:postId", requireAuth, async (req: any, res) => {
+    try {
+      const postId = parseInt(req.params.postId);
+      const post = await storage.getPostById(postId);
+      
+      if (!post) {
+        return res.status(404).json({ error: "Post not found" });
+      }
+      
+      // Increment view count
+      await storage.incrementPostViews(postId);
+      
+      const comments = await storage.getPostComments(postId);
+      res.json({ ...post, comments });
+    } catch (error) {
+      console.error("Error fetching post:", error);
+      res.status(500).json({ error: "Failed to fetch post" });
+    }
+  });
+
+  // Create new post
+  app.post("/api/community/boards/:slug/posts", requireAuth, async (req: any, res) => {
+    try {
+      const { slug } = req.params;
+      const { title, content } = req.body;
+      const authorId = req.user.id;
+      
+      if (!title || !content) {
+        return res.status(400).json({ error: "Title and content are required" });
+      }
+      
+      const board = await storage.getBoardBySlug(slug);
+      if (!board) {
+        return res.status(404).json({ error: "Board not found" });
+      }
+      
+      const post = await storage.createPost({
+        boardId: board.id,
+        authorId,
+        title,
+        content
+      });
+      
+      res.json(post);
+    } catch (error) {
+      console.error("Error creating post:", error);
+      res.status(500).json({ error: "Failed to create post" });
+    }
+  });
+
+  // Add comment to post
+  app.post("/api/community/posts/:postId/comments", requireAuth, async (req: any, res) => {
+    try {
+      const postId = parseInt(req.params.postId);
+      const { content, parentId } = req.body;
+      const authorId = req.user.id;
+      
+      if (!content) {
+        return res.status(400).json({ error: "Content is required" });
+      }
+      
+      const comment = await storage.createComment({
+        postId,
+        authorId,
+        content,
+        parentId: parentId || null
+      });
+      
+      res.json(comment);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
+  // Toggle like on post
+  app.post("/api/community/posts/:postId/like", requireAuth, async (req: any, res) => {
+    try {
+      const postId = parseInt(req.params.postId);
+      const userId = req.user.id;
+      
+      const liked = await storage.togglePostLike(postId, userId);
+      res.json({ liked });
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      res.status(500).json({ error: "Failed to toggle like" });
+    }
+  });
+
+  // ========== ACHIEVEMENTS & ATHLETE PROGRESS ROUTES ==========
+
+  app.get("/api/achievements", async (req, res) => {
+    try {
+      const allAchievements = await storage.getAllAchievements();
+      res.json(allAchievements);
+    } catch (error) {
+      console.error("Error fetching achievements:", error);
+      res.status(500).json({ error: "Failed to fetch achievements" });
+    }
+  });
+
+  app.get("/api/athlete/achievements", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const earned = await storage.getUserAchievements(userId);
+      res.json(earned);
+    } catch (error) {
+      console.error("Error fetching user achievements:", error);
+      res.status(500).json({ error: "Failed to fetch user achievements" });
+    }
+  });
+
+  app.get("/api/athlete/progress", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const progress = await storage.getAthleteProgress(userId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching athlete progress:", error);
+      res.status(500).json({ error: "Failed to fetch athlete progress" });
+    }
+  });
+
+  // ========== PARTNER ORGANISATION ROUTES ==========
+
+  app.get("/api/user/partner-org", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user || !user.partnerOrgId) {
+        return res.json(null);
+      }
+
+      const org = await storage.getPartnerOrgById(user.partnerOrgId);
+      if (!org) {
+        return res.json(null);
+      }
+
+      res.json({
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        sportName: org.sportName,
+        primaryColor: org.primaryColor,
+        secondaryColor: org.secondaryColor,
+        logoUrl: org.logoUrl,
+        welcomeMessage: org.welcomeMessage,
+      });
+    } catch (error) {
+      console.error("Error fetching user partner org:", error);
+      res.status(500).json({ error: "Failed to fetch partner organisation" });
+    }
+  });
+
+  app.get("/api/partner-orgs/validate/:code", async (req, res) => {
+    try {
+      const { code } = req.params;
+      const org = await storage.getPartnerOrgByCode(code);
+
+      if (!org) {
+        return res.status(404).json({ error: "Invalid organisation code" });
+      }
+
+      res.json({
+        name: org.name,
+        slug: org.slug,
+        sport: org.sportName,
+        welcomeMessage: org.welcomeMessage,
+        primaryColor: org.primaryColor,
+        secondaryColor: org.secondaryColor,
+        logoUrl: org.logoUrl,
+      });
+    } catch (error) {
+      console.error("Error validating partner org code:", error);
+      res.status(500).json({ error: "Failed to validate code" });
+    }
+  });
+
+  app.get("/api/partner-orgs/:slug", async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const org = await storage.getPartnerOrgBySlug(slug);
+
+      if (!org) {
+        return res.status(404).json({ error: "Organisation not found" });
+      }
+
+      res.json({
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        sportName: org.sportName,
+        primaryColor: org.primaryColor,
+        secondaryColor: org.secondaryColor,
+        logoUrl: org.logoUrl,
+        welcomeMessage: org.welcomeMessage,
+        description: org.description,
+        website: org.website,
+        country: org.country,
+      });
+    } catch (error) {
+      console.error("Error fetching partner org by slug:", error);
+      res.status(500).json({ error: "Failed to fetch organisation" });
+    }
+  });
+
+  app.patch("/api/auth/user/location", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { state, region, club } = req.body;
+
+      if (!state) {
+        return res.status(400).json({ error: "State is required" });
+      }
+
+      await storage.updateUserLocation(userId, state, region || "", club || "");
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating user location:", error);
+      res.status(500).json({ error: "Failed to update location" });
+    }
+  });
+
+  // ========== NSO ADMIN ANALYTICS ROUTES ==========
+
+  const requireNSOAdmin = async (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+    const user = await storage.getUser(req.user.id);
+    if (!user || (user.role !== 'nso_admin' && user.role !== 'admin')) {
+      return res.status(403).json({ error: "NSO admin access required" });
+    }
+    req.nsoUser = user;
+    next();
+  };
+
+  app.get("/api/nso/analytics", requireAuth, requireNSOAdmin, async (req: any, res) => {
+    try {
+      const partnerOrgId = req.nsoUser.partnerOrgId || undefined;
+      const analytics = await storage.getNSOAnalytics(partnerOrgId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching NSO analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get("/api/nso/export/csv", requireAuth, requireNSOAdmin, async (req: any, res) => {
+    try {
+      const partnerOrgId = req.nsoUser.partnerOrgId || undefined;
+      const analytics = await storage.getNSOAnalytics(partnerOrgId);
+
+      const summaryHeaders = ["Metric", "Value"];
+      const summaryRows = [
+        ["Total Registered Athletes", analytics.totalAthletes.toString()],
+        ["Active This Week", analytics.activeThisWeek.toString()],
+        ["Average Compliance Rate", `${analytics.averageCompliance}%`],
+        ["Total Sessions This Month", analytics.totalSessionsMonth.toString()],
+      ];
+
+      const stateHeaders = ["State", "Registered Athletes", "Active Count", "Active %", "Avg Sessions/Week", "Top Club"];
+      const stateRows = analytics.byState.map(s => [
+        s.state,
+        s.athleteCount.toString(),
+        s.activeCount.toString(),
+        `${s.activePercent}%`,
+        s.avgSessionsWeek.toString(),
+        s.topClub,
+      ]);
+
+      const trendHeaders = ["Week", "Compliance %"];
+      const trendRows = analytics.weeklyTrend.map(t => [t.week, `${t.compliance}%`]);
+
+      const csvParts = [
+        "NSO ANALYTICS REPORT",
+        `Generated: ${new Date().toLocaleDateString()}`,
+        "",
+        "OVERVIEW",
+        summaryHeaders.join(","),
+        ...summaryRows.map(r => r.map(v => `"${v}"`).join(",")),
+        "",
+        "REGIONAL BREAKDOWN",
+        stateHeaders.join(","),
+        ...stateRows.map(r => r.map(v => `"${v}"`).join(",")),
+        "",
+        "WEEKLY COMPLIANCE TREND",
+        trendHeaders.join(","),
+        ...trendRows.map(r => r.map(v => `"${v}"`).join(",")),
+      ];
+
+      const csv = csvParts.join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename=nso-analytics-report-${new Date().toISOString().split('T')[0]}.csv`);
+      res.send(csv);
+    } catch (error) {
+      console.error("Error generating NSO CSV report:", error);
+      res.status(500).json({ error: "Failed to generate report" });
+    }
+  });
+
+  // ========== CLINIC DIRECTORY ROUTES ==========
+
+  app.get("/api/clinics", async (req, res) => {
+    try {
+      const { state, search, services } = req.query;
+      const filters: { state?: string; search?: string; services?: string[] } = {};
+      if (state && typeof state === "string" && state !== "all") filters.state = state;
+      if (search && typeof search === "string") filters.search = search;
+      if (services && typeof services === "string") filters.services = services.split(",");
+      const clinicList = await storage.getClinics(filters);
+      res.json(clinicList);
+    } catch (error) {
+      console.error("Error fetching clinics:", error);
+      res.status(500).json({ error: "Failed to fetch clinics" });
+    }
+  });
+
+  app.get("/api/clinics/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      const clinic = await storage.getClinicById(id);
+      if (!clinic) {
+        return res.status(404).json({ error: "Clinic not found" });
+      }
+      res.json(clinic);
+    } catch (error) {
+      console.error("Error fetching clinic:", error);
+      res.status(500).json({ error: "Failed to fetch clinic" });
+    }
+  });
+
+  app.post("/api/clinics/:id/refer", requireAuth, async (req: any, res) => {
+    try {
+      const clinicId = parseInt(req.params.id);
+      if (isNaN(clinicId)) {
+        return res.status(400).json({ error: "Invalid clinic ID" });
+      }
+      const clinic = await storage.getClinicById(clinicId);
+      if (!clinic) {
+        return res.status(404).json({ error: "Clinic not found" });
+      }
+      const { referralType } = req.body;
+      if (!referralType || !["assessment", "treatment", "prevention"].includes(referralType)) {
+        return res.status(400).json({ error: "Invalid referral type. Must be assessment, treatment, or prevention." });
+      }
+      const referral = await storage.createClinicReferral({
+        userId: req.user.id,
+        clinicId,
+        referralType,
+      });
+      res.status(201).json({ referral, clinic });
+    } catch (error) {
+      console.error("Error creating referral:", error);
+      res.status(500).json({ error: "Failed to create referral" });
+    }
+  });
+
+  app.get("/api/athlete/referrals", requireAuth, async (req: any, res) => {
+    try {
+      const referrals = await storage.getUserReferrals(req.user.id);
+      res.json(referrals);
+    } catch (error) {
+      console.error("Error fetching referrals:", error);
+      res.status(500).json({ error: "Failed to fetch referrals" });
+    }
+  });
+
+  // ========== EDUCATION MODULE ROUTES ==========
+
+  app.get("/api/education/modules", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      const accessLevel = user?.role || 'coach';
+      const modules = await storage.getEducationModules(accessLevel);
+      const completedIds = await storage.getUserModuleCompletions(userId);
+      const modulesWithStatus = modules.map(mod => ({
+        ...mod,
+        isCompleted: completedIds.includes(mod.id),
+      }));
+      res.json(modulesWithStatus);
+    } catch (error) {
+      console.error("Error fetching education modules:", error);
+      res.status(500).json({ error: "Failed to fetch education modules" });
+    }
+  });
+
+  app.get("/api/education/progress", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const progress = await storage.getEducationProgress(userId);
+      res.json(progress);
+    } catch (error) {
+      console.error("Error fetching education progress:", error);
+      res.status(500).json({ error: "Failed to fetch education progress" });
+    }
+  });
+
+  app.get("/api/education/modules/:id", requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid module ID" });
+      }
+      const mod = await storage.getEducationModule(id);
+      if (!mod) {
+        return res.status(404).json({ error: "Module not found" });
+      }
+      const completedIds = await storage.getUserModuleCompletions(req.user.id);
+      res.json({ ...mod, isCompleted: completedIds.includes(mod.id) });
+    } catch (error) {
+      console.error("Error fetching education module:", error);
+      res.status(500).json({ error: "Failed to fetch education module" });
+    }
+  });
+
+  app.post("/api/education/modules/:id/complete", requireAuth, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ error: "Invalid module ID" });
+      }
+      const mod = await storage.getEducationModule(id);
+      if (!mod) {
+        return res.status(404).json({ error: "Module not found" });
+      }
+      const completion = await storage.completeModule(req.user.id, id);
+      res.json(completion);
+    } catch (error) {
+      console.error("Error completing module:", error);
+      res.status(500).json({ error: "Failed to complete module" });
+    }
+  });
+
+  // ─── SESSION PLAYER — COMPLETE SESSION (T005) ──────────────────────────────
+
+  // POST /api/session/complete — athlete marks session done, updates streak + belt
+  app.post("/api/session/complete", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { exerciseIds, rating, durationSeconds } = req.body;
+
+      if (!exerciseIds || !Array.isArray(exerciseIds) || exerciseIds.length === 0) {
+        return res.status(400).json({ error: "exerciseIds required" });
+      }
+
+      const completion = await storage.recordSessionCompletion({
+        userId,
+        exerciseIds: exerciseIds.map(String),
+        rating: rating || null,
+        durationSeconds: durationSeconds || null,
+      });
+
+      // Check for new achievements after session
+      const profile = await storage.getAthleteProfile(userId);
+      const totalSessions = profile?.totalSessionsCompleted || 0;
+      const allAchievements = await storage.getAllAchievements();
+      const earned = await storage.getUserAchievements(userId);
+      const earnedIds = new Set(earned.map((e: any) => e.achievementId));
+
+      const newAchievements: any[] = [];
+      for (const ach of allAchievements) {
+        if (earnedIds.has(ach.id)) continue;
+        let unlocked = false;
+        if (ach.triggerType === "sessions_completed" && totalSessions >= (ach.triggerValue || 0)) {
+          unlocked = true;
+        } else if (ach.triggerType === "streak" && (profile?.currentStreak || 0) >= (ach.triggerValue || 0)) {
+          unlocked = true;
+        }
+        if (unlocked) {
+          await storage.awardAchievement(userId, ach.id);
+          newAchievements.push(ach);
+        }
+      }
+
+      res.json({ completion, newAchievements });
+    } catch (error: any) {
+      console.error("Session complete error:", error);
+      res.status(500).json({ error: "Failed to record session" });
+    }
+  });
+
+  // ─── INJURY REPORTS (T008 — Berkshire commercial data) ─────────────────────
+
+  // POST /api/injury/report — athlete reports pain mid-session
+  app.post("/api/injury/report", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const { bodyPart, painRating, notes, sessionExerciseIds } = req.body;
+
+      if (!bodyPart || !painRating) {
+        return res.status(400).json({ error: "bodyPart and painRating required" });
+      }
+
+      const report = await storage.createInjuryReport({
+        userId,
+        bodyPart,
+        painRating: parseInt(painRating),
+        notes: notes || null,
+        sessionExerciseIds: sessionExerciseIds || null,
+        referredToClinicId: null,
+        referralStatus: "none",
+      });
+
+      // Return clinic recommendation if pain >= 6
+      const shouldRefer = painRating >= 6;
+      res.json({ report, shouldRefer });
+    } catch (error: any) {
+      console.error("Injury report error:", error);
+      res.status(500).json({ error: "Failed to save injury report" });
+    }
+  });
+
+  // GET /api/injury/stats — admin/NSO dashboard stats
+  app.get("/api/injury/stats", requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || (user.role !== "admin" && user.role !== "nso_admin")) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+      const stats = await storage.getInjuryReportStats();
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch injury stats" });
+    }
+  });
+
+  // GET /api/injury/coach — coach sees injury flags for their athletes
+  app.get("/api/injury/coach", requireAuth, async (req: any, res) => {
+    try {
+      const reports = await storage.getInjuryReportsByCoach(req.user.id);
+      res.json(reports);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch injury reports" });
+    }
+  });
+
+  // ── STRIPE ROUTES ─────────────────────────────────────────────────────────
+  setupStripeRoutes(app);
+
+  // ── PROGRAM ENGINE API ────────────────────────────────────────────────────
+  app.get("/api/program-engine/options", requireAuth, async (_req, res) => {
+    const { PHASE_OPTIONS, WAVE_WEEK_OPTIONS } = await import("./lib/blueprint-generator");
+    res.json({ phases: PHASE_OPTIONS, waveWeeks: WAVE_WEEK_OPTIONS });
+  });
+
+  app.get("/api/program-engine/load-budget", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { belt = "WHITE", phase = "PRESEASON_A", waveWeek = "1" } = req.query;
+      const { getPhaseBudget } = await import("./lib/blueprint-generator");
+      const budget = getPhaseBudget(
+        (belt as string).toUpperCase() as "WHITE" | "BLUE" | "BLACK",
+        phase as any,
+        parseInt(waveWeek as string) as 1 | 2 | 3
+      );
+      res.json(budget);
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  // Training blocks CRUD
+  app.get("/api/programs/:programId/blocks", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { programId } = req.params;
+      const { weekNumber, dayNumber } = req.query;
+      let q = db.select().from(trainingBlocks).where(eq(trainingBlocks.programId, parseInt(programId)));
+      const blocks = await q;
+      let filtered = blocks;
+      if (weekNumber) filtered = filtered.filter(b => b.weekNumber === parseInt(weekNumber as string));
+      if (dayNumber) filtered = filtered.filter(b => b.dayNumber === parseInt(dayNumber as string));
+      res.json(filtered.sort((a, b) => a.orderIndex - b.orderIndex));
+    } catch (e) { res.status(500).json({ error: "Failed to fetch blocks" }); }
+  });
+
+  app.post("/api/programs/:programId/blocks", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { programId } = req.params;
+      const [block] = await db.insert(trainingBlocks).values({ ...req.body, programId: parseInt(programId) }).returning();
+      res.status(201).json(block);
+    } catch (e) { res.status(500).json({ error: "Failed to create block" }); }
+  });
+
+  app.patch("/api/programs/blocks/:blockId", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { blockId } = req.params;
+      const [updated] = await db.update(trainingBlocks).set(req.body).where(eq(trainingBlocks.id, parseInt(blockId))).returning();
+      res.json(updated);
+    } catch (e) { res.status(500).json({ error: "Failed to update block" }); }
+  });
+
+  app.delete("/api/programs/blocks/:blockId", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { blockId } = req.params;
+      await db.delete(blockExercises).where(eq(blockExercises.blockId, parseInt(blockId)));
+      await db.delete(trainingBlocks).where(eq(trainingBlocks.id, parseInt(blockId)));
+      res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Failed to delete block" }); }
+  });
+
+  // Block exercises CRUD
+  app.get("/api/programs/blocks/:blockId/exercises", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { blockId } = req.params;
+      const exercises = await db.select().from(blockExercises).where(eq(blockExercises.blockId, parseInt(blockId)));
+      res.json(exercises.sort((a, b) => a.orderIndex - b.orderIndex));
+    } catch (e) { res.status(500).json({ error: "Failed to fetch block exercises" }); }
+  });
+
+  app.post("/api/programs/blocks/:blockId/exercises", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { blockId } = req.params;
+      const [ex] = await db.insert(blockExercises).values({ ...req.body, blockId: parseInt(blockId) }).returning();
+      res.status(201).json(ex);
+    } catch (e) { res.status(500).json({ error: "Failed to add block exercise" }); }
+  });
+
+  app.patch("/api/programs/blocks/exercises/:exId", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { exId } = req.params;
+      const [updated] = await db.update(blockExercises).set(req.body).where(eq(blockExercises.id, parseInt(exId))).returning();
+      res.json(updated);
+    } catch (e) { res.status(500).json({ error: "Failed to update block exercise" }); }
+  });
+
+  app.delete("/api/programs/blocks/exercises/:exId", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { exId } = req.params;
+      await db.delete(blockExercises).where(eq(blockExercises.id, parseInt(exId)));
+      res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Failed to delete block exercise" }); }
+  });
+
+  // Program phases
+  app.get("/api/programs/:programId/phases", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const phases = await db.select().from(programPhases).where(eq(programPhases.programId, parseInt(req.params.programId)));
+      res.json(phases.sort((a, b) => a.orderIndex - b.orderIndex));
+    } catch (e) { res.status(500).json({ error: "Failed to fetch phases" }); }
+  });
+
+  app.post("/api/programs/:programId/phases", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const [phase] = await db.insert(programPhases).values({ ...req.body, programId: parseInt(req.params.programId) }).returning();
+      res.status(201).json(phase);
+    } catch (e) { res.status(500).json({ error: "Failed to create phase" }); }
+  });
+
+  // ── COACH MESSAGING ────────────────────────────────────────────────────────
+  app.get("/api/messages", requireAuth, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const msgs = await db.select().from(coachMessages)
+        .where(or(eq(coachMessages.fromUserId, userId), eq(coachMessages.toUserId, userId)))
+        .orderBy(desc(coachMessages.createdAt));
+      // Normalize to frontend-friendly format
+      const normalized = msgs.map((m: any) => ({
+        id: m.id,
+        senderId: m.fromUserId,
+        recipientId: m.isBroadcast ? null : m.toUserId,
+        subject: "(Message)",
+        body: m.content,
+        messageType: m.isBroadcast ? "broadcast" : "direct",
+        isRead: m.isRead,
+        createdAt: m.createdAt,
+      }));
+      res.json(normalized);
+    } catch (e) { res.status(500).json({ error: "Failed to fetch messages" }); }
+  });
+
+  app.post("/api/messages/athlete/:athleteId", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const content = req.body.content || req.body.body || req.body.message || "";
+      if (!content) return res.status(400).json({ error: "Message content required" });
+      const [msg] = await db.insert(coachMessages).values({
+        fromUserId: req.user.id,
+        toUserId: req.params.athleteId,
+        content,
+        isBroadcast: false,
+      }).returning();
+      res.status(201).json(msg);
+    } catch (e) { res.status(500).json({ error: "Failed to send message" }); }
+  });
+
+  app.post("/api/messages/broadcast", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const content = req.body.content || req.body.body || req.body.message || "";
+      if (!content) return res.status(400).json({ error: "Message content required" });
+      let { athleteIds } = req.body;
+      // If no athleteIds provided, broadcast to all athletes under this coach's organization
+      if (!Array.isArray(athleteIds) || athleteIds.length === 0) {
+        const orgId = req.user.organizationId;
+        let athleteRows: any[] = [];
+        if (orgId) {
+          athleteRows = await db.select({ id: users.id }).from(users)
+            .where(and(eq(users.organizationId, orgId), eq(users.role, "athlete")));
+        }
+        athleteIds = athleteRows.map((a: any) => a.id);
+      }
+      if (athleteIds.length === 0) {
+        return res.json({ sent: 0, message: "No athletes found to broadcast to" });
+      }
+      const msgs = await db.insert(coachMessages).values(
+        athleteIds.map((toId: string) => ({ fromUserId: req.user.id, toUserId: toId, content, isBroadcast: true }))
+      ).returning();
+      res.json({ sent: msgs.length });
+    } catch (e) { res.status(500).json({ error: "Failed to broadcast" }); }
+  });
+
+  app.patch("/api/messages/:msgId/read", requireAuth, async (req: any, res) => {
+    try {
+      await db.update(coachMessages).set({ isRead: true }).where(and(eq(coachMessages.id, parseInt(req.params.msgId)), eq(coachMessages.toUserId, req.user.id)));
+      res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: "Failed to mark read" }); }
+  });
+
+  // ── WELLNESS CHECK-INS ─────────────────────────────────────────────────────
+  app.post("/api/wellness", requireAuth, async (req: any, res) => {
+    try {
+      const [checkin] = await db.insert(wellnessCheckins).values({ ...req.body, userId: req.user.id }).returning();
+      res.status(201).json(checkin);
+    } catch (e) { res.status(500).json({ error: "Failed to save wellness check-in" }); }
+  });
+
+  app.get("/api/wellness/recent", requireAuth, async (req: any, res) => {
+    try {
+      const checkins = await db.select().from(wellnessCheckins)
+        .where(eq(wellnessCheckins.userId, req.user.id))
+        .orderBy(desc(wellnessCheckins.createdAt))
+        .limit(14);
+      res.json(checkins);
+    } catch (e) { res.status(500).json({ error: "Failed to fetch wellness" }); }
+  });
+
+  // ── AUDIT LOGS ─────────────────────────────────────────────────────────────
+  app.get("/api/audit-logs", requireAuth, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user || (user.role !== "admin" && user.role !== "nso_admin")) return res.status(403).json({ error: "Admin only" });
+      const logs = await db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(500);
+      res.json(logs);
+    } catch (e) { res.status(500).json({ error: "Failed to fetch audit logs" }); }
+  });
+
+  // ── ATHLETE MANAGEMENT (T007) ─────────────────────────────────────────────
+
+  // Invite a single athlete — creates account, links to coach
+  app.post("/api/athletes/invite", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { firstName, lastName, email, sport } = req.body;
+      if (!firstName || !lastName || !email) return res.status(400).json({ error: "firstName, lastName, and email are required" });
+
+      const existing = await storage.getUserByEmail(email);
+      if (existing) return res.status(409).json({ error: "An account with this email already exists" });
+
+      const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase();
+      const hashed = await (await import("bcrypt")).default.hash(tempPassword, 10);
+
+      const [newUser] = await db.insert(users).values({
+        id: `athlete_${Date.now()}_${Math.random().toString(36).slice(-4)}`,
+        email: email.toLowerCase().trim(),
+        password: hashed,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        role: "athlete",
+        coachId: req.user.id,
+        subscriptionTier: "trial",
+        subscriptionStatus: "trial",
+        trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      }).returning();
+
+      res.json({ user: { id: newUser.id, email: newUser.email, firstName: newUser.firstName, lastName: newUser.lastName }, tempPassword });
+    } catch (e: any) {
+      console.error("Invite athlete error:", e);
+      res.status(500).json({ error: e.message || "Failed to create athlete" });
+    }
+  });
+
+  // CSV import — accepts CSV text, bulk-creates athletes
+  app.post("/api/athletes/csv-import", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { csvText } = req.body;
+      if (!csvText) return res.status(400).json({ error: "csvText is required" });
+
+      const lines = csvText.trim().split(/\r?\n/).filter((l: string) => l.trim());
+      const results: { email: string; status: string; tempPassword?: string }[] = [];
+      const bcrypt = (await import("bcrypt")).default;
+
+      for (const line of lines) {
+        const [firstName, lastName, email] = line.split(",").map((s: string) => s.trim().replace(/^"|"$/g, ""));
+        if (!firstName || !lastName || !email || !email.includes("@")) {
+          results.push({ email: email || line, status: "skipped — invalid format" });
+          continue;
+        }
+        const existing = await storage.getUserByEmail(email.toLowerCase());
+        if (existing) {
+          results.push({ email, status: "skipped — already exists" });
+          continue;
+        }
+        const tempPassword = Math.random().toString(36).slice(-8) + "A1";
+        const hashed = await bcrypt.hash(tempPassword, 10);
+        await db.insert(users).values({
+          id: `athlete_${Date.now()}_${Math.random().toString(36).slice(-4)}`,
+          email: email.toLowerCase(),
+          password: hashed,
+          firstName,
+          lastName,
+          role: "athlete",
+          coachId: req.user.id,
+          subscriptionTier: "trial",
+          subscriptionStatus: "trial",
+          trialEndsAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        });
+        results.push({ email, status: "created", tempPassword });
+      }
+
+      res.json({ imported: results.filter(r => r.status === "created").length, results });
+    } catch (e: any) {
+      console.error("CSV import error:", e);
+      res.status(500).json({ error: e.message || "Failed to import" });
+    }
+  });
+
+  // Bulk assign athletes to a program
+  app.post("/api/athletes/bulk-assign", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const { athleteIds, programId } = req.body;
+      if (!athleteIds?.length || !programId) return res.status(400).json({ error: "athleteIds and programId required" });
+      let assigned = 0;
+      for (const athleteId of athleteIds) {
+        try {
+          await storage.assignProgramToAthlete({ programId: Number(programId), athleteId, assignedByUserId: req.user.id });
+          assigned++;
+        } catch {}
+      }
+      res.json({ assigned });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message || "Failed to bulk assign" });
+    }
+  });
+
+  // Athlete detail — profile, session completions, compliance summary
+  app.get("/api/athletes/:id/detail", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const athlete = await storage.getUser(req.params.id);
+      if (!athlete) return res.status(404).json({ error: "Athlete not found" });
+      if (athlete.coachId !== req.user.id && req.user.role !== "admin") return res.status(403).json({ error: "Not your athlete" });
+
+      const profile = await storage.getAthleteProfile(req.params.id).catch(() => null);
+      const sessions = await db.select().from(athleteSessionCompletions)
+        .where(eq(athleteSessionCompletions.userId, req.params.id))
+        .orderBy(desc(athleteSessionCompletions.completedAt))
+        .limit(30);
+
+      res.json({
+        athlete: { id: athlete.id, firstName: athlete.firstName, lastName: athlete.lastName, email: athlete.email, role: athlete.role, subscriptionTier: athlete.subscriptionTier, createdAt: athlete.createdAt },
+        profile,
+        recentSessions: sessions,
+        sessionCount: sessions.length,
+      });
+    } catch (e: any) {
+      console.error("Athlete detail error:", e);
+      res.status(500).json({ error: e.message || "Failed to get athlete detail" });
+    }
+  });
+
+  // Remove athlete from coach (unlink, don't delete account)
+  app.delete("/api/athletes/:id", requireAuth, requireTier("pro"), async (req: any, res) => {
+    try {
+      const athlete = await storage.getUser(req.params.id);
+      if (!athlete) return res.status(404).json({ error: "Not found" });
+      if (athlete.coachId !== req.user.id && req.user.role !== "admin") return res.status(403).json({ error: "Not your athlete" });
+      await db.update(users).set({ coachId: null }).where(eq(users.id, req.params.id));
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message || "Failed to remove athlete" });
+    }
+  });
   const httpServer = createServer(app);
   return httpServer;
 }

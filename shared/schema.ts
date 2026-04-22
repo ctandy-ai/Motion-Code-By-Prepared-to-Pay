@@ -1,5 +1,5 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, real, unique, index } from "drizzle-orm/pg-core";
+import { sql, relations } from "drizzle-orm";
+import { pgTable, text, varchar, integer, timestamp, real, unique, index, boolean, serial, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -400,6 +400,25 @@ export const insertPersonalRecordSchema = createInsertSchema(personalRecords).om
 export type InsertPersonalRecord = z.infer<typeof insertPersonalRecordSchema>;
 export type PersonalRecord = typeof personalRecords.$inferSelect;
 
+// ── Organizations (from Replit athlete app) ──────────────────────────────────
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  subscriptionStatus: text("subscription_status").notNull().default("trial"),
+  subscriptionTier: text("subscription_tier").notNull().default("basic"),
+  maxCoaches: integer("max_coaches").notNull().default(1),
+  maxAthletes: integer("max_athletes").notNull().default(10),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  trialEndsAt: timestamp("trial_ends_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertOrganizationSchema = createInsertSchema(organizations);
+export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;
+export type Organization = typeof organizations.$inferSelect;
+
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").unique(),
@@ -408,6 +427,23 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   username: text("username"),
   password: text("password"),
+  // Replit fields: role-based access, org membership, subscription
+  role: text("role").notNull().default("athlete"), // admin, coach, athlete, clinician, nso_admin
+  organizationId: integer("organization_id").references(() => organizations.id),
+  partnerOrgId: integer("partner_org_id"),
+  coachId: varchar("coach_id"),
+  state: text("state"),
+  region: text("region"),
+  club: text("club"),
+  subscriptionTier: text("subscription_tier").default("trial"),
+  subscriptionStatus: text("subscription_status").default("trial"),
+  subscriptionExpiresAt: timestamp("subscription_expires_at"),
+  trialEndsAt: timestamp("trial_ends_at"),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  stripePriceId: varchar("stripe_price_id"),
+  orgLead: boolean("org_lead").default(false),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -419,9 +455,14 @@ export const insertUserSchema = createInsertSchema(users).pick({
   profileImageUrl: true,
   username: true,
   password: true,
+  role: true,
+  organizationId: true,
+  isActive: true,
 });
+export const upsertUserSchema = createInsertSchema(users);
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpsertUser = z.infer<typeof upsertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 export const athleteStats = pgTable("athlete_stats", {
@@ -1196,3 +1237,460 @@ export const insertNormativeMetricSchema = createInsertSchema(normativeMetrics).
 });
 export type InsertNormativeMetric = z.infer<typeof insertNormativeMetricSchema>;
 export type NormativeMetric = typeof normativeMetrics.$inferSelect;
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// REPLIT ATHLETE APP TABLES
+// Added from Replit source — athlete-facing, community, clinics, education, etc.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Session storage for passport/express-session
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Password reset tokens
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  token: varchar("token").unique().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Motion Code Pro waitlist
+export const proWaitlist = pgTable("pro_waitlist", {
+  id: serial("id").primaryKey(),
+  email: varchar("email").unique().notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  organization: varchar("organization"),
+  role: text("role"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProWaitlistSchema = createInsertSchema(proWaitlist).omit({ id: true, createdAt: true });
+export type InsertProWaitlist = z.infer<typeof insertProWaitlistSchema>;
+export type ProWaitlist = typeof proWaitlist.$inferSelect;
+
+// Athlete profiles (B2C extended info)
+export const athleteProfiles = pgTable("athlete_profiles", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull().unique(),
+  age: integer("age"),
+  sport: text("sport").default("netball"),
+  playingLevel: text("playing_level"),
+  position: text("position"),
+  injuryHistory: text("injury_history").array(),
+  trainingFrequency: integer("training_frequency"),
+  seasonPhase: text("season_phase"),
+  currentStreak: integer("current_streak").default(0),
+  longestStreak: integer("longest_streak").default(0),
+  totalSessionsCompleted: integer("total_sessions_completed").default(0),
+  lastSessionDate: timestamp("last_session_date"),
+  onboardingCompleted: boolean("onboarding_completed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertAthleteProfileSchema = createInsertSchema(athleteProfiles).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAthleteProfile = z.infer<typeof insertAthleteProfileSchema>;
+export type AthleteProfile = typeof athleteProfiles.$inferSelect;
+
+// Clinics / Prepared to Play provider network
+export const clinics = pgTable("clinics", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  address: text("address").notNull(),
+  suburb: text("suburb").notNull(),
+  state: text("state").notNull(),
+  postcode: text("postcode").notNull(),
+  country: text("country").default("Australia"),
+  phone: text("phone"),
+  email: text("email"),
+  website: text("website"),
+  services: text("services").array(),
+  specialties: text("specialties").array(),
+  latitude: real("latitude"),
+  longitude: real("longitude"),
+  isActive: boolean("is_active").default(true),
+  isPreparedToPlay: boolean("is_prepared_to_play").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertClinicSchema = createInsertSchema(clinics).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertClinic = z.infer<typeof insertClinicSchema>;
+export type Clinic = typeof clinics.$inferSelect;
+
+// Micro sessions (athlete daily sessions)
+export const microSessions = pgTable("micro_sessions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  programId: integer("program_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  estimatedDuration: integer("estimated_duration"),
+  difficulty: text("difficulty"),
+  focusArea: text("focus_area"),
+  isCompleted: boolean("is_completed").default(false),
+  scheduledDate: timestamp("scheduled_date"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMicroSessionSchema = createInsertSchema(microSessions).omit({ id: true, createdAt: true });
+export type InsertMicroSession = z.infer<typeof insertMicroSessionSchema>;
+export type MicroSession = typeof microSessions.$inferSelect;
+
+// Micro session exercises
+export const microSessionExercises = pgTable("micro_session_exercises", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").references(() => microSessions.id).notNull(),
+  exerciseId: integer("exercise_id"),
+  orderIndex: integer("order_index").notNull().default(0),
+  sets: integer("sets"),
+  reps: text("reps"),
+  duration: integer("duration"),
+  rest: integer("rest"),
+  notes: text("notes"),
+});
+
+export const insertMicroSessionExerciseSchema = createInsertSchema(microSessionExercises).omit({ id: true });
+export type InsertMicroSessionExercise = z.infer<typeof insertMicroSessionExerciseSchema>;
+export type MicroSessionExercise = typeof microSessionExercises.$inferSelect;
+
+// Session completions
+export const sessionCompletions = pgTable("session_completions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  sessionId: integer("session_id").references(() => microSessions.id).notNull(),
+  completedAt: timestamp("completed_at").defaultNow(),
+  duration: integer("duration"),
+  rating: integer("rating"),
+  notes: text("notes"),
+});
+
+export const insertSessionCompletionSchema = createInsertSchema(sessionCompletions).omit({ id: true, completedAt: true });
+export type InsertSessionCompletion = z.infer<typeof insertSessionCompletionSchema>;
+export type SessionCompletion = typeof sessionCompletions.$inferSelect;
+
+// Coach teams (Replit consumer-facing)
+export const coachTeams = pgTable("coach_teams", {
+  id: serial("id").primaryKey(),
+  coachId: varchar("coach_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  sport: text("sport"),
+  description: text("description"),
+  teamCode: varchar("team_code").unique(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCoachTeamSchema = createInsertSchema(coachTeams).omit({ id: true, createdAt: true });
+export type InsertCoachTeam = z.infer<typeof insertCoachTeamSchema>;
+export type CoachTeam = typeof coachTeams.$inferSelect;
+
+// Team members
+export const teamMembers = pgTable("team_members", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").references(() => coachTeams.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  role: text("role").default("member"),
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
+export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({ id: true, joinedAt: true });
+export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
+export type TeamMember = typeof teamMembers.$inferSelect;
+
+// Program sessions (Replit's session-based programs)
+export const programSessions = pgTable("program_sessions", {
+  id: serial("id").primaryKey(),
+  programId: integer("program_id"),
+  title: text("title").notNull(),
+  description: text("description"),
+  weekNumber: integer("week_number").notNull().default(1),
+  dayNumber: integer("day_number").notNull().default(1),
+  estimatedDuration: integer("estimated_duration"),
+  orderIndex: integer("order_index").notNull().default(0),
+});
+
+export const insertProgramSessionSchema = createInsertSchema(programSessions);
+export type InsertProgramSession = z.infer<typeof insertProgramSessionSchema>;
+export type ProgramSession = typeof programSessions.$inferSelect;
+
+// Session exercises (linking exercises to program sessions)
+export const sessionExercises = pgTable("session_exercises", {
+  id: serial("id").primaryKey(),
+  sessionId: integer("session_id").references(() => programSessions.id).notNull(),
+  exerciseId: integer("exercise_id"),
+  orderIndex: integer("order_index").notNull().default(0),
+  sets: integer("sets"),
+  reps: text("reps"),
+  duration: integer("duration"),
+  rest: integer("rest"),
+  notes: text("notes"),
+  videoUrl: text("video_url"),
+  thumbnailUrl: text("thumbnail_url"),
+});
+
+export const insertSessionExerciseSchema = createInsertSchema(sessionExercises);
+export type InsertSessionExercise = z.infer<typeof insertSessionExerciseSchema>;
+export type SessionExercise = typeof sessionExercises.$inferSelect;
+
+// Exercise logs (per-set logging)
+export const exerciseLogs = pgTable("exercise_logs", {
+  id: serial("id").primaryKey(),
+  workoutLogId: integer("workout_log_id"),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  exerciseId: integer("exercise_id"),
+  setNumber: integer("set_number").notNull().default(1),
+  repsCompleted: integer("reps_completed"),
+  weightUsed: real("weight_used"),
+  duration: integer("duration"),
+  notes: text("notes"),
+  completedAt: timestamp("completed_at").defaultNow(),
+});
+
+export const insertExerciseLogSchema = createInsertSchema(exerciseLogs);
+export type InsertExerciseLog = z.infer<typeof insertExerciseLogSchema>;
+export type ExerciseLog = typeof exerciseLogs.$inferSelect;
+
+// Community boards
+export const communityBoards = pgTable("community_boards", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").unique().notNull(),
+  description: text("description"),
+  category: text("category"),
+  requiredRole: text("required_role"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCommunityBoardSchema = createInsertSchema(communityBoards).omit({ id: true, createdAt: true });
+export type InsertCommunityBoard = z.infer<typeof insertCommunityBoardSchema>;
+export type CommunityBoard = typeof communityBoards.$inferSelect;
+
+// Community posts
+export const communityPosts = pgTable("community_posts", {
+  id: serial("id").primaryKey(),
+  boardId: integer("board_id").references(() => communityBoards.id).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  mediaUrl: text("media_url"),
+  isPinned: boolean("is_pinned").default(false),
+  isAnnouncement: boolean("is_announcement").default(false),
+  viewCount: integer("view_count").notNull().default(0),
+  likeCount: integer("like_count").notNull().default(0),
+  commentCount: integer("comment_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertCommunityPostSchema = createInsertSchema(communityPosts).omit({ id: true, createdAt: true, updatedAt: true, viewCount: true, likeCount: true, commentCount: true });
+export type InsertCommunityPost = z.infer<typeof insertCommunityPostSchema>;
+export type CommunityPost = typeof communityPosts.$inferSelect;
+
+// Post comments
+export const postComments = pgTable("post_comments", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").references(() => communityPosts.id).notNull(),
+  authorId: varchar("author_id").references(() => users.id).notNull(),
+  content: text("content").notNull(),
+  likeCount: integer("like_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPostCommentSchema = createInsertSchema(postComments).omit({ id: true, createdAt: true, updatedAt: true, likeCount: true });
+export type InsertPostComment = z.infer<typeof insertPostCommentSchema>;
+export type PostComment = typeof postComments.$inferSelect;
+
+// Post likes
+export const postLikes = pgTable("post_likes", {
+  id: serial("id").primaryKey(),
+  postId: integer("post_id").references(() => communityPosts.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type PostLike = typeof postLikes.$inferSelect;
+
+// Comment likes
+export const commentLikes = pgTable("comment_likes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").references(() => postComments.id).notNull(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+export type CommentLike = typeof commentLikes.$inferSelect;
+
+// Partner organisations (NSO / sports body)
+export const partnerOrganisations = pgTable("partner_organisations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").unique().notNull(),
+  sport: text("sport").notNull().default("netball"),
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color"),
+  secondaryColor: text("secondary_color"),
+  description: text("description"),
+  website: text("website"),
+  state: text("state"),
+  accessCode: varchar("access_code").unique(),
+  grantedTier: text("granted_tier").default("season_pass"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertPartnerOrgSchema = createInsertSchema(partnerOrganisations).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertPartnerOrg = z.infer<typeof insertPartnerOrgSchema>;
+export type PartnerOrganisation = typeof partnerOrganisations.$inferSelect;
+
+// User achievements (linking users to achievement records)
+export const userAchievements = pgTable("user_achievements", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  achievementId: varchar("achievement_id"),
+  earnedAt: timestamp("earned_at").defaultNow(),
+});
+
+export const insertUserAchievementSchema = createInsertSchema(userAchievements).omit({ id: true, earnedAt: true });
+export type InsertUserAchievement = z.infer<typeof insertUserAchievementSchema>;
+export type UserAchievement = typeof userAchievements.$inferSelect;
+
+// Clinic referrals
+export const clinicReferrals = pgTable("clinic_referrals", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  clinicId: integer("clinic_id").references(() => clinics.id).notNull(),
+  reason: text("reason"),
+  status: text("status").default("pending"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertClinicReferralSchema = createInsertSchema(clinicReferrals).omit({ id: true, createdAt: true });
+export type InsertClinicReferral = z.infer<typeof insertClinicReferralSchema>;
+export type ClinicReferral = typeof clinicReferrals.$inferSelect;
+
+// Education modules
+export const educationModules = pgTable("education_modules", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  content: text("content"),
+  videoUrl: text("video_url"),
+  thumbnailUrl: text("thumbnail_url"),
+  category: text("category"),
+  difficulty: text("difficulty"),
+  duration: integer("duration"),
+  requiredTier: text("required_tier").default("trial"),
+  orderIndex: integer("order_index").default(0),
+  isPublished: boolean("is_published").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertEducationModuleSchema = createInsertSchema(educationModules).omit({ id: true, createdAt: true });
+export type InsertEducationModule = z.infer<typeof insertEducationModuleSchema>;
+export type EducationModule = typeof educationModules.$inferSelect;
+
+// Module completions
+export const moduleCompletions = pgTable("module_completions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  moduleId: integer("module_id").references(() => educationModules.id).notNull(),
+  completedAt: timestamp("completed_at").defaultNow(),
+  score: integer("score"),
+});
+
+export const insertModuleCompletionSchema = createInsertSchema(moduleCompletions).omit({ id: true, completedAt: true });
+export type InsertModuleCompletion = z.infer<typeof insertModuleCompletionSchema>;
+export type ModuleCompletion = typeof moduleCompletions.$inferSelect;
+
+// Injury reports
+export const injuryReports = pgTable("injury_reports", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  bodyPart: text("body_part").notNull(),
+  severity: text("severity").notNull(),
+  description: text("description"),
+  occurredAt: timestamp("occurred_at"),
+  status: text("status").default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertInjuryReportSchema = createInsertSchema(injuryReports).omit({ id: true, createdAt: true });
+export type InsertInjuryReport = z.infer<typeof insertInjuryReportSchema>;
+export type InjuryReport = typeof injuryReports.$inferSelect;
+
+// Athlete session completions (B2C athlete progress)
+export const athleteSessionCompletions = pgTable("athlete_session_completions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  sessionId: integer("session_id"),
+  programId: integer("program_id"),
+  completedAt: timestamp("completed_at").defaultNow(),
+  duration: integer("duration"),
+  rating: integer("rating"),
+  notes: text("notes"),
+});
+
+export const insertAthleteSessionCompletionSchema = createInsertSchema(athleteSessionCompletions).omit({ id: true, completedAt: true });
+export type InsertAthleteSessionCompletion = z.infer<typeof insertAthleteSessionCompletionSchema>;
+export type AthleteSessionCompletion = typeof athleteSessionCompletions.$inferSelect;
+
+// Coach messages (in-app messaging)
+export const coachMessages = pgTable("coach_messages", {
+  id: serial("id").primaryKey(),
+  fromUserId: varchar("from_user_id").references(() => users.id).notNull(),
+  toUserId: varchar("to_user_id").references(() => users.id),
+  content: text("content").notNull(),
+  isBroadcast: boolean("is_broadcast").default(false),
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCoachMessageSchema = createInsertSchema(coachMessages).omit({ id: true, createdAt: true });
+export type InsertCoachMessage = z.infer<typeof insertCoachMessageSchema>;
+export type CoachMessage = typeof coachMessages.$inferSelect;
+
+// Wellness check-ins (Replit consumer-facing)
+export const wellnessCheckins = pgTable("wellness_checkins", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  mood: integer("mood"),
+  energy: integer("energy"),
+  sleepQuality: integer("sleep_quality"),
+  soreness: integer("soreness"),
+  stress: integer("stress"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertWellnessCheckinSchema = createInsertSchema(wellnessCheckins).omit({ id: true, createdAt: true });
+export type InsertWellnessCheckin = z.infer<typeof insertWellnessCheckinSchema>;
+export type WellnessCheckin = typeof wellnessCheckins.$inferSelect;
+
+// ── Drizzle relations for Replit tables ────────────────────────────────────
+export const organizationRelations = relations(organizations, ({ many }) => ({
+  users: many(users),
+}));
+
+export const userRelations = relations(users, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [users.organizationId],
+    references: [organizations.id],
+  }),
+}));

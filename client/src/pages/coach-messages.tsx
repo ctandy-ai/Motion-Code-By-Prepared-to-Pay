@@ -1,419 +1,297 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sidebar } from "@/components/sidebar";
+import { TrialBanner } from "@/components/trial-banner";
+import { LockedContent } from "@/components/locked-content";
+import { useAuth } from "@/hooks/useAuth";
+import { useTier } from "@/hooks/useTier";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { PageHeader } from "@/components/page-header";
-import {
-  MessageSquare,
-  Send,
-  Users,
-  Search,
-  Megaphone,
-  Check,
-  CheckCheck,
-  Clock,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { Message, Athlete } from "@shared/schema";
-import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MessageSquare, Send, Users, Search, ChevronRight, Check, CheckCheck, Broadcast } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
-interface MessageThread {
-  athleteId: string;
-  athleteName: string;
-  team: string | null;
-  lastMessage: string;
-  lastMessageTime: Date;
-  unreadCount: number;
-  messages: Message[];
+interface CoachMessage {
+  id: number;
+  senderId: string;
+  recipientId: string | null;
+  subject: string;
+  body: string;
+  messageType: string;
+  isRead: boolean;
+  createdAt: string;
+  sender?: { firstName: string; lastName: string; email: string };
+  recipient?: { firstName: string; lastName: string; email: string };
 }
 
-export default function CoachMessages() {
+interface Athlete {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+function ComposePane({ onSent }: { onSent: () => void }) {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [selectedThread, setSelectedThread] = useState<string | null>(null);
-  const [newMessage, setNewMessage] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [broadcastOpen, setBroadcastOpen] = useState(false);
-  const [broadcastMessage, setBroadcastMessage] = useState("");
-  const [selectedForBroadcast, setSelectedForBroadcast] = useState<string[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [recipientId, setRecipientId] = useState("broadcast");
 
-  const { data: athletes } = useQuery<Athlete[]>({
+  const { data: athletes = [] } = useQuery<Athlete[]>({
     queryKey: ["/api/athletes"],
-  });
-
-  const { data: allMessages, isLoading: loadingMessages } = useQuery<Message[]>({
-    queryKey: ["/api/messages"],
-    refetchInterval: 10000,
+    enabled: !!user && user.role === "coach",
   });
 
   const sendMutation = useMutation({
-    mutationFn: async ({ athleteId, content }: { athleteId: string; content: string }) => {
-      return apiRequest("POST", `/api/messages/athlete/${athleteId}`, { content });
+    mutationFn: (data: any) => {
+      if (data.messageType === "broadcast") {
+        return apiRequest("POST", "/api/messages/broadcast", { subject: data.subject, body: data.body });
+      }
+      return apiRequest("POST", `/api/messages/athlete/${data.recipientId}`, { subject: data.subject, body: data.body });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      setNewMessage("");
+      toast({ title: "Message sent", description: recipientId === "broadcast" ? "Broadcast sent to all athletes" : "Message delivered" });
+      setSubject(""); setBody(""); setRecipientId("broadcast");
+      onSent();
     },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
-    },
+    onError: (err: any) => toast({ title: "Failed to send", description: err.message, variant: "destructive" }),
   });
 
-  const broadcastMutation = useMutation({
-    mutationFn: async ({ athleteIds, content }: { athleteIds: string[]; content: string }) => {
-      return apiRequest("POST", "/api/messages/broadcast", { athleteIds, content });
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      setBroadcastMessage("");
-      setSelectedForBroadcast([]);
-      setBroadcastOpen(false);
-      toast({
-        title: "Broadcast Sent",
-        description: `Message sent to ${data.sent} athletes.`,
-      });
-    },
-    onError: () => {
-      toast({ title: "Error", description: "Failed to broadcast message.", variant: "destructive" });
-    },
-  });
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedThread, allMessages]);
-
-  const threads: MessageThread[] = athletes
-    ?.map((athlete) => {
-      const athleteMessages = allMessages?.filter((m) => m.athleteId === athlete.id) || [];
-      const sortedMessages = [...athleteMessages].sort(
-        (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      );
-      const lastMsg = sortedMessages[0];
-      const unreadCount = athleteMessages.filter(
-        (m) => m.senderType === "athlete" && m.isRead === 0
-      ).length;
-
-      return {
-        athleteId: athlete.id,
-        athleteName: athlete.name,
-        team: athlete.team,
-        lastMessage: lastMsg?.content || "No messages yet",
-        lastMessageTime: lastMsg?.createdAt ? new Date(lastMsg.createdAt) : new Date(0),
-        unreadCount,
-        messages: athleteMessages.sort(
-          (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
-        ),
-      };
-    })
-    .filter((t) => {
-      if (!searchQuery) return true;
-      return t.athleteName.toLowerCase().includes(searchQuery.toLowerCase());
-    })
-    .sort((a, b) => b.lastMessageTime.getTime() - a.lastMessageTime.getTime()) || [];
-
-  const selectedThreadData = threads.find((t) => t.athleteId === selectedThread);
-
-  const handleSend = () => {
-    if (newMessage.trim() && selectedThread) {
-      sendMutation.mutate({ athleteId: selectedThread, content: newMessage.trim() });
-    }
-  };
-
-  const handleBroadcast = () => {
-    if (broadcastMessage.trim() && selectedForBroadcast.length > 0) {
-      broadcastMutation.mutate({
-        athleteIds: selectedForBroadcast,
-        content: broadcastMessage.trim(),
-      });
-    }
-  };
-
-  const toggleBroadcastSelection = (athleteId: string) => {
-    setSelectedForBroadcast((prev) =>
-      prev.includes(athleteId) ? prev.filter((id) => id !== athleteId) : [...prev, athleteId]
-    );
-  };
-
-  const selectAllForBroadcast = () => {
-    if (selectedForBroadcast.length === athletes?.length) {
-      setSelectedForBroadcast([]);
-    } else {
-      setSelectedForBroadcast(athletes?.map((a) => a.id) || []);
-    }
-  };
+  function handleSend() {
+    if (!body.trim()) return;
+    sendMutation.mutate({
+      subject: subject || "(No subject)",
+      body,
+      messageType: recipientId === "broadcast" ? "broadcast" : "direct",
+      recipientId: recipientId === "broadcast" ? null : recipientId,
+    });
+  }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Messaging Center"
-        icon={MessageSquare}
-        description="Communicate with your athletes"
-        actions={
-          <Button onClick={() => setBroadcastOpen(true)} data-testid="button-broadcast">
-            <Megaphone className="h-4 w-4 mr-2" />
-            Broadcast Message
-          </Button>
-        }
-      />
-
-      <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Broadcast Message</DialogTitle>
-            <DialogDescription>
-              Send a message to multiple athletes at once
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {selectedForBroadcast.length} of {athletes?.length || 0} selected
-              </span>
-              <Button variant="outline" size="sm" onClick={selectAllForBroadcast}>
-                {selectedForBroadcast.length === athletes?.length ? "Deselect All" : "Select All"}
-              </Button>
-            </div>
-            <div className="max-h-48 overflow-y-auto space-y-2 border rounded-lg p-3">
-              {athletes?.map((athlete) => (
-                <label
-                  key={athlete.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover-elevate cursor-pointer"
-                >
-                  <Checkbox
-                    checked={selectedForBroadcast.includes(athlete.id)}
-                    onCheckedChange={() => toggleBroadcastSelection(athlete.id)}
-                  />
-                  <span className="text-sm">{athlete.name}</span>
-                  {athlete.team && (
-                    <Badge variant="outline" className="text-xs">
-                      {athlete.team}
-                    </Badge>
-                  )}
-                </label>
-              ))}
-            </div>
-            <Textarea
-              placeholder="Type your broadcast message..."
-              value={broadcastMessage}
-              onChange={(e) => setBroadcastMessage(e.target.value)}
-              rows={4}
-              data-testid="input-broadcast-message"
-            />
-            <Button
-              className="w-full"
-              onClick={handleBroadcast}
-              disabled={
-                !broadcastMessage.trim() ||
-                selectedForBroadcast.length === 0 ||
-                broadcastMutation.isPending
-              }
-              data-testid="button-send-broadcast"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Send to {selectedForBroadcast.length} Athletes
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <div className="grid gap-6 lg:grid-cols-3 h-[calc(100vh-16rem)]">
-        <Card className="lg:col-span-1 flex flex-col">
-          <CardHeader className="pb-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search athletes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-                data-testid="input-search-threads"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto">
-            {loadingMessages ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
-                ))}
-              </div>
-            ) : threads.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="h-12 w-12 mx-auto text-slate-600 mb-3" />
-                <p className="text-sm text-muted-foreground">No conversations yet</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {threads.map((thread) => (
-                  <div
-                    key={thread.athleteId}
-                    className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-all hover-elevate ${
-                      selectedThread === thread.athleteId
-                        ? "bg-brand-600/20 border border-brand-500/30"
-                        : "bg-muted/50"
-                    }`}
-                    onClick={() => setSelectedThread(thread.athleteId)}
-                    data-testid={`thread-${thread.athleteId}`}
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-brand-600 text-white">
-                        {thread.athleteName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-foreground truncate">
-                          {thread.athleteName}
-                        </span>
-                        {thread.unreadCount > 0 && (
-                          <Badge className="bg-blue-600 text-[10px] px-1.5 py-0">
-                            {thread.unreadCount}
-                          </Badge>
-                        )}
-                      </div>
-                      {thread.team && (
-                        <span className="text-xs text-muted-foreground">{thread.team}</span>
-                      )}
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {thread.lastMessage}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-2 flex flex-col">
-          {selectedThreadData ? (
-            <>
-              <CardHeader className="pb-2 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-brand-600 text-white">
-                      {selectedThreadData.athleteName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-base font-semibold text-foreground">
-                      {selectedThreadData.athleteName}
-                    </CardTitle>
-                    {selectedThreadData.team && (
-                      <p className="text-xs text-muted-foreground">{selectedThreadData.team}</p>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 space-y-3">
-                {selectedThreadData.messages.length === 0 ? (
-                  <div className="text-center py-12">
-                    <MessageSquare className="h-12 w-12 mx-auto text-slate-600 mb-3" />
-                    <p className="text-sm text-muted-foreground">No messages yet</p>
-                    <p className="text-xs text-muted-foreground">Start the conversation</p>
-                  </div>
-                ) : (
-                  selectedThreadData.messages.map((message) => {
-                    const isCoach = message.senderType === "coach";
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${isCoach ? "justify-end" : "justify-start"}`}
-                        data-testid={`message-${message.id}`}
-                      >
-                        <div
-                          className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                            isCoach
-                              ? "bg-brand-600 text-white rounded-br-sm"
-                              : "bg-muted rounded-bl-sm"
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
-                          <div
-                            className={`flex items-center gap-1 mt-1 ${
-                              isCoach ? "justify-end" : ""
-                            }`}
-                          >
-                            <span
-                              className={`text-[10px] ${
-                                isCoach ? "text-white/70" : "text-muted-foreground"
-                              }`}
-                            >
-                              {message.createdAt
-                                ? format(new Date(message.createdAt), "h:mm a")
-                                : ""}
-                            </span>
-                            {isCoach && (
-                              <span className="text-white/70">
-                                {message.isRead ? (
-                                  <CheckCheck className="h-3 w-3" />
-                                ) : (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </CardContent>
-              <div className="p-4 border-t border-border">
+    <Card className="bg-[#132130] border-[#1A2D3F]">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-[#EEF2F6] text-base flex items-center gap-2">
+          <Send className="w-4 h-4 text-[#FF6432]" />
+          New Message
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div>
+          <label className="text-[#6A8499] text-xs font-semibold uppercase tracking-wide mb-1 block">To</label>
+          <Select value={recipientId} onValueChange={setRecipientId}>
+            <SelectTrigger className="bg-[#0A0C12] border-[#1A2D3F] text-[#EEF2F6]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#0A0C12] border-[#1A2D3F]">
+              <SelectItem value="broadcast">
                 <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    className="flex-1"
-                    data-testid="input-message"
-                  />
-                  <Button
-                    size="icon"
-                    onClick={handleSend}
-                    disabled={!newMessage.trim() || sendMutation.isPending}
-                    data-testid="button-send"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  <Users className="w-3 h-3 text-[#FF6432]" />
+                  <span>All Athletes (Broadcast)</span>
                 </div>
-              </div>
+              </SelectItem>
+              {athletes.map((a) => (
+                <SelectItem key={a.id} value={a.id}>
+                  {a.firstName} {a.lastName} — {a.email}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-[#6A8499] text-xs font-semibold uppercase tracking-wide mb-1 block">Subject</label>
+          <Input
+            placeholder="e.g. Week 4 load notes"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            className="bg-[#0A0C12] border-[#1A2D3F] text-[#EEF2F6] placeholder:text-[#6A8499]"
+          />
+        </div>
+
+        <div>
+          <label className="text-[#6A8499] text-xs font-semibold uppercase tracking-wide mb-1 block">Message</label>
+          <Textarea
+            placeholder="Write your message..."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={5}
+            className="bg-[#0A0C12] border-[#1A2D3F] text-[#EEF2F6] placeholder:text-[#6A8499] resize-none"
+          />
+        </div>
+
+        <Button
+          className="w-full bg-[#FF6432] hover:bg-[#FF7A52] text-white font-bold uppercase tracking-wide"
+          onClick={handleSend}
+          disabled={!body.trim() || sendMutation.isPending}
+        >
+          {sendMutation.isPending ? "Sending..." : (
+            <>
+              <Send className="w-4 h-4 mr-2" />
+              {recipientId === "broadcast" ? "Broadcast to All" : "Send Message"}
             </>
-          ) : (
-            <CardContent className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <MessageSquare className="h-16 w-16 mx-auto text-slate-600 mb-4" />
-                <h3 className="text-lg font-medium text-muted-foreground mb-2">
-                  Select a conversation
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Choose an athlete from the list to start messaging
-                </p>
-              </div>
-            </CardContent>
           )}
-        </Card>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MessageThread({ message, onSelect, selected }: { message: CoachMessage; onSelect: () => void; selected: boolean }) {
+  const isCoachSide = message.messageType === "broadcast" || message.sender?.email;
+  return (
+    <button
+      onClick={onSelect}
+      className={`w-full text-left p-3 rounded-lg border transition-all ${selected ? "border-[#FF6432]/50 bg-[#FF6432]/5" : "border-[#1A2D3F] bg-[#132130] hover:border-[#FF6432]/20"}`}
+    >
+      <div className="flex items-start gap-3">
+        <div className="w-8 h-8 rounded-full bg-[#1A2D3F] flex items-center justify-center shrink-0 text-xs font-bold text-[#6A8499]">
+          {message.messageType === "broadcast" ? "📢" : (message.recipient?.firstName?.[0] || message.sender?.firstName?.[0] || "?")}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <span className="text-[#EEF2F6] text-sm font-semibold truncate">
+              {message.messageType === "broadcast" ? "Broadcast — All Athletes" : (
+                message.recipient ? `${message.recipient.firstName} ${message.recipient.lastName}` : "Unknown"
+              )}
+            </span>
+            <span className="text-[#6A8499] text-xs shrink-0">
+              {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+            </span>
+          </div>
+          <p className="text-[#6A8499] text-xs truncate">{message.subject}</p>
+          <p className="text-[#EEF2F6]/60 text-xs truncate mt-0.5">{message.body}</p>
+        </div>
+        {!message.isRead && (
+          <div className="w-2 h-2 rounded-full bg-[#FF6432] shrink-0 mt-1" />
+        )}
+      </div>
+    </button>
+  );
+}
+
+export default function CoachMessagesPage() {
+  const { user } = useAuth();
+  const { isPro } = useTier();
+  const [selected, setSelected] = useState<CoachMessage | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: sentMessages = [], refetch } = useQuery<CoachMessage[]>({
+    queryKey: ["/api/messages"],
+    enabled: !!user,
+  });
+
+  const { data: inbox = [] } = useQuery<CoachMessage[]>({
+    queryKey: ["/api/messages"],
+    enabled: !!user && user.role !== "coach",
+  });
+
+  const isCoach = user?.role === "coach";
+  const messages = isCoach ? sentMessages : inbox;
+  const filtered = messages.filter(m =>
+    m.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    m.body?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const content = (
+    <div className="flex h-full gap-4">
+      {/* Left: list */}
+      <div className="w-80 flex flex-col gap-3 shrink-0">
+        {isCoach && <ComposePane onSent={() => { refetch(); setSelected(null); }} />}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6A8499]" />
+          <Input
+            placeholder="Search messages..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-[#132130] border-[#1A2D3F] text-[#EEF2F6] placeholder:text-[#6A8499]"
+          />
+        </div>
+        <div className="flex flex-col gap-2 overflow-y-auto max-h-[calc(100vh-320px)]">
+          {filtered.length === 0 ? (
+            <div className="text-center py-8 text-[#6A8499] text-sm">
+              {isCoach ? "No messages sent yet" : "No messages in your inbox"}
+            </div>
+          ) : (
+            filtered.map(m => (
+              <MessageThread
+                key={m.id}
+                message={m}
+                selected={selected?.id === m.id}
+                onSelect={() => setSelected(m)}
+              />
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Right: thread view */}
+      <div className="flex-1">
+        {selected ? (
+          <Card className="bg-[#132130] border-[#1A2D3F] h-full">
+            <CardHeader className="pb-3 border-b border-[#1A2D3F]">
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-[#EEF2F6] text-base">{selected.subject}</CardTitle>
+                  <p className="text-[#6A8499] text-xs mt-1">
+                    {selected.messageType === "broadcast" ? (
+                      <><Users className="w-3 h-3 inline mr-1" />Broadcast to all athletes</>
+                    ) : (
+                      <>To: {selected.recipient?.firstName} {selected.recipient?.lastName} · {selected.recipient?.email}</>
+                    )}
+                  </p>
+                </div>
+                <Badge className={selected.messageType === "broadcast" ? "bg-amber-600/20 text-amber-400 border-amber-400/30" : "bg-[#1A2D3F] text-[#6A8499]"}>
+                  {selected.messageType === "broadcast" ? "Broadcast" : "Direct"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <p className="text-[#EEF2F6] leading-relaxed whitespace-pre-wrap">{selected.body}</p>
+              <p className="text-[#6A8499] text-xs mt-4">
+                Sent {formatDistanceToNow(new Date(selected.createdAt), { addSuffix: true })}
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <MessageSquare className="w-12 h-12 text-[#1A2D3F] mb-3" />
+            <p className="text-[#6A8499]">Select a message to read</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-[#0A0C12]">
+      <Sidebar />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <TrialBanner />
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <MessageSquare className="w-6 h-6 text-[#FF6432]" />
+              <h1 className="text-2xl font-extrabold uppercase tracking-tight text-[#EEF2F6]">
+                {isCoach ? "Coach Messages" : "Messages"}
+              </h1>
+              {isCoach && (
+                <Badge className="bg-[#FF6432]/10 text-[#FF6432] border-[#FF6432]/30 text-xs">Pro Feature</Badge>
+              )}
+            </div>
+
+            {isCoach ? (
+              <LockedContent requiredTier="pro" label="Coach Messaging — Pro Feature">
+                {content}
+              </LockedContent>
+            ) : content}
+          </div>
+        </div>
       </div>
     </div>
   );

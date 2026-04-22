@@ -1,19 +1,43 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { uploadRouter } from "./uploadRoutes";
+import path from "path";
+
 const app = express();
 
+// Extend IncomingMessage for Stripe raw body verification
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
   }
 }
+
+// JSON body with rawBody capture (needed for Stripe webhook signature verification)
 app.use(express.json({
   verify: (req, _res, buf) => {
     req.rawBody = buf;
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+
+// Serve attached_assets folder for video files with optimized streaming headers
+app.use("/attached_assets", express.static(path.join(process.cwd(), "attached_assets"), {
+  maxAge: '1y',
+  immutable: true,
+  setHeaders: (res, filePath) => {
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    if (filePath.endsWith('.mp4')) {
+      res.setHeader('Content-Type', 'video/mp4');
+    } else if (filePath.endsWith('.MOV') || filePath.endsWith('.mov')) {
+      res.setHeader('Content-Type', 'video/quicktime');
+    }
+  }
+}));
+
+// Upload routes
+app.use("/api/upload", uploadRouter);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -56,9 +80,8 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  // Only setup vite in development and after all other routes
+  // so the catch-all doesn't interfere with API routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
@@ -67,8 +90,6 @@ app.use((req, res, next) => {
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || '5000', 10);
   server.listen({
     port,

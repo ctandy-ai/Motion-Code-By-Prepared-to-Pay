@@ -1,0 +1,19 @@
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- P2P Logo recreated in white based on the black logo -->
+  <g fill="white">
+    <!-- Main P -->
+    <path d="M5 8h16c5.5 0 10 4.5 10 10s-4.5 10-10 10h-6v14H5V8z M15 23h6c2.8 0 5-2.2 5-5s-2.2-5-5-5h-6v10z"/>
+    
+    <!-- Number 2 styled as P -->
+    <path d="M40 8h12c4.4 0 8 3.6 8 8 0 3.3-2 6.1-4.9 7.3L60 32h-8l-4.5-8H45v8h-5V8z M45 20h7c1.7 0 3-1.3 3-3s-1.3-3-3-3h-7v6z"/>
+    
+    <!-- Final P -->
+    <path d="M72 8h16c5.5 0 10 4.5 10 10s-4.5 10-10 10h-6v14h-10V8z M82 23h6c2.8 0 5-2.2 5-5s-2.2-5-5-5h-6v10z"/>
+  </g>
+  
+  <!-- "PREPARED TO PLAY" text -->
+  <g fill="white">
+    <text x="110" y="20" font-family="Arial, sans-serif" font-weight="bold" font-size="12">PREPARED</text>
+    <text x="110" y="35" font-family="Arial, sans-serif" font-weight="bold" font-size="12">TO PLAY</text>
+  </g>
+</svg>
