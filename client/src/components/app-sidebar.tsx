@@ -38,7 +38,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useState } from "react";
-import p2pLogo from "@assets/download_1762768481735.png";
+import p2pLogo from "/p2p-logo-white.svg";
 
 const coreItems = [
   { title: "Dashboard", url: "/", icon: Home },

@@ -244,10 +244,9 @@ export default function FindClinic() {
                     </div>
                   </div>
                   {clinic.isPreparedToPlayPartner && (
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border shrink-0 ml-3"
-                         style={{ backgroundColor: 'rgba(212, 175, 55, 0.15)', borderColor: 'rgba(212, 175, 55, 0.4)' }}>
-                      <Shield className="w-4 h-4" style={{ color: '#D4AF37' }} />
-                      <span className="text-xs font-semibold" style={{ color: '#D4AF37' }}>P2P Certified</span>
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border shrink-0 ml-3 bg-gold/15 border-gold/40">
+                      <Shield className="w-4 h-4 text-gold" />
+                      <span className="text-xs font-semibold text-gold">P2P Certified</span>
                     </div>
                   )}
                 </div>
@@ -391,8 +390,8 @@ export default function FindClinic() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setReferralSuccess(null)}>
           <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
             <div className="text-center mb-4">
-              <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(212, 175, 55, 0.2)' }}>
-                <CheckCircle2 className="w-8 h-8" style={{ color: '#D4AF37' }} />
+              <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center bg-gold/20">
+                <CheckCircle2 className="w-8 h-8 text-gold" />
               </div>
               <h3 className="font-heading text-xl font-bold text-white">Referral Confirmed!</h3>
             </div>

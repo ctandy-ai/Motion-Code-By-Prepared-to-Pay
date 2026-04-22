@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { useAuth } from "./hooks/useAuth";
+import { useEffect } from "react";
 
 // ── Internal coach/admin pages (GitHub MC Pro) ─────────────────────────────
 import Dashboard from "@/pages/dashboard";
@@ -86,6 +87,25 @@ import Upgrade from "./pages/upgrade";
 import Pricing from "./pages/pricing";
 import UpgradeSuccess from "./pages/upgrade-success";
 
+// ── Role-based home redirect ──────────────────────────────────────────────
+function RoleBasedHome() {
+  const { user, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (isLoading || !user) return;
+    const role = (user as any).role;
+    if (role === "athlete") navigate("/athlete-dashboard");
+    else navigate("/app");
+  }, [user, isLoading]);
+
+  return (
+    <div className="min-h-screen bg-p2p-dark flex items-center justify-center">
+      <div className="animate-pulse text-p2p-muted">Redirecting…</div>
+    </div>
+  );
+}
+
 // ── Protected Route wrapper ────────────────────────────────────────────────
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -161,8 +181,8 @@ function DesktopRouter() {
       <Route path="/team-training" component={TeamTraining} />
       <Route path="/mc-pro-planner" component={McProPlanner} />
 
-      {/* Athlete-facing protected routes */}
-      <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
+      {/* Role-based home redirect */}
+      <Route path="/dashboard">{() => <ProtectedRoute component={RoleBasedHome} />}</Route>
       <Route path="/onboarding">{() => <ProtectedRoute component={Onboarding} />}</Route>
       <Route path="/athlete-setup">{() => <ProtectedRoute component={AthleteSetup} />}</Route>
       <Route path="/athlete">{() => <ProtectedRoute component={AthleteDashboard} />}</Route>

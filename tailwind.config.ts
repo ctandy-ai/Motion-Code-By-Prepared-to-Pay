@@ -115,6 +115,18 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        // Motion Code / Prepared to Play brand tokens
+        "p2p-dark": "#0A0C12",
+        "p2p-surface": "#0E1420",
+        "p2p-surface2": "#132130",
+        "p2p-border": "#1F2937",
+        "p2p-electric": "#3B82F6",
+        "p2p-blue": "#2563EB",
+        "p2p-orange": "#FF6432",
+        "p2p-orange-hover": "#FF7A52",
+        "p2p-text": "#EEF2F6",
+        "p2p-muted": "#6A8499",
+        "p2p-navy": "#1A2D3F",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],

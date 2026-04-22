@@ -15,7 +15,7 @@ import {
   TrendingUp,
   Building2
 } from "lucide-react";
-import preparedToPlayLogo from "@assets/Logo (2)_1754315444562.png";
+import preparedToPlayLogo from "/p2p-logo-white.svg";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 type User = {
@@ -51,21 +51,21 @@ export default function ClinicianDashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-p2p-dark flex items-center justify-center">
         <div className="animate-pulse text-white">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
-      <header className="bg-slate-900/90 border-b border-slate-700 sticky top-0 z-50 backdrop-blur-sm">
+    <div className="min-h-screen bg-gradient-to-b from-p2p-dark to-p2p-surface">
+      <header className="bg-p2p-surface/90 border-b border-p2p-border sticky top-0 z-50 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={preparedToPlayLogo} alt="Prepared to Play" className="h-10" />
             <div>
               <h1 className="text-lg font-bold text-white">Motion Code</h1>
-              <p className="text-xs text-slate-400">Clinician Portal</p>
+              <p className="text-xs text-p2p-muted">Clinician Portal</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -73,7 +73,7 @@ export default function ClinicianDashboard() {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/settings")}
-              className="text-slate-400 hover:text-white hover:bg-slate-800"
+              className="text-p2p-muted hover:text-white hover:bg-p2p-surface"
               data-testid="button-settings"
             >
               <Settings className="h-5 w-5" />
@@ -82,7 +82,7 @@ export default function ClinicianDashboard() {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="text-slate-400 hover:text-white hover:bg-slate-800"
+              className="text-p2p-muted hover:text-white hover:bg-p2p-surface"
               data-testid="button-logout"
             >
               <LogOut className="h-5 w-5" />
@@ -96,34 +96,34 @@ export default function ClinicianDashboard() {
           <h2 className="text-2xl font-bold text-white">
             Welcome, {user?.firstName || "Clinician"}
           </h2>
-          <p className="text-slate-400">Access clinical tools and patient resources</p>
+          <p className="text-p2p-muted">Access clinical tools and patient resources</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-slate-800/50 border-slate-700 text-center p-4">
+          <Card className="bg-p2p-surface2/50 border-p2p-border text-center p-4">
             <Users className="h-6 w-6 mx-auto mb-2 text-blue-400" />
             <div className="text-2xl font-bold text-white">24</div>
-            <div className="text-xs text-slate-400">Active Patients</div>
+            <div className="text-xs text-p2p-muted">Active Patients</div>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700 text-center p-4">
+          <Card className="bg-p2p-surface2/50 border-p2p-border text-center p-4">
             <FileText className="h-6 w-6 mx-auto mb-2 text-green-400" />
             <div className="text-2xl font-bold text-white">8</div>
-            <div className="text-xs text-slate-400">Treatment Plans</div>
+            <div className="text-xs text-p2p-muted">Treatment Plans</div>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700 text-center p-4">
+          <Card className="bg-p2p-surface2/50 border-p2p-border text-center p-4">
             <Activity className="h-6 w-6 mx-auto mb-2 text-yellow-400" />
             <div className="text-2xl font-bold text-white">92%</div>
-            <div className="text-xs text-slate-400">Avg Compliance</div>
+            <div className="text-xs text-p2p-muted">Avg Compliance</div>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700 text-center p-4">
+          <Card className="bg-p2p-surface2/50 border-p2p-border text-center p-4">
             <TrendingUp className="h-6 w-6 mx-auto mb-2 text-purple-400" />
             <div className="text-2xl font-bold text-white">18</div>
-            <div className="text-xs text-slate-400">RTP This Month</div>
+            <div className="text-xs text-p2p-muted">RTP This Month</div>
           </Card>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-p2p-surface2/50 border-p2p-border">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-blue-400" />
@@ -131,7 +131,7 @@ export default function ClinicianDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-400 mb-4">
+              <p className="text-p2p-muted mb-4">
                 Full access to the P2P exercise library with clinical language, 
                 progressions, and RTP criteria.
               </p>
@@ -145,7 +145,7 @@ export default function ClinicianDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-p2p-surface2/50 border-p2p-border">
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <ClipboardList className="h-5 w-5 text-green-400" />
@@ -153,13 +153,13 @@ export default function ClinicianDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-slate-400 mb-4">
+              <p className="text-p2p-muted mb-4">
                 Create and export treatment plans using evidence-based protocols
                 and Rehab Bond integration.
               </p>
               <Button 
                 variant="outline" 
-                className="w-full border-slate-600 text-white hover:bg-slate-700"
+                className="w-full border-p2p-border text-white hover:bg-p2p-border"
                 data-testid="button-treatment-plans"
               >
                 Coming Soon
@@ -168,7 +168,7 @@ export default function ClinicianDashboard() {
           </Card>
         </div>
 
-        <Card className="bg-slate-800/50 border-slate-700 mb-8">
+        <Card className="bg-p2p-surface2/50 border-p2p-border mb-8">
           <CardHeader>
             <CardTitle className="text-white flex items-center gap-2">
               <Building2 className="h-5 w-5 text-orange-400" />
@@ -178,7 +178,7 @@ export default function ClinicianDashboard() {
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-slate-400 mb-2">
+                <p className="text-p2p-muted mb-2">
                   Manage your clinic's directory listing and service offerings.
                 </p>
                 <div className="flex gap-2">
@@ -193,7 +193,7 @@ export default function ClinicianDashboard() {
               <Button 
                 variant="outline"
                 onClick={() => navigate("/find-clinic")}
-                className="border-slate-600 text-white hover:bg-slate-700"
+                className="border-p2p-border text-white hover:bg-p2p-border"
                 data-testid="button-manage-listing"
               >
                 <MapPin className="h-4 w-4 mr-2" />

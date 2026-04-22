@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
-import groundContactImg from "@assets/ground contact time_1760010709947.jpg";
-import sprintingImg from "@assets/sprinting_1760010814329.jpg";
-import codImg from "@assets/change of direction_1760010709946.jpg";
-import decelerationImg from "@assets/acceleration_1760010709946.jpg";
+
+// Placeholder data URIs for missing assets (replace with real images when available)
+const groundContactImg = "";
+const sprintingImg = "";
+const codImg = "";
+const decelerationImg = "";
 
 export default function StatisticsSection() {
   const stats = [
@@ -91,11 +93,15 @@ export default function StatisticsSection() {
                 <div className="relative bg-gradient-to-br from-gray-900 to-black border border-gray-800 rounded-2xl p-8 hover:border-gray-700 transition-all duration-300 h-full">
                   {/* Image */}
                   <div className="relative w-full h-32 mb-6 rounded-xl overflow-hidden">
-                    <img 
-                      src={stat.image} 
-                      alt={stat.label}
-                      className="w-full h-full object-cover"
-                    />
+                    {stat.image ? (
+                      <img 
+                        src={stat.image} 
+                        alt={stat.label}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-br ${stat.gradient} opacity-20`} />
+                    )}
                     <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-20`} />
                   </div>
                   

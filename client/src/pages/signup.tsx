@@ -16,7 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Eye, EyeOff, CheckCircle2, Loader2, ArrowRight, Building2 } from "lucide-react";
-import logoImage from "@assets/download_1753006535107.png";
+import logoImage from "/p2p-logo-white.svg";
+import { useRoleRedirect } from "@/hooks/useRoleRedirect";
 
 const signupSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -57,6 +58,7 @@ export default function Signup() {
   const searchString = useSearch();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  useRoleRedirect();
   const [showPassword, setShowPassword] = useState(false);
   const [partnerOrg, setPartnerOrg] = useState<PartnerOrgInfo | null>(null);
   const [isValidatingCode, setIsValidatingCode] = useState(false);
@@ -174,8 +176,8 @@ export default function Signup() {
           {partnerOrg ? (
             <>
               <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-6">
-                <Building2 className="w-3.5 h-3.5" style={{ color: partnerOrg.primaryColor }} />
-                <span className="text-sm font-medium" style={{ color: partnerOrg.primaryColor }}>
+                <Building2 className="w-3.5 h-3.5 text-p2p-orange" />
+                <span className="text-sm font-medium text-p2p-orange">
                   {partnerOrg.name}
                 </span>
               </div>
@@ -218,7 +220,7 @@ export default function Signup() {
 
           {partnerOrg && (
             <div className="flex items-center gap-2 mb-5 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
-              <Building2 className="w-4 h-4 shrink-0" style={{ color: partnerOrg.primaryColor }} />
+              <Building2 className="w-4 h-4 shrink-0 text-p2p-orange" />
               <span className="text-sm text-gray-300">
                 Joining via <span className="font-semibold text-white">{partnerOrg.name}</span>
               </span>

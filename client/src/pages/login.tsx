@@ -16,7 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { apiRequest, clearAuthCache } from "@/lib/queryClient";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
-import logoImage from "@assets/download_1753006535107.png";
+import logoImage from "/p2p-logo-white.svg";
+import { useRoleRedirect } from "@/hooks/useRoleRedirect";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -30,6 +31,7 @@ export default function Login() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  useRoleRedirect();
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),

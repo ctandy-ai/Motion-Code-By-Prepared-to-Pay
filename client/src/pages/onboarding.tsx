@@ -145,15 +145,11 @@ export default function Onboarding() {
       <div className="w-full max-w-4xl">
         {partnerOrg && partnerOrg.welcomeMessage && (
           <div
-            className="mb-6 rounded-xl border p-4 text-center"
-            style={{
-              borderColor: partnerOrg.primaryColor,
-              backgroundColor: `${partnerOrg.primaryColor}10`,
-            }}
+            className="mb-6 rounded-xl border p-4 text-center border-p2p-orange/40 bg-p2p-orange/5"
           >
             <p className="text-white text-lg font-semibold">{partnerOrg.welcomeMessage}</p>
             <p className="text-gray-400 text-sm mt-1">
-              via <span style={{ color: partnerOrg.primaryColor }}>{partnerOrg.name}</span>
+              via <span className="text-p2p-orange">{partnerOrg.name}</span>
             </p>
           </div>
         )}

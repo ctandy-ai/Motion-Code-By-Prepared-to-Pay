@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import PhoneFrame from "./PhoneFrame";
-import VideoBackground from "./VideoBackground";
+import VideoSmart from "./VideoSmart";
 import AppMockup from "./AppMockup";
 
 interface SectionProps {
@@ -19,9 +19,9 @@ export default function MovementSection({ title, description, video, reverse, sh
       category={title}
     />
   ) : (
-    <VideoBackground 
+    <VideoSmart 
       src={video}
-      className="w-full h-full object-cover rounded-2xl shadow-glow"
+      className="w-full h-full rounded-2xl shadow-glow"
     />
   );
 
