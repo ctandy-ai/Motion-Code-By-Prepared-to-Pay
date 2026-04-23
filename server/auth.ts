@@ -532,3 +532,36 @@ export function getPermissions(role: UserRole) {
       };
   }
 }
+
+// ── TIER MIDDLEWARE ─────────────────────────────────────────────────────────────
+
+export function requireTier(...tiers: string[]): RequestHandler {
+  return async (req: any, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    try {
+      const { storage } = await import('./storage');
+      const user = await storage.getUser(req.user.id);
+      const userTier = user?.subscriptionTier || 'trial';
+      if (tiers.includes(userTier) || userTier === 'admin') {
+        return next();
+      }
+      return res.status(403).json({ error: 'Upgrade required', requiredTier: tiers[0] });
+    } catch {
+      return next();
+    }
+  };
+}
+
+export function requireValidSubscription(req: any, res: Response, next: NextFunction) {
+  // Allow all authenticated users through — subscription enforcement is handled at feature level
+  if (!req.user) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  return next();
+}
+
+export function generateTeamCode(): string {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}

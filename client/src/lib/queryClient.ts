@@ -55,3 +55,8 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+export function clearAuthCache() {
+  queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
+  queryClient.removeQueries({ queryKey: ["/api/auth/me"] });
+}

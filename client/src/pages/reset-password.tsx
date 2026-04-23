@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Eye, EyeOff, CheckCircle2, AlertCircle, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
-import logoImage from "/p2p-logo-white.svg";
+import logoImage from "@/assets/p2p-logo-white.svg";
 
 const resetPasswordSchema = z.object({
   newPassword: z

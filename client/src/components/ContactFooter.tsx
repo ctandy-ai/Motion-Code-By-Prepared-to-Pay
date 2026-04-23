@@ -1,5 +1,5 @@
 import { Mail, Phone, MapPin } from "lucide-react";
-import preparedToPlayLogo from "/p2p-logo-white.svg";
+import preparedToPlayLogo from "@/assets/p2p-logo-white.svg";
 
 export default function ContactFooter() {
   return (

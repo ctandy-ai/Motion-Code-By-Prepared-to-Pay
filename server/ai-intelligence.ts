@@ -36,7 +36,7 @@ interface AIResponse {
   }>;
 }
 
-async function buildAthleteContext(storage: IStorage, athleteId?: string): Promise<string> {
+async function buildAthleteContext(storage: any, athleteId?: string): Promise<string> {
   if (athleteId) {
     const athlete = await storage.getAthlete(athleteId);
     const workoutLogs = await storage.getWorkoutLogs(athleteId);
@@ -65,7 +65,7 @@ ${prs.slice(0, 5).map(pr => `- Exercise ${pr.exerciseId}: ${pr.maxWeight}kg`).jo
   return `ROSTER: ${athletes.length} athletes\n${athletes.slice(0, 20).map(a => `- ${a.name} (${a.team || "No team"})`).join("\n")}`;
 }
 
-async function buildProgramContext(storage: IStorage, programId?: string): Promise<string> {
+async function buildProgramContext(storage: any, programId?: string): Promise<string> {
   if (programId) {
     const program = await storage.getProgram(programId);
     const phases = await storage.getProgramPhases(programId);
@@ -85,7 +85,7 @@ ${phases.map(p => `- ${p.name}: Weeks ${p.startWeek}-${p.endWeek}`).join("\n")}
   return `PROGRAMS: ${programs.length} total\n${programs.map(p => `- ${p.name}`).join("\n")}`;
 }
 
-async function buildTeamContext(storage: IStorage): Promise<string> {
+async function buildTeamContext(storage: any): Promise<string> {
   const athletes = await storage.getAthletes();
   const allSurveys = await storage.getAllReadinessSurveys();
   const recentSurveys = allSurveys.filter(s => {
@@ -118,7 +118,7 @@ ${Object.entries(
 `;
 }
 
-async function buildExerciseContext(storage: IStorage, exerciseId?: string): Promise<string> {
+async function buildExerciseContext(storage: any, exerciseId?: string): Promise<string> {
   if (exerciseId) {
     const exercise = await storage.getExercise(exerciseId);
     return `
@@ -129,12 +129,12 @@ EXERCISE: ${exercise?.name}
 `;
   }
   
-  const exercises = await storage.getExercises();
+  const exercises = await storage.getAllExercises();
   const categorySet = new Set(exercises.map(e => e.category).filter(Boolean));
   return `EXERCISE LIBRARY: ${exercises.length} exercises across ${categorySet.size} categories`;
 }
 
-async function buildAnalyticsContext(storage: IStorage): Promise<string> {
+async function buildAnalyticsContext(storage: any): Promise<string> {
   const workoutLogs = await storage.getWorkoutLogs();
   const prs = await storage.getPersonalRecords();
   const surveys = await storage.getAllReadinessSurveys();
@@ -243,7 +243,7 @@ Provide strategic coaching support:
 export async function processAIQuery(
   query: string,
   context: AIContext,
-  storage: IStorage
+  storage: any
 ): Promise<AIResponse> {
   let contextString = "";
   
@@ -303,7 +303,7 @@ export async function processAIQuery(
 
 export async function getAthleteInsights(
   athleteId: string,
-  storage: IStorage
+  storage: any
 ): Promise<AIResponse> {
   return processAIQuery(
     "Analyze this athlete's recent performance, wellness trends, and provide actionable recommendations. Identify any injury risks or areas for improvement.",
@@ -314,7 +314,7 @@ export async function getAthleteInsights(
 
 export async function getProgramSuggestions(
   programId: string,
-  storage: IStorage
+  storage: any
 ): Promise<AIResponse> {
   return processAIQuery(
     "Review this program structure and suggest optimizations for periodization, exercise selection, and recovery placement.",
@@ -326,7 +326,7 @@ export async function getProgramSuggestions(
 export async function getExerciseRecommendations(
   goals: string[],
   constraints: { injuries?: string[]; equipment?: string[]; beltLevel?: string; athleteId?: string },
-  storage: IStorage
+  storage: any
 ): Promise<AIResponse> {
   let athleteContext = "";
   
@@ -358,7 +358,7 @@ Provide:
   return processAIQuery(query, { level: "exercise" }, storage);
 }
 
-export async function getTeamInsights(storage: IStorage): Promise<AIResponse> {
+export async function getTeamInsights(storage: any): Promise<AIResponse> {
   const athletes = await storage.getAllAthletes();
   const surveys = await storage.getAllReadinessSurveys();
   const workoutLogs = await storage.getWorkoutLogs();
@@ -413,14 +413,14 @@ Analyze this team and provide:
 
 export async function queryAnalytics(
   naturalLanguageQuery: string,
-  storage: IStorage
+  storage: any
 ): Promise<AIResponse> {
   return processAIQuery(naturalLanguageQuery, { level: "analytics" }, storage);
 }
 
 export async function getCoachingDecisionSupport(
   scenario: string,
-  storage: IStorage
+  storage: any
 ): Promise<AIResponse> {
   const heuristics = await storage.getActiveHeuristics();
   const athletes = await storage.getAllAthletes();
@@ -464,7 +464,7 @@ Provide decision support including:
 export async function updateAthleteWithAI(
   athleteId: string,
   updateDescription: string,
-  storage: IStorage
+  storage: any
 ): Promise<{
   proposedChanges: Record<string, unknown>;
   message: string;

@@ -9,7 +9,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { eq, and, or, desc, inArray } from "drizzle-orm";
 import { setupAuth } from "./auth";
-import { authMiddleware, requireAuth, getPermissions, USER_ROLES, requireHeadCoach, requireCoach } from "./auth";
+import { authMiddleware, requireAuth, getPermissions, USER_ROLES, requireHeadCoach, requireCoach, requireTier, requireValidSubscription, generateTeamCode } from "./auth";
 import {
   insertExerciseSchema,
   insertAthleteSchema,

@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import logoImage from "/p2p-logo-white.svg";
+import logoImage from "@/assets/p2p-logo-white.svg";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { usePartnerOrg } from "@/hooks/usePartnerOrg";
 

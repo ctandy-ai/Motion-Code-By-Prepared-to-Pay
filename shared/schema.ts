@@ -18,6 +18,29 @@ export const exercises = pgTable("exercises", {
   instructions: text("instructions").notNull(),
   videoUrl: text("video_url"),
   thumbnailUrl: text("thumbnail_url"),
+  // Extended fields for consumer app
+  description: text("description"),
+  component: text("component"),
+  beltLevel: text("belt_level"),
+  duration: text("duration"),
+  movementType: text("movement_type"),
+  setsRange: text("sets_range"),
+  repsRange: text("reps_range"),
+  restPeriod: text("rest_period"),
+  programmingGuide: text("programming_guide"),
+  whyItWorks: text("why_it_works"),
+  coachingCues: text("coaching_cues").array(),
+  applicableSports: text("applicable_sports").array(),
+  applicablePositions: text("applicable_positions").array(),
+  progressions: text("progressions").array(),
+  regressions: text("regressions").array(),
+  skillFocus: text("skill_focus"),
+  trainingPhase: text("training_phase"),
+  progressionLevel: text("progression_level"),
+  complexityRating: text("complexity_rating"),
+  weekIntroduced: integer("week_introduced"),
+  isCustom: integer("is_custom").default(0),
+  organizationId: varchar("organization_id"),
 });
 
 export const insertExerciseSchema = createInsertSchema(exercises).omit({ id: true });
@@ -35,6 +58,10 @@ export const athletes = pgTable("athletes", {
   avatarUrl: text("avatar_url"),
   notes: text("notes"),
   dateJoined: timestamp("date_joined").defaultNow(),
+  // Extended fields
+  age: integer("age"),
+  belt: text("belt").default("white"),
+  stats: text("stats"),
 });
 
 export const insertAthleteSchema = createInsertSchema(athletes).omit({ 
@@ -76,6 +103,7 @@ export const programs = pgTable("programs", {
   name: text("name").notNull(),
   description: text("description"),
   duration: integer("duration").notNull(),
+  organizationId: varchar("organization_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -375,6 +403,7 @@ export const workoutLogs = pgTable("workout_logs", {
   repsPerSet: text("reps_per_set").notNull(),
   weightPerSet: text("weight_per_set").notNull(),
   notes: text("notes"),
+  setsCompleted: integer("sets_completed"),
 });
 
 export const insertWorkoutLogSchema = createInsertSchema(workoutLogs).omit({ 
@@ -488,8 +517,14 @@ export const achievements = pgTable("achievements", {
   category: text("category").notNull(),
   rarity: text("rarity").notNull(),
   iconUrl: text("icon_url"),
+  icon: text("icon"),
   xpReward: integer("xp_reward").notNull(),
   requirement: text("requirement").notNull(),
+  criteria: text("criteria"),
+  criteriaValue: integer("criteria_value"),
+  tier: text("tier"),
+  sortOrder: integer("sort_order"),
+  isActive: boolean("is_active").default(true),
 });
 
 export const insertAchievementSchema = createInsertSchema(achievements).omit({ id: true });
@@ -551,6 +586,8 @@ export const readinessSurveys = pgTable("readiness_surveys", {
   mood: integer("mood").notNull(),
   overallReadiness: integer("overall_readiness").notNull(),
   notes: text("notes"),
+  readinessScore: integer("readiness_score"),
+  soreness: integer("soreness"),
 }, (table) => ({
   athleteDateIdx: index("readiness_surveys_athlete_date_idx").on(table.athleteId, table.surveyDate),
 }));
@@ -1322,6 +1359,15 @@ export const clinics = pgTable("clinics", {
   longitude: real("longitude"),
   isActive: boolean("is_active").default(true),
   isPreparedToPlay: boolean("is_prepared_to_play").default(false),
+  // Extended fields
+  isPreparedToPlayPartner: boolean("is_prepared_to_play_partner").default(false),
+  isTripleHopProvider: boolean("is_triple_hop_provider").default(false),
+  isMovementScreeningProvider: boolean("is_movement_screening_provider").default(false),
+  isRehabBondClinic: boolean("is_rehab_bond_clinic").default(false),
+  isVerified: boolean("is_verified").default(false),
+  bookingUrl: text("booking_url"),
+  logoUrl: text("logo_url"),
+  managedByUserId: varchar("managed_by_user_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -1340,7 +1386,9 @@ export const microSessions = pgTable("micro_sessions", {
   estimatedDuration: integer("estimated_duration"),
   difficulty: text("difficulty"),
   focusArea: text("focus_area"),
+  sport: text("sport"),
   isCompleted: boolean("is_completed").default(false),
+  isActive: boolean("is_active").default(true),
   scheduledDate: timestamp("scheduled_date"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1405,6 +1453,7 @@ export const teamMembers = pgTable("team_members", {
   teamId: integer("team_id").references(() => coachTeams.id).notNull(),
   userId: varchar("user_id").references(() => users.id).notNull(),
   role: text("role").default("member"),
+  isActive: boolean("is_active").default(true),
   joinedAt: timestamp("joined_at").defaultNow(),
 });
 
@@ -1474,6 +1523,8 @@ export const communityBoards = pgTable("community_boards", {
   category: text("category"),
   requiredRole: text("required_role"),
   isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  accessLevel: text("access_level"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -1491,6 +1542,7 @@ export const communityPosts = pgTable("community_posts", {
   mediaUrl: text("media_url"),
   isPinned: boolean("is_pinned").default(false),
   isAnnouncement: boolean("is_announcement").default(false),
+  isLocked: boolean("is_locked").default(false),
   viewCount: integer("view_count").notNull().default(0),
   likeCount: integer("like_count").notNull().default(0),
   commentCount: integer("comment_count").notNull().default(0),
@@ -1508,6 +1560,7 @@ export const postComments = pgTable("post_comments", {
   postId: integer("post_id").references(() => communityPosts.id).notNull(),
   authorId: varchar("author_id").references(() => users.id).notNull(),
   content: text("content").notNull(),
+  parentId: integer("parent_id"),
   likeCount: integer("like_count").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -1541,13 +1594,17 @@ export const partnerOrganisations = pgTable("partner_organisations", {
   name: text("name").notNull(),
   slug: text("slug").unique().notNull(),
   sport: text("sport").notNull().default("netball"),
+  sportName: text("sport_name"),
   logoUrl: text("logo_url"),
   primaryColor: text("primary_color"),
   secondaryColor: text("secondary_color"),
   description: text("description"),
   website: text("website"),
   state: text("state"),
+  country: text("country"),
+  welcomeMessage: text("welcome_message"),
   accessCode: varchar("access_code").unique(),
+  entryCode: varchar("entry_code").unique(),
   grantedTier: text("granted_tier").default("season_pass"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1575,6 +1632,7 @@ export const clinicReferrals = pgTable("clinic_referrals", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").references(() => users.id).notNull(),
   clinicId: integer("clinic_id").references(() => clinics.id).notNull(),
+  referralType: text("referral_type"),
   reason: text("reason"),
   status: text("status").default("pending"),
   notes: text("notes"),
@@ -1598,6 +1656,8 @@ export const educationModules = pgTable("education_modules", {
   duration: integer("duration"),
   requiredTier: text("required_tier").default("trial"),
   orderIndex: integer("order_index").default(0),
+  sortOrder: integer("sort_order").default(0),
+  accessLevel: text("access_level"),
   isPublished: boolean("is_published").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -1626,6 +1686,8 @@ export const injuryReports = pgTable("injury_reports", {
   bodyPart: text("body_part").notNull(),
   severity: text("severity").notNull(),
   description: text("description"),
+  painRating: integer("pain_rating"),
+  referredToClinicId: integer("referred_to_clinic_id"),
   occurredAt: timestamp("occurred_at"),
   status: text("status").default("active"),
   createdAt: timestamp("created_at").defaultNow(),

@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { apiRequest, clearAuthCache } from "@/lib/queryClient";
 import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
-import logoImage from "/p2p-logo-white.svg";
+import logoImage from "@/assets/p2p-logo-white.svg";
 import { useRoleRedirect } from "@/hooks/useRoleRedirect";
 
 const loginSchema = z.object({

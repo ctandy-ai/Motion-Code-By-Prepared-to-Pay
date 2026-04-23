@@ -15,7 +15,7 @@ import {
   TrendingUp,
   Building2
 } from "lucide-react";
-import preparedToPlayLogo from "/p2p-logo-white.svg";
+import preparedToPlayLogo from "@/assets/p2p-logo-white.svg";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 type User = {

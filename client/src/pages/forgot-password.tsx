@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { ArrowLeft, Mail, Loader2, ArrowRight } from "lucide-react";
-import logoImage from "/p2p-logo-white.svg";
+import logoImage from "@/assets/p2p-logo-white.svg";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),

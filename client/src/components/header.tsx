@@ -1,6 +1,6 @@
 import { Activity, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import preparedToPlayLogo from "/p2p-logo-white.svg";
+import preparedToPlayLogo from "@/assets/p2p-logo-white.svg";
 
 export default function Header() {
   return (

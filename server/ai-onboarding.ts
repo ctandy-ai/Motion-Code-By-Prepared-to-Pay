@@ -90,7 +90,7 @@ Be professional but efficient. Confirm what you understood without asking unnece
 export async function processOnboardingMessage(
   userMessage: string,
   conversationHistory: Array<{ role: string; content: string }>,
-  storage: IStorage
+  storage: any
 ): Promise<OnboardingResponse> {
   const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
     { role: "system", content: SYSTEM_PROMPT },
@@ -128,7 +128,7 @@ export async function processOnboardingMessage(
 
 export async function createAthleteFromOnboarding(
   data: ParsedAthleteData,
-  storage: IStorage
+  storage: any
 ): Promise<{ success: boolean; athleteId?: string; error?: string }> {
   if (!data.name) {
     return { success: false, error: "Athlete name is required" };
@@ -190,7 +190,7 @@ export async function createAthleteFromOnboarding(
 
 export async function suggestProgramsForAthlete(
   data: ParsedAthleteData,
-  storage: IStorage
+  storage: any
 ): Promise<Array<{ id: string; name: string; description?: string | null; matchReason: string }>> {
   const templates = await storage.getProgramTemplates();
   

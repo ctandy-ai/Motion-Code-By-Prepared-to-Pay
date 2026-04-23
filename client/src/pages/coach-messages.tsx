@@ -13,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MessageSquare, Send, Users, Search, ChevronRight, Check, CheckCheck, Broadcast } from "lucide-react";
+import { MessageSquare, Send, Users, Search, ChevronRight, Check, CheckCheck, Radio } from "lucide-react";
+const Broadcast = Radio;
 import { formatDistanceToNow } from "date-fns";
 
 interface CoachMessage {

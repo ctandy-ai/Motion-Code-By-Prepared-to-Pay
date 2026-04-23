@@ -12,7 +12,7 @@ const APP_URL = process.env.APP_URL || "https://motioncode.app";
 
 function getStripe(): Stripe | null {
   if (!STRIPE_SECRET) return null;
-  return new Stripe(STRIPE_SECRET, { apiVersion: "2025-02-24.acacia" });
+  return new Stripe(STRIPE_SECRET, { apiVersion: "2025-08-27.basil" });
 }
 
 // Pricing configuration — update price IDs after creating in Stripe dashboard

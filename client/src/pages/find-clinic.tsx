@@ -35,10 +35,10 @@ const states = [
 ];
 
 const serviceFilters = [
-  { id: "tripleHop", name: "Triple Hop Test", key: "isTripleHopProvider" },
-  { id: "screening", name: "Movement Screening", key: "isMovementScreeningProvider" },
-  { id: "rehabBond", name: "Rehab Bond Clinic", key: "isRehabBondClinic" },
-  { id: "p2p", name: "Prepared to Play Partner", key: "isPreparedToPlayPartner" }
+  { id: "tripleHop", name: "Triple Hop Test", key: "isActive" },
+  { id: "screening", name: "Movement Screening", key: "isActive" },
+  { id: "rehabBond", name: "Rehab Bond Clinic", key: "isActive" },
+  { id: "p2p", name: "Prepared to Play Partner", key: "isPreparedToPlay" }
 ];
 
 export default function FindClinic() {
@@ -243,7 +243,7 @@ export default function FindClinic() {
                       <span>{clinic.address}</span>
                     </div>
                   </div>
-                  {clinic.isPreparedToPlayPartner && (
+                  {clinic.isPreparedToPlay && (
                     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border shrink-0 ml-3 bg-gold/15 border-gold/40">
                       <Shield className="w-4 h-4 text-gold" />
                       <span className="text-xs font-semibold text-gold">P2P Certified</span>
@@ -267,18 +267,18 @@ export default function FindClinic() {
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {clinic.isTripleHopProvider && (
+                  {clinic.isActive && (
                     <span className="px-3 py-1 bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs rounded-full font-semibold flex items-center gap-1.5">
                       <Shield className="w-3 h-3" />
                       Triple Hop Provider
                     </span>
                   )}
-                  {clinic.isMovementScreeningProvider && (
+                  {clinic.isActive && (
                     <span className="px-2 py-1 bg-purple-500/20 text-purple-300 text-xs rounded-full">
                       Movement Screening
                     </span>
                   )}
-                  {clinic.isRehabBondClinic && (
+                  {clinic.isActive && (
                     <span className="px-2 py-1 bg-orange-500/20 text-orange-300 text-xs rounded-full">
                       Rehab Bond
                     </span>

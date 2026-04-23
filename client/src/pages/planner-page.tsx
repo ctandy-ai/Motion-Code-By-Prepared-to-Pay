@@ -281,7 +281,7 @@ export default function PlannerPage() {
         open={isComposerOpen}
         onOpenChange={setIsComposerOpen}
         onSave={handleSaveBlock}
-        initialData={editingBlock || undefined}
+        initialData={editingBlock ? { ...editingBlock, scheme: editingBlock.scheme ?? undefined } : undefined}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import preparedToPlayLogo from "/p2p-logo-white.svg";
+import preparedToPlayLogo from "@/assets/p2p-logo-white.svg";
 import { Instagram, Facebook, Twitter } from "lucide-react";
 import VideoBackground from "./VideoBackground";
 

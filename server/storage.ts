@@ -184,6 +184,8 @@ import {
   sessionParticipants,
   normativeCohorts,
   normativeMetrics,
+  athleteStats,
+  type AthleteStats,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, ilike, gte, lte, lt, arrayContains, sql, desc } from "drizzle-orm";
@@ -1253,7 +1255,7 @@ export class DatabaseStorage implements IStorage {
           isRehabBondClinic: clinics.isRehabBondClinic,
           isPreparedToPlayPartner: clinics.isPreparedToPlayPartner,
           services: clinics.services,
-          specializations: clinics.specializations,
+          specialties: clinics.specialties,
           managedByUserId: clinics.managedByUserId,
           isVerified: clinics.isVerified,
           isActive: clinics.isActive,
@@ -2242,7 +2244,7 @@ export class DatabaseStorage implements IStorage {
     return team;
   }
 
-  async createTeam(team: InsertTeam): Promise<Team> {
+  async createMCTeam(team: InsertTeam): Promise<Team> {
     const [newTeam] = await db.insert(teams).values(team).returning();
     return newTeam;
   }
@@ -2286,10 +2288,7 @@ export class DatabaseStorage implements IStorage {
     return program || undefined;
   }
 
-  async createProgram(program: InsertProgram): Promise<Program> {
-    const [newProgram] = await db.insert(programs).values(program).returning();
-    return newProgram;
-  }
+  // createProgram already defined above
 
   async updateProgram(id: string, program: Partial<InsertProgram>): Promise<Program | undefined> {
     const [updated] = await db
@@ -2413,9 +2412,7 @@ export class DatabaseStorage implements IStorage {
     return newProgram;
   }
 
-  async getAthletePrograms(athleteId: string): Promise<AthleteProgram[]> {
-    return await db.select().from(athletePrograms).where(eq(athletePrograms.athleteId, athleteId));
-  }
+  // getAthletePrograms already defined above
 
   async createAthleteProgram(athleteProgram: InsertAthleteProgram): Promise<AthleteProgram> {
     const [newAthleteProgram] = await db.insert(athletePrograms).values(athleteProgram).returning();
@@ -2438,10 +2435,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(workoutLogs);
   }
 
-  async createWorkoutLog(workoutLog: InsertWorkoutLog): Promise<WorkoutLog> {
-    const [newLog] = await db.insert(workoutLogs).values(workoutLog).returning();
-    return newLog;
-  }
+  // createWorkoutLog already defined above
 
   async getPersonalRecords(athleteId?: string): Promise<PersonalRecord[]> {
     if (athleteId) {
@@ -3995,6 +3989,24 @@ export class DatabaseStorage implements IStorage {
 
   async getNormativeMetrics(cohortId: string): Promise<NormativeMetric[]> {
     return db.select().from(normativeMetrics).where(eq(normativeMetrics.cohortId, cohortId));
+  }
+
+  // ── COMPATIBILITY ALIASES (for consumer routes using older method names) ──
+  async getExercises(organizationId?: number): Promise<Exercise[]> {
+    return this.getAllExercises(organizationId);
+  }
+  async getExercise(id: string): Promise<Exercise | undefined> {
+    const [ex] = await db.select().from(exercises).where(eq(exercises.id, id));
+    return ex || undefined;
+  }
+  async getAthleteProgramAssignments(athleteId: string): Promise<any[]> {
+    return this.getAthletePrograms(athleteId);
+  }
+  async getTrainingBlocksByProgram(programId: string): Promise<any[]> {
+    return db.select().from(trainingBlocks).where(eq(trainingBlocks.programId, programId));
+  }
+  async getAthleteStatsOrCreate(athleteId: string): Promise<any> {
+    return db.select().from(athleteStats).where(eq(athleteStats.athleteId, athleteId)).then(r => r[0] || { athleteId, xp: 0, level: 1 });
   }
 
   async getMatchingCohorts(params: { deviceType: string; testType: string; sex?: string | null; sport?: string | null; age?: number | null }): Promise<NormativeCohort[]> {

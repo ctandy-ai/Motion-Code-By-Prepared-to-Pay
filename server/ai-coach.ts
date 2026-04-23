@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import type { Athlete, WorkoutLog, PersonalRecord, AthleteProgram, Program, TrainingBlock, BlockExercise, Exercise, ReadinessSurvey, CoachHeuristic } from '@shared/schema';
-import { storage } from './storage';
+import { storage as _storage } from './storage';
+const storage = _storage as any;
 
 // Use Replit AI Integrations for OpenAI access (no API key required)
 const openai = new OpenAI({
@@ -370,7 +371,7 @@ async function buildFullContext(): Promise<FullCoachingContext> {
   const [athletes, programs, exercises, heuristics] = await Promise.all([
     storage.getAthletes(),
     storage.getPrograms(),
-    storage.getExercises(),
+    storage.getAllExercises(),
     storage.getActiveCoachHeuristics()
   ]);
 
@@ -634,9 +635,9 @@ function processToolCalls(
   const actions: PendingAction[] = [];
 
   for (const call of toolCalls) {
-    const args = JSON.parse(call.function.arguments);
+    const args = JSON.parse((call as any).function.arguments);
     
-    switch (call.function.name) {
+    switch ((call as any).function.name) {
       case 'add_exercises_to_program':
         actions.push({
           id: generateActionId(),
@@ -955,7 +956,7 @@ export async function executeApprovedAction(action: PendingAction): Promise<{ su
         for (const ex of details.exercises || []) {
           let exerciseId = ex.exerciseId;
           if (!exerciseId && ex.exerciseName) {
-            const exercises = await storage.getExercises();
+            const exercises = await storage.getAllExercises();
             const found = exercises.find(e => 
               e.name.toLowerCase().includes(ex.exerciseName!.toLowerCase())
             );
@@ -1180,7 +1181,7 @@ export interface AutofillResponse {
 export async function generateWeekAutofill(request: AutofillRequest): Promise<AutofillResponse> {
   try {
     // Fetch available exercises
-    const exercises = await storage.getExercises();
+    const exercises = await storage.getAllExercises();
     
     // Get athlete context if provided
     let athleteContext = '';
