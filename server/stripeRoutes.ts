@@ -17,10 +17,10 @@ function getStripe(): Stripe | null {
 
 // Pricing configuration — update price IDs after creating in Stripe dashboard
 const PRICES = {
-  season_pass_annual: process.env.STRIPE_PRICE_SEASON_ANNUAL || "price_season_pass_annual",
-  season_pass_monthly: process.env.STRIPE_PRICE_SEASON_MONTHLY || "price_season_pass_monthly",
-  pro_annual: process.env.STRIPE_PRICE_PRO_ANNUAL || "price_pro_annual",
-  pro_monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || "price_pro_monthly",
+  season_pass_annual: process.env.STRIPE_PRICE_SEASON_ANNUAL || "price_1TRAkHR3dygmxNOCDiFGykdi",
+  season_pass_monthly: process.env.STRIPE_PRICE_SEASON_MONTHLY || "price_1TPDBzR3dygmxNOCfzIYpauZ",
+  pro_annual: process.env.STRIPE_PRICE_PRO_ANNUAL || "price_1TRAkHR3dygmxNOCQzM9ZoKP",
+  pro_monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || "price_1TPDCyR3dygmxNOCEYICBBwB",
 };
 
 export const PLAN_DETAILS = {
