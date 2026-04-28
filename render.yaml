@@ -10,7 +10,32 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        sync: false
       - key: PORT
         value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: motioncode-db
+          property: connectionString
+      - key: SESSION_SECRET
+        value: XgDiHDwildYewdRa_ldww902Q72VSq2LNcK070Wopug
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: VITE_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_PRICE_SEASON_MONTHLY
+        value: price_1TPDBzR3dygmxNOCfzIYpauZ
+      - key: STRIPE_PRICE_SEASON_ANNUAL
+        value: price_1TRAkHR3dygmxNOCDiFGykdi
+      - key: STRIPE_PRICE_PRO_MONTHLY
+        value: price_1TPDCyR3dygmxNOCEYICBBwB
+      - key: STRIPE_PRICE_PRO_ANNUAL
+        value: price_1TRAkHR3dygmxNOCQzM9ZoKP
+      - key: OPENAI_API_KEY
+        sync: false
+
+databases:
+  - name: motioncode-db
+    plan: free
+    region: singapore
+    databaseName: motioncode
+    user: motioncode_user
