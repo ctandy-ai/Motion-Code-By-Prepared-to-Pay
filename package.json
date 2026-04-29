@@ -130,13 +130,13 @@
     "@types/passport-local": "^1.0.38",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
-    "@types/ws": "^8.5.13"
+    "@types/ws": "^8.5.13",
+    "drizzle-kit": "^0.31.4"
   },
   "devDependencies": {
     "@replit/vite-plugin-cartographer": "^0.4.1",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
-    "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
-    "drizzle-kit": "^0.31.4"
+    "@replit/vite-plugin-runtime-error-modal": "^0.0.3"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
