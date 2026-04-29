@@ -2,750 +2,675 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>Motion Code — Athlete Onboarding Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Motion Code — App Demo</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  
-  body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: #060e18;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    min-height: 100vh;
-    padding: 20px 16px 40px;
-    color: #e2e8f0;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* Demo nav */
-  .demo-nav {
-    width: 100%;
-    max-width: 420px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 16px;
-  }
-  .demo-label {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #475569;
-  }
-  .demo-steps {
-    display: flex;
-    gap: 6px;
-  }
-  .demo-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: #1e3a52;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .demo-dot.active { background: #E8601C; }
-  .demo-dot.done { background: #22c55e; }
+:root {
+  --navy: #0C1A27;
+  --surface: #0f2233;
+  --orange: #E8601C;
+  --orange-hover: #d4561a;
+  --text: #e2e8f0;
+  --muted: #64748b;
+  --border: rgba(255,255,255,0.08);
+}
 
-  /* Phone shell */
-  .phone {
-    width: 100%;
-    max-width: 390px;
-    min-height: 720px;
-    border-radius: 44px;
-    border: 1.5px solid rgba(255,255,255,0.08);
-    overflow: hidden;
-    position: relative;
-    background: #0C1A27;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
-  }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  background: #050d15;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
 
-  /* Status bar */
-  .status-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 24px 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #94a3b8;
-  }
+/* Ambient background glow */
+body::before {
+  content: '';
+  position: fixed;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(232,96,28,0.08) 0%, transparent 70%);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
 
-  /* Screens */
-  .screen {
-    display: none;
-    flex-direction: column;
-    min-height: 660px;
-    padding: 0 0 32px;
-    animation: fadeIn 0.3s ease;
-  }
-  .screen.active { display: flex; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+/* ── Presentation header ── */
+.pres-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+  background: linear-gradient(180deg, rgba(5,13,21,0.95) 0%, transparent 100%);
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+}
+.brand-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--orange); display: flex; align-items: center;
+  justify-content: center; font-size: 12px; font-weight: 900; color: #0C1A27;
+}
+.brand-name { font-size: 15px; font-weight: 700; color: #fff; }
+.brand-sub { font-size: 11px; color: var(--muted); font-weight: 400; }
 
-  /* Typography */
-  .eyebrow {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: #E8601C;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-  .eyebrow::before { content: ''; display: inline-block; width: 16px; height: 2px; background: #E8601C; }
+.pres-title {
+  font-size: 13px; color: var(--muted); font-weight: 500;
+  text-align: center; flex: 1;
+}
+.pres-hint {
+  font-size: 11px; color: #334155;
+  display: flex; align-items: center; gap: 8px;
+}
+.key-hint {
+  background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 6px; font-size: 10px; font-weight: 600; color: #475569;
+}
 
-  h1 { font-size: 28px; font-weight: 800; line-height: 1.2; color: #fff; margin-bottom: 12px; }
-  h2 { font-size: 22px; font-weight: 800; line-height: 1.3; color: #fff; margin-bottom: 10px; }
-  p.sub { font-size: 14px; color: #64748b; line-height: 1.6; }
+/* ── Progress dots ── */
+.progress-bar {
+  position: fixed;
+  bottom: 28px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; gap: 8px; align-items: center;
+  z-index: 100;
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #1e3a52; cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.dot.active { width: 24px; border-radius: 99px; background: var(--orange); }
+.dot.done { background: #22c55e; }
 
-  /* Buttons */
-  .btn-primary {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    width: 100%; padding: 15px;
-    background: #E8601C; color: #0C1A27;
-    font-size: 15px; font-weight: 800;
-    border: none; border-radius: 14px; cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    letter-spacing: 0.01em;
-  }
-  .btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
-  .btn-primary:active { transform: scale(0.98); }
-  .btn-secondary {
-    display: flex; align-items: center; justify-content: center;
-    width: 100%; padding: 14px;
-    background: transparent; color: #64748b;
-    font-size: 14px; font-weight: 500;
-    border: none; cursor: pointer;
-    transition: color 0.15s;
-  }
-  .btn-secondary:hover { color: #94a3b8; }
+/* ── Screen counter ── */
+.screen-counter {
+  position: fixed;
+  bottom: 28px; right: 32px;
+  font-size: 11px; color: #334155; font-weight: 500;
+  z-index: 100;
+}
+.screen-name {
+  position: fixed;
+  bottom: 28px; left: 32px;
+  font-size: 11px; color: #334155; font-weight: 500;
+  z-index: 100;
+}
 
-  /* Cards */
-  .card {
-    background: #0f2233;
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    padding: 18px;
-  }
-  .card-selected {
-    border-color: #E8601C;
-    background: rgba(232,96,28,0.06);
-  }
+/* ── Phone frame ── */
+.scene {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px 80px;
+}
 
-  /* Stat row */
-  .stat-row {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .stat-row:last-child { border-bottom: none; }
-  .stat-num { font-size: 26px; font-weight: 800; color: #E8601C; width: 72px; flex-shrink: 0; }
-  .stat-label { font-size: 13px; color: #94a3b8; }
+.phone-frame {
+  position: relative;
+  width: 375px;
+  height: 780px;
+  border-radius: 50px;
+  background: #0a0f1a;
+  border: 1.5px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.5),
+    0 40px 120px rgba(0,0,0,0.8),
+    0 0 60px rgba(232,96,28,0.06),
+    inset 0 0 0 1px rgba(255,255,255,0.03);
+}
 
-  /* Progress bar */
-  .progress-track {
-    height: 6px; background: rgba(255,255,255,0.08); border-radius: 99px; overflow: hidden;
-    margin: 8px 0;
-  }
-  .progress-fill {
-    height: 100%; border-radius: 99px;
-    background: linear-gradient(90deg, #E8601C, #f97316);
-    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
-  }
+/* Side buttons */
+.phone-frame::before {
+  content: '';
+  position: absolute;
+  left: -3px; top: 140px;
+  width: 3px; height: 36px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px 0 0 2px;
+  box-shadow: 0 50px 0 rgba(255,255,255,0.08), 0 100px 0 rgba(255,255,255,0.08);
+}
+.phone-frame::after {
+  content: '';
+  position: absolute;
+  right: -3px; top: 160px;
+  width: 3px; height: 60px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 0 2px 2px 0;
+}
 
-  /* Badge */
-  .badge {
-    display: inline-flex; align-items: center; gap: 5px;
-    padding: 4px 10px; border-radius: 99px;
-    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  }
-  .badge-orange { background: rgba(232,96,28,0.12); color: #E8601C; border: 1px solid rgba(232,96,28,0.2); }
-  .badge-green { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
-  .badge-blue { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+/* Dynamic island */
+.island {
+  position: absolute;
+  top: 14px; left: 50%;
+  transform: translateX(-50%);
+  width: 120px; height: 34px;
+  background: #000;
+  border-radius: 20px;
+  z-index: 50;
+}
 
-  /* Role card */
-  .role-card {
-    padding: 18px; border-radius: 16px; cursor: pointer;
-    border: 2px solid rgba(255,255,255,0.07);
-    background: #0f2233;
-    transition: all 0.2s;
-    display: flex; align-items: flex-start; gap: 14px;
-  }
-  .role-card:hover { border-color: rgba(232,96,28,0.3); }
-  .role-card.featured {
-    border-color: rgba(232,96,28,0.35);
-    background: rgba(232,96,28,0.04);
-    position: relative;
-  }
-  .role-card-icon {
-    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; font-size: 20px;
-  }
-  .role-card-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-  .role-card-desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+/* Status bar */
+.statusbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 54px;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 0 24px 8px;
+  font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+  z-index: 40;
+  background: linear-gradient(180deg, rgba(12,26,39,0.98) 0%, transparent 100%);
+}
 
-  /* Week row */
-  .week-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-  .week-row:last-child { border-bottom: none; }
-  .week-num {
-    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; font-weight: 800;
-  }
-  .week-num.done { background: rgba(34,197,94,0.12); color: #22c55e; }
-  .week-num.current { background: rgba(232,96,28,0.12); color: #E8601C; }
-  .week-num.locked { background: rgba(255,255,255,0.04); color: #475569; }
-  .week-title { font-size: 13px; font-weight: 600; color: #e2e8f0; }
-  .week-sub { font-size: 11px; color: #475569; }
+/* Screen content */
+.screens-wrapper {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow: hidden;
+}
 
-  /* Padding helpers */
-  .px { padding-left: 24px; padding-right: 24px; }
-  .pt { padding-top: 20px; }
-  .gap { display: flex; flex-direction: column; gap: 12px; }
+.screen {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--navy);
+  padding-top: 58px;
+  opacity: 0;
+  transform: translateX(40px);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  scrollbar-width: none;
+}
+.screen::-webkit-scrollbar { display: none; }
+.screen.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: all;
+}
+.screen.exit-left {
+  opacity: 0;
+  transform: translateX(-40px);
+}
 
-  /* Bottom CTA area */
-  .bottom-cta { padding: 16px 24px 0; margin-top: auto; }
+/* Touch/swipe area */
+.swipe-left {
+  position: absolute;
+  right: 0; top: 54px; bottom: 60px;
+  width: 60px;
+  cursor: pointer;
+  z-index: 30;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.swipe-right {
+  position: absolute;
+  left: 0; top: 54px; bottom: 60px;
+  width: 60px;
+  cursor: pointer;
+  z-index: 30;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.phone-frame:hover .swipe-left,
+.phone-frame:hover .swipe-right { opacity: 1; }
+.swipe-arrow {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.08);
+}
 
-  /* Exercise card */
-  .exercise-card {
-    background: #0f2233; border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 14px; overflow: hidden;
-  }
-  .exercise-thumb {
-    height: 120px; background: linear-gradient(135deg, #0a1f35, #1a3a5c);
-    display: flex; align-items: center; justify-content: center; font-size: 40px;
-  }
-  .exercise-body { padding: 14px; }
-  .exercise-title { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-  .exercise-meta { font-size: 12px; color: #475569; }
+/* ── Design tokens ── */
+.px { padding-left: 24px; padding-right: 24px; }
+.gap { display: flex; flex-direction: column; gap: 12px; }
 
-  /* Wellness sliders */
-  .wellness-item { margin-bottom: 18px; }
-  .wellness-label { display: flex; justify-content: space-between; font-size: 13px; color: #94a3b8; margin-bottom: 8px; }
-  .wellness-label span:last-child { color: #E8601C; font-weight: 700; }
-  input[type=range] {
-    width: 100%; -webkit-appearance: none; appearance: none;
-    height: 6px; border-radius: 99px; outline: none;
-    background: linear-gradient(90deg, #E8601C 72%, rgba(255,255,255,0.08) 72%);
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
-    background: #E8601C; cursor: pointer; box-shadow: 0 0 0 3px rgba(232,96,28,0.2);
-  }
+.eyebrow {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--orange);
+  display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+}
+.eyebrow::before {
+  content: ''; display: inline-block;
+  width: 14px; height: 2px; background: var(--orange);
+}
 
-  /* Nav bar */
-  .nav-bar {
-    display: flex; justify-content: space-around; align-items: center;
-    padding: 12px 8px 4px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    background: rgba(12,26,39,0.95);
-  }
-  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
-  .nav-icon { font-size: 20px; opacity: 0.4; }
-  .nav-icon.active { opacity: 1; }
-  .nav-label { font-size: 10px; color: #475569; }
-  .nav-label.active { color: #E8601C; }
+h1 { font-size: 26px; font-weight: 800; line-height: 1.25; color: #fff; }
+h2 { font-size: 22px; font-weight: 800; line-height: 1.3; color: #fff; }
+.sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
 
-  /* Demo controls */
-  .demo-controls {
-    width: 100%; max-width: 420px;
-    display: flex; justify-content: space-between; margin-top: 20px; gap: 10px;
-  }
-  .ctrl-btn {
-    flex: 1; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: 600;
-    cursor: pointer; border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.04); color: #94a3b8;
-    transition: all 0.15s;
-  }
-  .ctrl-btn:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
-  .ctrl-btn.primary-ctrl { background: #E8601C; color: #0C1A27; border-color: #E8601C; }
-  .ctrl-btn.primary-ctrl:hover { opacity: 0.9; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+}
+.card-sel {
+  border-color: var(--orange);
+  background: rgba(232,96,28,0.06);
+}
 
-  .screen-label {
-    text-align: center; font-size: 11px; color: #334155; margin-top: 10px;
-    font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em;
-  }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 99px;
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+}
+.badge-o { background: rgba(232,96,28,0.12); color: var(--orange); border: 1px solid rgba(232,96,28,0.2); }
+.badge-g { background: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+.badge-b { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
+
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px; border-radius: 14px;
+  font-size: 15px; font-weight: 800; border: none; cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-o { background: var(--orange); color: #0C1A27; }
+.btn-o:hover { background: var(--orange-hover); }
+.btn-ghost { background: transparent; color: var(--muted); font-size: 13px; font-weight: 500; }
+
+.prog-track { height: 5px; background: rgba(255,255,255,0.07); border-radius: 99px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--orange), #f97316); }
+
+/* Nav bar */
+.nav-bar {
+  position: sticky; bottom: 0;
+  display: flex; justify-content: space-around;
+  padding: 10px 8px 16px;
+  background: rgba(12,26,39,0.97);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+}
+.nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+.nav-ic { font-size: 20px; opacity: 0.35; transition: opacity 0.15s; }
+.nav-ic.on { opacity: 1; }
+.nav-lb { font-size: 9px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.nav-lb.on { color: var(--orange); }
+
+/* Stat rows */
+.stat-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-n { font-size: 24px; font-weight: 800; color: var(--orange); width: 68px; flex-shrink: 0; }
+.stat-l { font-size: 13px; color: #94a3b8; }
+
+/* Week rows */
+.wk-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.wk-row:last-child { border-bottom: none; }
+.wk-n { width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.wk-done { background: rgba(34,197,94,0.12); color: #22c55e; }
+.wk-cur { background: rgba(232,96,28,0.12); color: var(--orange); }
+.wk-lock { background: rgba(255,255,255,0.04); color: #334155; }
+
+/* Range input */
+input[type=range] {
+  width: 100%; -webkit-appearance: none; height: 5px; border-radius: 99px; outline: none;
+  background: linear-gradient(90deg, var(--orange) var(--val, 72%), rgba(255,255,255,0.08) var(--val, 72%));
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: var(--orange); cursor: pointer; box-shadow: 0 0 0 4px rgba(232,96,28,0.2);
+}
 </style>
 </head>
 <body>
 
-<!-- Demo nav -->
-<div class="demo-nav">
-  <span class="demo-label">Motion Code Demo</span>
-  <div class="demo-steps" id="dots"></div>
-</div>
+<!-- Presentation header -->
+<header class="pres-header">
+  <div class="brand">
+    <div class="brand-icon">MC</div>
+    <div>
+      <div class="brand-name">Motion Code</div>
+      <div class="brand-sub">by Prepared to Play</div>
+    </div>
+  </div>
+  <div class="pres-title">Athlete Onboarding — Live Demo</div>
+  <div class="pres-hint">
+    <span class="key-hint">←</span><span class="key-hint">→</span> navigate &nbsp;
+    <span class="key-hint">Space</span> advance
+  </div>
+</header>
 
 <!-- Phone -->
-<div class="phone">
-  <div class="status-bar">
+<div class="scene">
+<div class="phone-frame" id="phone">
+  <div class="island"></div>
+  <div class="statusbar">
     <span>9:41</span>
-    <span>●●●●○ WiFi 🔋</span>
+    <span style="display:flex;gap:5px;align-items:center;">
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="4" width="3" height="7" rx="1" fill="currentColor" opacity=".4"/><rect x="4" y="2.5" width="3" height="8.5" rx="1" fill="currentColor" opacity=".6"/><rect x="8" y="1" width="3" height="10" rx="1" fill="currentColor" opacity=".8"/><rect x="12" y="0" width="3" height="11" rx="1" fill="currentColor"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none"><path d="M8 2.5C9.8 2.5 11.4 3.3 12.5 4.5L13.9 3.1C12.4 1.5 10.3 0.5 8 0.5C5.7 0.5 3.6 1.5 2.1 3.1L3.5 4.5C4.6 3.3 6.2 2.5 8 2.5Z" fill="currentColor" opacity=".4"/><path d="M8 5.5C9.1 5.5 10.1 6 10.8 6.8L12.2 5.4C11.1 4.2 9.6 3.5 8 3.5C6.4 3.5 4.9 4.2 3.8 5.4L5.2 6.8C5.9 6 6.9 5.5 8 5.5Z" fill="currentColor" opacity=".7"/><circle cx="8" cy="10" r="1.5" fill="currentColor"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" stroke-opacity=".35"/><rect x="2" y="2" width="17" height="8" rx="2" fill="currentColor"/><path d="M23 4.5C23.8 4.9 24.5 5.5 24.5 6C24.5 6.5 23.8 7.1 23 7.5V4.5Z" fill="currentColor" opacity=".4"/></svg>
+    </span>
   </div>
 
-  <!-- SCREEN 1: Welcome / Landing -->
-  <div class="screen active" id="s1">
-    <div class="px pt" style="flex:1; display:flex; flex-direction:column; justify-content:space-between; padding-bottom:32px;">
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:40px;">
-          <div style="width:32px;height:32px;background:#E8601C;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0C1A27;border-radius:8px;">MC</div>
-          <span style="font-weight:700;font-size:16px;color:#fff;">Motion Code</span>
-          <span style="font-size:11px;color:#334155;font-weight:500;">by Prepared to Play</span>
+  <div class="screens-wrapper">
+
+    <!-- S1: Landing -->
+    <div class="screen active px" id="s1" style="display:flex;flex-direction:column;justify-content:space-between;padding-bottom:36px;">
+      <div style="padding-top:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:36px;">
+          <div style="width:30px;height:30px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#0C1A27;">MC</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;">Motion Code</div>
+          <div style="font-size:11px;color:#334155;">by Prepared to Play</div>
         </div>
-
-        <div class="eyebrow">ACL Prevention Program</div>
-        <h1>Move better.<br>Stay on court.<br><span style="color:#E8601C;">Prevent injury.</span></h1>
-        <p class="sub" style="margin-top:12px;">The only evidence-based ACL prevention platform built specifically for netball. 50% risk reduction. 20 minutes a session.</p>
-
-        <div style="margin-top:28px;display:flex;flex-direction:column;gap:10px;">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:32px;height:32px;border-radius:10px;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;">✓</div>
-            <span style="font-size:13px;color:#94a3b8;">Backed by 12 RCTs — RR=0.50 ACL risk reduction</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:32px;height:32px;border-radius:10px;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;">✓</div>
-            <span style="font-size:13px;color:#94a3b8;">Used by Melbourne Storm, Essendon AFL</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:32px;height:32px;border-radius:10px;background:rgba(34,197,94,0.1);display:flex;align-items:center;justify-content:center;font-size:15px;">✓</div>
-            <span style="font-size:13px;color:#94a3b8;">Endorsed by Netball Australia</span>
-          </div>
+        <div class="eyebrow">Netball ACL Prevention</div>
+        <h1 style="margin-bottom:14px;">Move better.<br>Stay on court.<br><span style="color:var(--orange);">Prevent injury.</span></h1>
+        <p class="sub" style="margin-bottom:28px;">The only evidence-based ACL prevention platform built for netball. 50% risk reduction. 20 minutes a session.</p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;align-items:center;gap:10px;"><div style="width:30px;height:30px;background:rgba(34,197,94,0.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</div><span style="font-size:13px;color:#94a3b8;">Backed by 12 RCTs — 50% ACL risk reduction</span></div>
+          <div style="display:flex;align-items:center;gap:10px;"><div style="width:30px;height:30px;background:rgba(34,197,94,0.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</div><span style="font-size:13px;color:#94a3b8;">Used by Melbourne Storm &amp; Essendon AFL</span></div>
+          <div style="display:flex;align-items:center;gap:10px;"><div style="width:30px;height:30px;background:rgba(34,197,94,0.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:13px;">✓</div><span style="font-size:13px;color:#94a3b8;">Endorsed by Netball Australia</span></div>
         </div>
       </div>
-
       <div class="gap">
-        <button class="btn-primary" onclick="next()">Get Started →</button>
-        <button class="btn-secondary" onclick="next()">Already have an account? Sign in</button>
+        <button class="btn btn-o" onclick="next()">Get Started →</button>
+        <button class="btn btn-ghost" onclick="next()">Already have an account?</button>
       </div>
     </div>
-  </div>
 
-  <!-- SCREEN 2: Role selection -->
-  <div class="screen" id="s2">
-    <div class="px pt" style="flex:1;display:flex;flex-direction:column;">
-      <div class="eyebrow">Step 1 of 3</div>
-      <h2>Who are you?</h2>
-      <p class="sub" style="margin-bottom:24px;">We'll personalise your program from day one.</p>
+    <!-- S2: Role -->
+    <div class="screen px" id="s2" style="padding-top:72px;display:flex;flex-direction:column;gap:14px;padding-bottom:32px;">
+      <div><div class="eyebrow">Step 1 of 3</div><h2 style="margin-bottom:6px;">Who are you?</h2><p class="sub">We'll personalise your experience.</p></div>
 
-      <div class="gap" style="flex:1;">
-        <!-- Athlete — featured -->
-        <div class="role-card featured" onclick="next()">
-          <div style="position:absolute;top:-12px;left:20px;">
-            <span class="badge badge-orange">⭐ Featured for Netball</span>
-          </div>
-          <div class="role-card-icon" style="background:rgba(232,96,28,0.12);">🏐</div>
-          <div style="flex:1;margin-top:6px;">
-            <div class="role-card-title">I'm an Athlete</div>
-            <div class="role-card-desc">Personal ACL prevention program. 8 weeks. 20 min/session.</div>
-          </div>
-          <div style="color:#E8601C;font-size:18px;margin-top:6px;">›</div>
-        </div>
-
-        <div class="role-card" onclick="next()">
-          <div class="role-card-icon" style="background:rgba(59,130,246,0.1);">🎽</div>
+      <div onclick="next()" style="position:relative;padding:18px;border-radius:16px;border:2px solid rgba(232,96,28,0.4);background:rgba(232,96,28,0.05);cursor:pointer;">
+        <div style="position:absolute;top:-11px;left:16px;"><span class="badge badge-o">⭐ Featured for Netball</span></div>
+        <div style="display:flex;align-items:flex-start;gap:14px;margin-top:4px;">
+          <div style="width:42px;height:42px;border-radius:12px;background:rgba(232,96,28,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏐</div>
           <div>
-            <div class="role-card-title">I'm a Coach</div>
-            <div class="role-card-desc">Manage your team's compliance and assign programs.</div>
+            <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:4px;">I'm an Athlete</div>
+            <div style="font-size:12px;color:var(--muted);">Personal ACL prevention program. 8 weeks. 20 min/session.</div>
           </div>
-        </div>
-
-        <div class="role-card" onclick="next()">
-          <div class="role-card-icon" style="background:rgba(168,85,247,0.1);">🩺</div>
-          <div>
-            <div class="role-card-title">I'm a Clinician / S&C</div>
-            <div class="role-card-desc">Clinical programming and return-to-play progressions.</div>
-          </div>
+          <div style="color:var(--orange);font-size:18px;margin-left:auto;margin-top:2px;">›</div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- SCREEN 3: Netball ACL pitch -->
-  <div class="screen" id="s3">
-    <div class="px pt" style="flex:1;display:flex;flex-direction:column;">
+      <div onclick="next()" style="padding:16px;border-radius:16px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;gap:14px;">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(59,130,246,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">🎽</div>
+        <div><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:3px;">I'm a Coach</div><div style="font-size:12px;color:var(--muted);">Manage team compliance and programs.</div></div>
+      </div>
+
+      <div onclick="next()" style="padding:16px;border-radius:16px;border:1px solid var(--border);background:var(--surface);cursor:pointer;display:flex;align-items:center;gap:14px;">
+        <div style="width:42px;height:42px;border-radius:12px;background:rgba(168,85,247,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;">🩺</div>
+        <div><div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:3px;">I'm a Clinician / S&C</div><div style="font-size:12px;color:var(--muted);">Clinical programming and RTP progressions.</div></div>
+      </div>
+    </div>
+
+    <!-- S3: ACL pitch -->
+    <div class="screen px" id="s3" style="padding-top:72px;display:flex;flex-direction:column;padding-bottom:32px;">
       <div style="text-align:center;margin-bottom:24px;">
-        <div style="font-size:52px;margin-bottom:12px;">🏐</div>
-        <span class="badge badge-orange" style="margin-bottom:16px;display:inline-flex;">Evidence-Based ACL Prevention</span>
-        <h2 style="text-align:center;">You're about to start the only program built for <span style="color:#E8601C;">netball.</span></h2>
+        <div style="font-size:48px;margin-bottom:14px;">🏐</div>
+        <span class="badge badge-o" style="margin-bottom:14px;display:inline-flex;">Evidence-Based ACL Prevention</span>
+        <h2 style="text-align:center;margin-bottom:0;">The only program built<br>for <span style="color:var(--orange);">netball.</span></h2>
       </div>
-
-      <div class="card" style="margin-bottom:20px;">
-        <div class="stat-row">
-          <div class="stat-num">8 wks</div>
-          <div class="stat-label">Progressive program — foundation to pre-season ready</div>
-        </div>
-        <div class="stat-row">
-          <div class="stat-num">20 min</div>
-          <div class="stat-label">Per session — fits around training and school</div>
-        </div>
-        <div class="stat-row">
-          <div class="stat-num">50%</div>
-          <div class="stat-label">ACL risk reduction with ≥75% compliance</div>
-        </div>
-        <div class="stat-row">
-          <div class="stat-num">Zero</div>
-          <div class="stat-label">Equipment needed to get started today</div>
-        </div>
+      <div class="card" style="margin-bottom:16px;flex:1;">
+        <div class="stat-row"><div class="stat-n">8 wks</div><div class="stat-l">Progressive program — foundation to pre-season ready</div></div>
+        <div class="stat-row"><div class="stat-n">20 min</div><div class="stat-l">Per session — fits around training and school</div></div>
+        <div class="stat-row"><div class="stat-n">50%</div><div class="stat-l">ACL risk reduction with ≥75% compliance</div></div>
+        <div class="stat-row"><div class="stat-n">Zero</div><div class="stat-l">Equipment needed to get started today</div></div>
       </div>
-
-      <p style="font-size:11px;color:#334155;text-align:center;margin-bottom:16px;">
-        Based on meta-analysis of 12 RCTs — British Journal of Sports Medicine / PMC 2024
-      </p>
-
-      <div class="bottom-cta" style="padding:0;margin-top:auto;">
-        <button class="btn-primary" onclick="next()">Start My Program →</button>
-        <button class="btn-secondary" onclick="next()">← Back</button>
+      <p style="font-size:11px;color:#334155;text-align:center;margin-bottom:16px;">British Journal of Sports Medicine meta-analysis, 2024</p>
+      <div class="gap">
+        <button class="btn btn-o" onclick="next()">Start My Program →</button>
+        <button class="btn btn-ghost" onclick="prev()">← Back</button>
       </div>
     </div>
-  </div>
 
-  <!-- SCREEN 4: Quick setup -->
-  <div class="screen" id="s4">
-    <div class="px pt" style="flex:1;display:flex;flex-direction:column;">
-      <div class="eyebrow">Step 2 of 3</div>
-      <h2>Quick setup</h2>
-      <p class="sub" style="margin-bottom:20px;">This helps us set your starting level.</p>
+    <!-- S4: Setup -->
+    <div class="screen px" id="s4" style="padding-top:72px;padding-bottom:32px;display:flex;flex-direction:column;gap:18px;">
+      <div><div class="eyebrow">Step 2 of 3</div><h2 style="margin-bottom:6px;">Quick setup</h2><p class="sub">Helps us set your starting level.</p></div>
 
-      <div class="gap" style="flex:1;">
-        <div>
-          <div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600;">Playing level</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-            <div class="card card-selected" style="padding:12px;text-align:center;cursor:pointer;">
-              <div style="font-size:18px;margin-bottom:4px;">🏆</div>
-              <div style="font-size:12px;font-weight:700;color:#fff;">Club / Assoc.</div>
-            </div>
-            <div class="card" style="padding:12px;text-align:center;cursor:pointer;opacity:0.6;">
-              <div style="font-size:18px;margin-bottom:4px;">⭐</div>
-              <div style="font-size:12px;font-weight:600;color:#94a3b8;">Representative</div>
-            </div>
-            <div class="card" style="padding:12px;text-align:center;cursor:pointer;opacity:0.6;">
-              <div style="font-size:18px;margin-bottom:4px;">🎯</div>
-              <div style="font-size:12px;font-weight:600;color:#94a3b8;">Social / Rec</div>
-            </div>
-            <div class="card" style="padding:12px;text-align:center;cursor:pointer;opacity:0.6;">
-              <div style="font-size:18px;margin-bottom:4px;">🌟</div>
-              <div style="font-size:12px;font-weight:600;color:#94a3b8;">Elite / State</div>
-            </div>
-          </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Playing level</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div class="card card-sel" style="padding:12px;text-align:center;cursor:pointer;"><div style="font-size:18px;margin-bottom:4px;">🏆</div><div style="font-size:12px;font-weight:700;color:#fff;">Club / Assoc.</div></div>
+          <div class="card" style="padding:12px;text-align:center;cursor:pointer;opacity:0.5;"><div style="font-size:18px;margin-bottom:4px;">⭐</div><div style="font-size:12px;font-weight:600;color:#94a3b8;">Representative</div></div>
+          <div class="card" style="padding:12px;text-align:center;cursor:pointer;opacity:0.5;"><div style="font-size:18px;margin-bottom:4px;">🎯</div><div style="font-size:12px;font-weight:600;color:#94a3b8;">Social / Rec</div></div>
+          <div class="card" style="padding:12px;text-align:center;cursor:pointer;opacity:0.5;"><div style="font-size:18px;margin-bottom:4px;">🌟</div><div style="font-size:12px;font-weight:600;color:#94a3b8;">Elite / State</div></div>
         </div>
+      </div>
 
-        <div>
-          <div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600;">Position</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;">
-            <span class="badge badge-orange" style="cursor:pointer;padding:8px 14px;">GS</span>
-            <span class="badge" style="background:#0f2233;border:1px solid rgba(255,255,255,0.1);color:#64748b;cursor:pointer;padding:8px 14px;">GA</span>
-            <span class="badge" style="background:#0f2233;border:1px solid rgba(255,255,255,0.1);color:#64748b;cursor:pointer;padding:8px 14px;">WA</span>
-            <span class="badge" style="background:#0f2233;border:1px solid rgba(255,255,255,0.1);color:#64748b;cursor:pointer;padding:8px 14px;">C</span>
-            <span class="badge" style="background:#0f2233;border:1px solid rgba(255,255,255,0.1);color:#64748b;cursor:pointer;padding:8px 14px;">WD</span>
-            <span class="badge" style="background:#0f2233;border:1px solid rgba(255,255,255,0.1);color:#64748b;cursor:pointer;padding:8px 14px;">GD</span>
-            <span class="badge" style="background:#0f2233;border:1px solid rgba(255,255,255,0.1);color:#64748b;cursor:pointer;padding:8px 14px;">GK</span>
-          </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Position</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px;">
+          <span class="badge badge-o" style="padding:7px 14px;cursor:pointer;">GS</span>
+          <span style="background:var(--surface);border:1px solid var(--border);color:#475569;padding:7px 14px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em">GA</span>
+          <span style="background:var(--surface);border:1px solid var(--border);color:#475569;padding:7px 14px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em">WA</span>
+          <span style="background:var(--surface);border:1px solid var(--border);color:#475569;padding:7px 14px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em">C</span>
+          <span style="background:var(--surface);border:1px solid var(--border);color:#475569;padding:7px 14px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em">WD</span>
+          <span style="background:var(--surface);border:1px solid var(--border);color:#475569;padding:7px 14px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em">GD</span>
+          <span style="background:var(--surface);border:1px solid var(--border);color:#475569;padding:7px 14px;border-radius:99px;font-size:10px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.08em">GK</span>
         </div>
+      </div>
 
-        <div>
-          <div style="font-size:12px;color:#64748b;margin-bottom:8px;font-weight:600;">Any injury history?</div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <div class="card" style="display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;">
-              <span style="font-size:18px;">✓</span>
-              <span style="font-size:13px;color:#e2e8f0;">No injuries — fresh start</span>
-            </div>
-            <div class="card card-selected" style="display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;">
-              <span style="font-size:18px;">🦵</span>
-              <span style="font-size:13px;color:#e2e8f0;">Previous knee/ACL issue</span>
-            </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Injury history</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="card" style="display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;">
+            <span style="font-size:17px;">✅</span><span style="font-size:13px;color:#e2e8f0;">No injuries</span>
+          </div>
+          <div class="card card-sel" style="display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;">
+            <span style="font-size:17px;">🦵</span><span style="font-size:13px;color:#e2e8f0;">Previous knee / ACL</span>
+            <span class="badge badge-o" style="margin-left:auto;">Selected</span>
           </div>
         </div>
       </div>
 
-      <div class="bottom-cta">
-        <button class="btn-primary" onclick="next()">Continue →</button>
-      </div>
+      <button class="btn btn-o" onclick="next()">Continue →</button>
     </div>
-  </div>
 
-  <!-- SCREEN 5: Belt classification result -->
-  <div class="screen" id="s5">
-    <div class="px pt" style="flex:1;display:flex;flex-direction:column;">
+    <!-- S5: Belt result -->
+    <div class="screen px" id="s5" style="padding-top:72px;padding-bottom:32px;display:flex;flex-direction:column;">
       <div class="eyebrow">Step 3 of 3 — Your Classification</div>
-
-      <div style="text-align:center;padding:20px 0 24px;">
-        <div style="width:80px;height:80px;border-radius:20px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:36px;background:linear-gradient(135deg,#1e3a5f,#2a5298);">🥋</div>
-        <div style="font-size:11px;color:#64748b;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Your Starting Level</div>
-        <div style="font-size:32px;font-weight:900;color:#60a5fa;letter-spacing:0.05em;">BLUE BELT</div>
-        <div style="font-size:13px;color:#475569;margin-top:6px;">Intermediate — 1–3 years structured training</div>
+      <div style="text-align:center;padding:16px 0 24px;">
+        <div style="width:72px;height:72px;border-radius:20px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:32px;background:linear-gradient(135deg,#1e3a5f,#2a5298);">🥋</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:6px;">Your Starting Level</div>
+        <div style="font-size:30px;font-weight:900;color:#60a5fa;letter-spacing:0.05em;">BLUE BELT</div>
+        <div style="font-size:12px;color:#475569;margin-top:6px;">Intermediate — 1–3 years structured training</div>
       </div>
-
-      <div class="card" style="margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">Your 8-Week Program</div>
-        <div class="progress-track"><div class="progress-fill" style="width:0%"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-top:4px;">
-          <span>0% complete</span><span>8 weeks remaining</span>
-        </div>
-        <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
-          <div class="week-row">
-            <div class="week-num current">W1</div>
-            <div><div class="week-title">Foundation Week</div><div class="week-sub">Landing fundamentals · 4 sessions</div></div>
-            <span class="badge badge-orange" style="margin-left:auto;font-size:10px;">Today</span>
-          </div>
-          <div class="week-row">
-            <div class="week-num locked">W2</div>
-            <div><div class="week-title" style="color:#475569;">Balance &amp; Stability</div><div class="week-sub">Unlocks after Week 1</div></div>
-          </div>
-          <div class="week-row">
-            <div class="week-num locked">W3</div>
-            <div><div class="week-title" style="color:#475569;">Deceleration</div><div class="week-sub">Unlocks after Week 2</div></div>
-          </div>
-        </div>
+      <div class="card" style="margin-bottom:16px;flex:1;">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em;">Your 8-Week Program</div>
+        <div class="prog-track" style="margin-bottom:4px;"><div class="prog-fill" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#334155;margin-bottom:16px;"><span>0% complete</span><span>8 weeks</span></div>
+        <div class="wk-row"><div class="wk-n wk-cur">W1</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#fff;">Foundation Week</div><div style="font-size:11px;color:var(--muted);">Landing fundamentals · 4 sessions</div></div><span class="badge badge-o" style="font-size:9px;">Today</span></div>
+        <div class="wk-row"><div class="wk-n wk-lock">W2</div><div><div style="font-size:13px;font-weight:600;color:#334155;">Balance &amp; Stability</div><div style="font-size:11px;color:#334155;">Unlocks after Week 1</div></div></div>
+        <div class="wk-row"><div class="wk-n wk-lock">W3</div><div><div style="font-size:13px;font-weight:600;color:#334155;">Deceleration</div><div style="font-size:11px;color:#334155;">Unlocks after Week 2</div></div></div>
       </div>
-
-      <div class="bottom-cta">
-        <button class="btn-primary" onclick="next()">Start Week 1 →</button>
-      </div>
+      <button class="btn btn-o" onclick="next()">Start Week 1 →</button>
     </div>
-  </div>
 
-  <!-- SCREEN 6: Today's session -->
-  <div class="screen" id="s6">
-    <div style="flex:1;display:flex;flex-direction:column;">
-      <div class="px pt">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <div>
-            <div style="font-size:11px;color:#475569;font-weight:600;">WEEK 1 · DAY 1</div>
-            <h2 style="margin-bottom:0;">Foundation Session</h2>
-          </div>
-          <div class="badge badge-orange">20 min</div>
+    <!-- S6: Live session -->
+    <div class="screen" id="s6" style="padding-top:58px;display:flex;flex-direction:column;">
+      <div class="px" style="padding-top:14px;padding-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div><div style="font-size:10px;color:#334155;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">WEEK 1 · DAY 1</div><div style="font-size:18px;font-weight:800;color:#fff;">Foundation Session</div></div>
+          <span class="badge badge-o">20 min</span>
         </div>
-        <p class="sub" style="margin-bottom:16px;">Landing mechanics + knee control fundamentals.</p>
-
-        <!-- Session progress -->
-        <div class="card" style="margin-bottom:16px;display:flex;gap:16px;align-items:center;">
-          <div style="flex:1;">
-            <div style="font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600;">Session Progress</div>
-            <div class="progress-track"><div class="progress-fill" style="width:33%"></div></div>
-            <div style="font-size:11px;color:#475569;margin-top:4px;">Exercise 2 of 6</div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:22px;font-weight:800;color:#E8601C;">18</div>
-            <div style="font-size:10px;color:#475569;">min left</div>
-          </div>
+        <div class="card" style="display:flex;align-items:center;gap:14px;padding:14px;">
+          <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Progress</div><div class="prog-track"><div class="prog-fill" style="width:33%"></div></div><div style="font-size:10px;color:#334155;margin-top:4px;">Exercise 2 of 6</div></div>
+          <div style="text-align:center;"><div style="font-size:22px;font-weight:800;color:var(--orange);">18</div><div style="font-size:10px;color:#334155;">min left</div></div>
         </div>
       </div>
 
-      <!-- Exercise card -->
-      <div class="px" style="margin-bottom:14px;">
-        <div class="exercise-card">
-          <div class="exercise-thumb">🦵</div>
-          <div class="exercise-body">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-              <div class="exercise-title">Single-Leg Landing</div>
-              <span class="badge badge-blue">Blue Belt</span>
+      <div class="px" style="padding-bottom:16px;">
+        <div style="border-radius:16px;overflow:hidden;border:1px solid var(--border);">
+          <div style="height:130px;background:linear-gradient(135deg,#0a1f35,#1a3a5c);display:flex;align-items:center;justify-content:center;font-size:52px;">🦵</div>
+          <div style="padding:16px;background:var(--surface);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:15px;font-weight:700;color:#fff;">Single-Leg Landing</div>
+              <span class="badge badge-b">Blue Belt</span>
             </div>
-            <div class="exercise-meta">3 sets · 8 reps each leg · Focus: knee-over-toe alignment</div>
-            <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-              <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;text-align:center;">
-                <div style="font-size:16px;font-weight:800;color:#fff;">3</div>
-                <div style="font-size:10px;color:#475569;">sets</div>
-              </div>
-              <div style="background:rgba(255,255,255,0.04);border-radius:8px;padding:8px;text-align:center;">
-                <div style="font-size:16px;font-weight:800;color:#fff;">8</div>
-                <div style="font-size:10px;color:#475569;">reps</div>
-              </div>
-              <div style="background:rgba(232,96,28,0.1);border-radius:8px;padding:8px;text-align:center;border:1px solid rgba(232,96,28,0.2);">
-                <div style="font-size:16px;font-weight:800;color:#E8601C;">2/3</div>
-                <div style="font-size:10px;color:#E8601C;">done</div>
-              </div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">3 sets · 8 reps each leg · Focus: knee-over-toe</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+              <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:18px;font-weight:800;color:#fff;">3</div><div style="font-size:10px;color:var(--muted);">sets</div></div>
+              <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:18px;font-weight:800;color:#fff;">8</div><div style="font-size:10px;color:var(--muted);">reps</div></div>
+              <div style="background:rgba(232,96,28,0.1);border-radius:10px;padding:10px;text-align:center;border:1px solid rgba(232,96,28,0.2);"><div style="font-size:18px;font-weight:800;color:var(--orange);">2/3</div><div style="font-size:10px;color:var(--orange);">done</div></div>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="px">
-        <button class="btn-primary" onclick="next()">Complete Set 3 ✓</button>
+      <div class="px" style="margin-top:auto;padding-bottom:16px;">
+        <button class="btn btn-o" onclick="next()">✓ Complete Set 3</button>
       </div>
-
-      <div class="nav-bar" style="margin-top:auto;">
-        <div class="nav-item"><div class="nav-icon active">🏠</div><div class="nav-label active">Home</div></div>
-        <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">Program</div></div>
-        <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progress</div></div>
-        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      <div class="nav-bar">
+        <div class="nav-item"><div class="nav-ic on">🏠</div><div class="nav-lb on">Home</div></div>
+        <div class="nav-item"><div class="nav-ic">📋</div><div class="nav-lb">Program</div></div>
+        <div class="nav-item"><div class="nav-ic">📊</div><div class="nav-lb">Progress</div></div>
+        <div class="nav-item"><div class="nav-ic">👤</div><div class="nav-lb">Profile</div></div>
       </div>
     </div>
-  </div>
 
-  <!-- SCREEN 7: Session complete + streak -->
-  <div class="screen" id="s7">
-    <div class="px pt" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:32px;">
-      <div style="font-size:64px;margin-bottom:16px;">🎉</div>
-      <span class="badge badge-green" style="margin-bottom:16px;display:inline-flex;">Session Complete</span>
-      <h2>Day 1 done!</h2>
-      <p class="sub" style="margin:8px 0 28px;">Foundation Week is underway. Your knee is already adapting.</p>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;margin-bottom:28px;">
-        <div class="card" style="text-align:center;padding:16px;">
-          <div style="font-size:28px;font-weight:800;color:#E8601C;margin-bottom:4px;">1</div>
-          <div style="font-size:11px;color:#64748b;">Day streak 🔥</div>
-        </div>
-        <div class="card" style="text-align:center;padding:16px;">
-          <div style="font-size:28px;font-weight:800;color:#E8601C;margin-bottom:4px;">+50</div>
-          <div style="font-size:11px;color:#64748b;">XP earned</div>
-        </div>
-        <div class="card" style="text-align:center;padding:16px;">
-          <div style="font-size:28px;font-weight:800;color:#22c55e;margin-bottom:4px;">6/6</div>
-          <div style="font-size:11px;color:#64748b;">Exercises done</div>
-        </div>
-        <div class="card" style="text-align:center;padding:16px;">
-          <div style="font-size:28px;font-weight:800;color:#60a5fa;margin-bottom:4px;">18m</div>
-          <div style="font-size:11px;color:#64748b;">Time invested</div>
-        </div>
+    <!-- S7: Session complete -->
+    <div class="screen px" id="s7" style="padding-top:72px;padding-bottom:36px;display:flex;flex-direction:column;align-items:center;text-align:center;">
+      <div style="font-size:60px;margin-bottom:14px;">🎉</div>
+      <span class="badge badge-g" style="margin-bottom:14px;display:inline-flex;">Session Complete</span>
+      <h2 style="margin-bottom:8px;">Day 1 done!</h2>
+      <p class="sub" style="margin-bottom:28px;">Foundation Week is underway. Your knee is already adapting.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:24px;">
+        <div class="card" style="text-align:center;padding:14px;"><div style="font-size:26px;font-weight:800;color:var(--orange);">1</div><div style="font-size:10px;color:var(--muted);margin-top:3px;">Day streak 🔥</div></div>
+        <div class="card" style="text-align:center;padding:14px;"><div style="font-size:26px;font-weight:800;color:var(--orange);">+50</div><div style="font-size:10px;color:var(--muted);margin-top:3px;">XP earned</div></div>
+        <div class="card" style="text-align:center;padding:14px;"><div style="font-size:26px;font-weight:800;color:#22c55e;">6/6</div><div style="font-size:10px;color:var(--muted);margin-top:3px;">Exercises done</div></div>
+        <div class="card" style="text-align:center;padding:14px;"><div style="font-size:26px;font-weight:800;color:#60a5fa;">18m</div><div style="font-size:10px;color:var(--muted);margin-top:3px;">Time invested</div></div>
       </div>
-
-      <div class="card" style="width:100%;text-align:left;margin-bottom:28px;">
-        <div style="font-size:12px;color:#64748b;font-weight:600;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em;">Your Compliance</div>
-        <div class="progress-track" style="height:8px;"><div class="progress-fill" style="width:14%;"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569;margin-top:6px;">
-          <span>Week 1 — 1 of 4 sessions</span>
-          <span style="color:#E8601C;">14% complete</span>
-        </div>
-        <p style="font-size:12px;color:#334155;margin-top:10px;">Complete 75%+ of sessions for maximum ACL risk reduction.</p>
+      <div class="card" style="width:100%;text-align:left;margin-bottom:24px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;">Compliance</div>
+        <div class="prog-track" style="height:7px;margin-bottom:5px;"><div class="prog-fill" style="width:14%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#334155;"><span>Week 1 — 1 of 4 done</span><span style="color:var(--orange);">14%</span></div>
+        <p style="font-size:11px;color:#334155;margin-top:10px;">Reach 75%+ for maximum ACL risk reduction.</p>
       </div>
-
-      <button class="btn-primary" style="width:100%;" onclick="next()">View My Dashboard →</button>
+      <button class="btn btn-o" style="width:100%;" onclick="next()">View My Dashboard →</button>
     </div>
-  </div>
 
-  <!-- SCREEN 8: Athlete dashboard -->
-  <div class="screen" id="s8">
-    <div style="flex:1;display:flex;flex-direction:column;">
-      <div class="px pt">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-          <div>
-            <div style="font-size:11px;color:#475569;font-weight:600;">GOOD MORNING</div>
-            <div style="font-size:20px;font-weight:800;color:#fff;">Sarah 👋</div>
-          </div>
-          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#E8601C,#f97316);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#0C1A27;">S</div>
+    <!-- S8: Dashboard -->
+    <div class="screen" id="s8" style="padding-top:58px;display:flex;flex-direction:column;">
+      <div class="px" style="padding-top:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+          <div><div style="font-size:10px;color:#334155;font-weight:600;text-transform:uppercase;letter-spacing:.08em;">Good morning</div><div style="font-size:20px;font-weight:800;color:#fff;">Sarah 👋</div></div>
+          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#f97316);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#0C1A27;">S</div>
         </div>
-
-        <!-- Today card -->
-        <div style="background:linear-gradient(135deg,rgba(232,96,28,0.12),rgba(249,115,22,0.06));border:1px solid rgba(232,96,28,0.25);border-radius:18px;padding:18px;margin-bottom:16px;">
+        <div style="background:linear-gradient(135deg,rgba(232,96,28,0.12),rgba(249,115,22,0.05));border:1px solid rgba(232,96,28,0.22);border-radius:18px;padding:18px;margin-bottom:14px;">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <div>
-              <div style="font-size:11px;color:#E8601C;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;">Today</div>
-              <div style="font-size:16px;font-weight:700;color:#fff;">Week 1 · Session 2</div>
-            </div>
-            <span class="badge badge-orange">20 min</span>
+            <div><div style="font-size:10px;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:.08em;">Today</div><div style="font-size:15px;font-weight:700;color:#fff;">Week 1 · Session 2</div></div>
+            <span class="badge badge-o">20 min</span>
           </div>
-          <div class="progress-track"><div class="progress-fill" style="width:25%;"></div></div>
-          <div style="font-size:11px;color:#475569;margin-top:4px;">Week 1 — 1 of 4 sessions complete</div>
-          <button class="btn-primary" style="margin-top:14px;border-radius:10px;padding:12px;" onclick="next()">Start Session →</button>
+          <div class="prog-track"><div class="prog-fill" style="width:25%"></div></div>
+          <div style="font-size:10px;color:#334155;margin-top:4px;margin-bottom:14px;">1 of 4 sessions complete</div>
+          <button class="btn btn-o" style="border-radius:10px;padding:12px;font-size:14px;" onclick="next()">Start Session →</button>
         </div>
-
-        <!-- Stats row -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
-          <div class="card" style="padding:12px;text-align:center;">
-            <div style="font-size:22px;font-weight:800;color:#E8601C;">1</div>
-            <div style="font-size:10px;color:#475569;margin-top:2px;">Day streak</div>
-          </div>
-          <div class="card" style="padding:12px;text-align:center;">
-            <div style="font-size:22px;font-weight:800;color:#60a5fa;">🥋</div>
-            <div style="font-size:10px;color:#475569;margin-top:2px;">Blue Belt</div>
-          </div>
-          <div class="card" style="padding:12px;text-align:center;">
-            <div style="font-size:22px;font-weight:800;color:#22c55e;">50</div>
-            <div style="font-size:10px;color:#475569;margin-top:2px;">XP total</div>
-          </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+          <div class="card" style="padding:10px;text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--orange);">1</div><div style="font-size:9px;color:var(--muted);">Streak</div></div>
+          <div class="card" style="padding:10px;text-align:center;"><div style="font-size:20px;font-weight:800;color:#60a5fa;">🥋</div><div style="font-size:9px;color:var(--muted);">Blue Belt</div></div>
+          <div class="card" style="padding:10px;text-align:center;"><div style="font-size:20px;font-weight:800;color:#22c55e;">50</div><div style="font-size:9px;color:var(--muted);">XP</div></div>
         </div>
-
-        <!-- Weekly program -->
         <div class="card">
-          <div style="font-size:12px;font-weight:600;color:#64748b;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.08em;">8-Week Program</div>
-          <div class="week-row">
-            <div class="week-num current">W1</div>
-            <div style="flex:1;"><div class="week-title">Foundation Week</div><div class="week-sub">Landing fundamentals</div></div>
-            <div class="progress-track" style="width:60px;margin:0;"><div class="progress-fill" style="width:25%;"></div></div>
-          </div>
-          <div class="week-row">
-            <div class="week-num locked">W2</div>
-            <div><div class="week-title" style="color:#334155;">Balance &amp; Stability</div><div class="week-sub">Locked</div></div>
-          </div>
-          <div class="week-row">
-            <div class="week-num locked">W3</div>
-            <div><div class="week-title" style="color:#334155;">Deceleration</div><div class="week-sub">Locked</div></div>
-          </div>
+          <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">8-Week Program</div>
+          <div class="wk-row"><div class="wk-n wk-cur">W1</div><div style="flex:1;"><div style="font-size:13px;font-weight:600;color:#fff;">Foundation Week</div><div style="font-size:11px;color:var(--muted);">Landing fundamentals</div></div><div class="prog-track" style="width:56px;margin:0;"><div class="prog-fill" style="width:25%"></div></div></div>
+          <div class="wk-row"><div class="wk-n wk-lock">W2</div><div><div style="font-size:13px;font-weight:600;color:#334155;">Balance &amp; Stability</div><div style="font-size:11px;color:#334155;">Locked</div></div></div>
+          <div class="wk-row"><div class="wk-n wk-lock">W3</div><div><div style="font-size:13px;font-weight:600;color:#334155;">Deceleration</div><div style="font-size:11px;color:#334155;">Locked</div></div></div>
         </div>
+        <div style="height:20px;"></div>
       </div>
-
-      <div class="nav-bar" style="margin-top:auto;">
-        <div class="nav-item"><div class="nav-icon active">🏠</div><div class="nav-label active">Home</div></div>
-        <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">Program</div></div>
-        <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Progress</div></div>
-        <div class="nav-item"><div class="nav-icon">👤</div><div class="nav-label">Profile</div></div>
+      <div class="nav-bar">
+        <div class="nav-item"><div class="nav-ic on">🏠</div><div class="nav-lb on">Home</div></div>
+        <div class="nav-item"><div class="nav-ic">📋</div><div class="nav-lb">Program</div></div>
+        <div class="nav-item"><div class="nav-ic">📊</div><div class="nav-lb">Progress</div></div>
+        <div class="nav-item"><div class="nav-ic">👤</div><div class="nav-lb">Profile</div></div>
       </div>
     </div>
-  </div>
 
-</div><!-- /phone -->
+  </div><!-- /screens-wrapper -->
 
-<!-- Controls -->
-<div class="demo-controls">
-  <button class="ctrl-btn" onclick="prev()">← Back</button>
-  <button class="ctrl-btn" onclick="resetDemo()">↺ Restart</button>
-  <button class="ctrl-btn primary-ctrl" onclick="next()">Next →</button>
-</div>
-<div class="screen-label" id="screen-label">Screen 1 of 8</div>
+  <!-- Tap zones -->
+  <div class="swipe-left" onclick="next()"><div class="swipe-arrow">›</div></div>
+  <div class="swipe-right" onclick="prev()"><div class="swipe-arrow">‹</div></div>
+
+</div><!-- /phone-frame -->
+</div><!-- /scene -->
+
+<!-- Progress dots -->
+<div class="progress-bar" id="dots"></div>
+<div class="screen-name" id="sname">Landing page</div>
+<div class="screen-counter" id="scounter">1 / 8</div>
 
 <script>
-  const SCREENS = ['s1','s2','s3','s4','s5','s6','s7','s8'];
-  const LABELS = [
-    'Landing page',
-    'Role selection',
-    'Netball ACL pitch',
-    'Quick setup',
-    'Belt classification',
-    'Live session',
-    'Session complete',
-    'Athlete dashboard'
-  ];
-  let current = 0;
+const SCREENS = ['s1','s2','s3','s4','s5','s6','s7','s8'];
+const NAMES = ['Landing','Role selection','Netball ACL pitch','Quick setup','Belt classification','Live session','Session complete','Dashboard'];
+let cur = 0;
+let lastDir = 1;
 
-  const dotsEl = document.getElementById('dots');
-  SCREENS.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'demo-dot' + (i === 0 ? ' active' : '');
-    d.onclick = () => goTo(i);
-    dotsEl.appendChild(d);
+const dotsEl = document.getElementById('dots');
+SCREENS.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' active' : '');
+  d.onclick = () => goTo(i);
+  dotsEl.appendChild(d);
+});
+
+function goTo(idx) {
+  if (idx < 0 || idx >= SCREENS.length) return;
+  lastDir = idx > cur ? 1 : -1;
+
+  const prev = document.getElementById(SCREENS[cur]);
+  prev.classList.remove('active');
+  prev.classList.add(lastDir > 0 ? 'exit-left' : '');
+  setTimeout(() => prev.classList.remove('exit-left'), 350);
+
+  cur = idx;
+  const next = document.getElementById(SCREENS[cur]);
+  next.style.transform = lastDir > 0 ? 'translateX(40px)' : 'translateX(-40px)';
+  next.style.opacity = '0';
+  next.classList.add('active');
+  requestAnimationFrame(() => {
+    next.style.transform = '';
+    next.style.opacity = '';
   });
 
-  function goTo(idx) {
-    document.getElementById(SCREENS[current]).classList.remove('active');
-    current = Math.max(0, Math.min(SCREENS.length - 1, idx));
-    document.getElementById(SCREENS[current]).classList.add('active');
-    updateDots();
-    document.getElementById('screen-label').textContent =
-      `Screen ${current + 1} of ${SCREENS.length} — ${LABELS[current]}`;
-  }
+  updateUI();
+}
 
-  function updateDots() {
-    const dots = dotsEl.querySelectorAll('.demo-dot');
-    dots.forEach((d, i) => {
-      d.className = 'demo-dot' + (i < current ? ' done' : i === current ? ' active' : '');
-    });
-  }
-
-  function next() { goTo(current + 1); }
-  function prev() { goTo(current - 1); }
-  function resetDemo() { goTo(0); }
-
-  // Keyboard nav
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'Space') next();
-    if (e.key === 'ArrowLeft') prev();
-    if (e.key === 'r' || e.key === 'R') resetDemo();
+function updateUI() {
+  const dots = dotsEl.querySelectorAll('.dot');
+  dots.forEach((d, i) => {
+    d.className = 'dot' + (i < cur ? ' done' : i === cur ? ' active' : '');
   });
+  document.getElementById('scounter').textContent = `${cur + 1} / ${SCREENS.length}`;
+  document.getElementById('sname').textContent = NAMES[cur];
+}
+
+function next() { goTo(cur + 1); }
+function prev() { goTo(cur - 1); }
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (['ArrowRight','Space','Enter'].includes(e.key)) { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+  if (e.key === 'r' || e.key === 'R') goTo(0);
+});
+
+// Touch/swipe
+let tx = 0;
+const phone = document.getElementById('phone');
+phone.addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+phone.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 40) dx < 0 ? next() : prev();
+}, { passive: true });
 </script>
 </body>
 </html>
