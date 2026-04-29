@@ -66,7 +66,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-p2p-dark flex">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-p2p-darker via-p2p-dark to-black border-r border-p2p-border flex-col justify-between p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0a1520] via-[#0C1A27] to-[#060f18] border-r border-p2p-border flex-col justify-between p-12">
         <div>
           <img src={logoImage} alt="Prepared to Play" className="h-12 object-contain" />
         </div>
@@ -80,7 +80,7 @@ export default function Login() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-p2p-blue to-p2p-electric flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-p2p-orange to-p2p-orange-hover flex items-center justify-center">
             <span className="text-white text-xs font-bold">P2P</span>
           </div>
           <div>
@@ -121,7 +121,7 @@ export default function Login() {
                           placeholder="you@example.com"
                           autoComplete="email"
                           autoFocus
-                          className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 focus:border-p2p-electric focus:ring-1 focus:ring-p2p-electric/30 transition-all h-11"
+                          className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 focus:border-p2p-orange focus:ring-1 focus:ring-p2p-orange/20 transition-all h-11"
                           data-testid="input-email"
                         />
                       </FormControl>
@@ -140,7 +140,7 @@ export default function Login() {
                         <button
                           type="button"
                           onClick={() => navigate("/forgot-password")}
-                          className="text-xs text-p2p-electric hover:text-blue-300 transition-colors"
+                          className="text-xs text-p2p-orange hover:text-p2p-orange-hover transition-colors"
                           data-testid="link-forgot-password"
                         >
                           Forgot password?
@@ -153,7 +153,7 @@ export default function Login() {
                             type={showPassword ? "text" : "password"}
                             placeholder="Enter your password"
                             autoComplete="current-password"
-                            className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 focus:border-p2p-electric focus:ring-1 focus:ring-p2p-electric/30 transition-all h-11 pr-11"
+                            className="bg-gray-800/60 border-gray-700 text-white placeholder:text-gray-500 focus:border-p2p-orange focus:ring-1 focus:ring-p2p-orange/20 transition-all h-11 pr-11"
                             data-testid="input-password"
                           />
                           <button
@@ -174,7 +174,7 @@ export default function Login() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-p2p-blue to-p2p-electric hover:opacity-90 text-white font-semibold transition-all mt-2 group"
+                  className="w-full h-11 bg-gradient-to-r from-p2p-orange to-p2p-orange-hover hover:opacity-90 text-white font-semibold transition-all mt-2 group"
                   disabled={isLoading}
                   data-testid="button-submit"
                 >
@@ -192,7 +192,7 @@ export default function Login() {
                 Don't have an account?{" "}
                 <button
                   onClick={() => navigate("/signup")}
-                  className="text-p2p-electric hover:text-blue-300 font-medium transition-colors"
+                  className="text-p2p-orange hover:text-p2p-orange-hover font-medium transition-colors"
                   data-testid="link-signup"
                 >
                   Create one free
