@@ -82,6 +82,7 @@ import Community from "./pages/community";
 import EducationModules from "./pages/education-modules";
 import NSODashboard from "./pages/nso-dashboard";
 import PartnerLanding from "./pages/partner-landing";
+import ComplianceReport from "./pages/compliance-report";
 import SessionPlayer from "./pages/session-player";
 import Upgrade from "./pages/upgrade";
 import Pricing from "./pages/pricing";
@@ -213,6 +214,9 @@ function DesktopRouter() {
       <Route path="/upgrade">{() => <ProtectedRoute component={Upgrade} />}</Route>
       <Route path="/upgrade/success">{() => <ProtectedRoute component={UpgradeSuccess} />}</Route>
       <Route path="/messages">{() => <ProtectedRoute component={CoachMessages} />}</Route>
+
+      {/* Public demo routes — no auth required */}
+      <Route path="/compliance-report" component={ComplianceReport} />
 
       <Route component={NotFound} />
     </Switch>
