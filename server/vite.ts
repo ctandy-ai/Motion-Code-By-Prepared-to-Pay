@@ -78,6 +78,14 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
+  // Explicit routes for standalone HTML demo files (bypass React router catch-all)
+  app.get("/demo-onboarding.html", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "demo-onboarding.html"));
+  });
+  app.get("/compliance-demo.html", (_req, res) => {
+    res.sendFile(path.resolve(distPath, "compliance-demo.html"));
+  });
+
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
