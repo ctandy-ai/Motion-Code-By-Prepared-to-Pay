@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -11,13 +12,31 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { Download, AlertTriangle, TrendingUp, Users, ShieldCheck, Activity } from "lucide-react";
+import { Download, AlertTriangle, TrendingUp, Users, ShieldCheck, Activity, RefreshCw } from "lucide-react";
 
 const TODAY = new Date().toLocaleDateString("en-AU", {
   day: "numeric",
   month: "long",
   year: "numeric",
 });
+
+// Demo fallback data (shown when DB has no real athletes yet)
+const DEMO_OVERVIEW = { totalAthletes: 2847, activeThisWeek: 2090, averageComplianceRate: 73.4, totalSessionsThisMonth: 8940 };
+const DEMO_STATE = [
+  { state: "NSW", athletes: 712, activeThisWeek: 534, complianceRate: 75.0 },
+  { state: "VIC", athletes: 641, activeThisWeek: 471, complianceRate: 73.5 },
+  { state: "QLD", athletes: 489, activeThisWeek: 341, complianceRate: 69.7 },
+  { state: "WA", athletes: 387, activeThisWeek: 268, complianceRate: 69.2 },
+  { state: "SA", athletes: 298, activeThisWeek: 198, complianceRate: 66.4 },
+  { state: "ACT", athletes: 187, activeThisWeek: 145, complianceRate: 77.5 },
+  { state: "TAS", athletes: 133, activeThisWeek: 89, complianceRate: 66.9 },
+];
+const DEMO_TREND = [
+  {week:"Wk 1",rate:42},{week:"Wk 2",rate:48},{week:"Wk 3",rate:54},{week:"Wk 4",rate:58},
+  {week:"Wk 5",rate:62},{week:"Wk 6",rate:65},{week:"Wk 7",rate:67},{week:"Wk 8",rate:68},
+  {week:"Wk 9",rate:71},{week:"Wk 10",rate:72},{week:"Wk 11",rate:73},{week:"Wk 12",rate:73.4},
+];
+const DEMO_INDICATORS = { painSignalsThisWeek: 47, highPainSignals: 12, lapsedAthletes14Days: 89 };
 
 const complianceBuckets = [
   { range: "0–20%", athletes: 287, risk: "high" },
@@ -43,20 +62,7 @@ const stateData = [
   { state: "TAS", athletes: 133, active: 89, compliance: 66.9, risk: "Monitor" },
 ];
 
-const weeklyTrend = [
-  { week: "Wk 1", rate: 42 },
-  { week: "Wk 2", rate: 48 },
-  { week: "Wk 3", rate: 54 },
-  { week: "Wk 4", rate: 58 },
-  { week: "Wk 5", rate: 62 },
-  { week: "Wk 6", rate: 65 },
-  { week: "Wk 7", rate: 67 },
-  { week: "Wk 8", rate: 68 },
-  { week: "Wk 9", rate: 71 },
-  { week: "Wk 10", rate: 72 },
-  { week: "Wk 11", rate: 73 },
-  { week: "Wk 12", rate: 73.4 },
-];
+// (weekly trend is now dynamic — see DEMO_TREND above)
 
 const riskBadgeClass = (risk: string) =>
   risk === "Low Risk"
@@ -64,6 +70,41 @@ const riskBadgeClass = (risk: string) =>
     : "bg-amber-500/10 text-amber-400 border border-amber-500/20";
 
 export default function ComplianceReport() {
+  const [liveData, setLiveData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const token = new URLSearchParams(window.location.search).get("token") || "p2p-berkshire-2025";
+      const res = await fetch(`/api/compliance/summary?token=${token}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.overview && data.overview.totalAthletes > 0) {
+          setLiveData(data);
+          setIsLive(true);
+        }
+      }
+    } catch (e) {
+      // fall back to demo data
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  // Use live data if available, otherwise demo
+  const overview = liveData?.overview || DEMO_OVERVIEW;
+  const stateData = liveData?.regional?.length > 0
+    ? liveData.regional.map((s: any) => ({ ...s, athletes: s.athletes, activeThisWeek: s.activeThisWeek, complianceRate: s.complianceRate }))
+    : DEMO_STATE;
+  const weeklyTrend = liveData?.weeklyTrend?.length > 0
+    ? liveData.weeklyTrend.map((t: any) => ({ week: t.week, rate: t.compliance }))
+    : DEMO_TREND;
+  const indicators = liveData?.leadingIndicators || DEMO_INDICATORS;
+
   return (
     <div
       className="min-h-screen font-sans"
@@ -107,35 +148,47 @@ export default function ComplianceReport() {
 
       <div className="max-w-6xl mx-auto px-8 py-8 space-y-8">
 
+        {/* Live/Demo indicator */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold"
+            style={{ background: isLive ? "rgba(34,197,94,0.1)" : "rgba(245,158,11,0.1)", color: isLive ? "#22c55e" : "#f59e0b", border: `1px solid ${isLive ? "rgba(34,197,94,0.2)" : "rgba(245,158,11,0.2)"}` }}>
+            <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: isLive ? "#22c55e" : "#f59e0b" }} />
+            {isLive ? "Live Data" : "Demo Data — enrol athletes to see live figures"}
+          </div>
+          <button onClick={fetchData} className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-colors" style={{ background: "rgba(255,255,255,0.04)", color: "#64748b", border: "1px solid rgba(255,255,255,0.08)" }}>
+            <RefreshCw className="w-3 h-3" /> Refresh
+          </button>
+        </div>
+
         {/* Hero metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             {
               icon: <Users className="w-5 h-5" />,
               label: "Enrolled Athletes",
-              value: "2,847",
+              value: overview.totalAthletes.toLocaleString(),
               sub: "Netball Australia members",
               colour: "#E8601C",
             },
             {
               icon: <ShieldCheck className="w-5 h-5" />,
               label: "Season Compliance Rate",
-              value: "73.4%",
+              value: `${overview.averageComplianceRate}%`,
               sub: "≥2 sessions/week",
               colour: "#22c55e",
             },
             {
               icon: <AlertTriangle className="w-5 h-5" />,
               label: "High-Risk Athletes",
-              value: "312",
-              sub: "Compliance < 40% (11%)",
+              value: indicators.lapsedAthletes14Days?.toLocaleString() ?? "312",
+              sub: "Compliance < 40% or lapsed 14+ days",
               colour: "#ef4444",
             },
             {
               icon: <TrendingUp className="w-5 h-5" />,
-              label: "Projected Claims Reduction",
-              value: "−38%",
-              sub: "vs. unmanaged baseline",
+              label: "Sessions This Month",
+              value: overview.totalSessionsThisMonth?.toLocaleString() ?? "−",
+              sub: "Total logged completions",
               colour: "#22c55e",
             },
           ].map((m) => (
@@ -235,9 +288,9 @@ export default function ComplianceReport() {
                   <td className="px-6 py-3 font-semibold text-white">{row.state}</td>
                   <td className="px-6 py-3" style={{ color: "#94a3b8" }}>{row.athletes.toLocaleString()}</td>
                   <td className="px-6 py-3" style={{ color: "#94a3b8" }}>
-                    {row.active.toLocaleString()}
+                    {(row.activeThisWeek ?? row.active ?? 0).toLocaleString()}
                     <span className="ml-1 text-xs" style={{ color: "#64748b" }}>
-                      ({Math.round(row.active / row.athletes * 100)}%)
+                      ({Math.round((row.activeThisWeek ?? row.active ?? 0) / Math.max(row.athletes, 1) * 100)}%)
                     </span>
                   </td>
                   <td className="px-6 py-3">
@@ -245,11 +298,11 @@ export default function ComplianceReport() {
                       <div className="w-20 h-1.5 rounded-full bg-white/10">
                         <div className="h-1.5 rounded-full"
                           style={{
-                            width: `${row.compliance}%`,
-                            background: row.compliance >= 75 ? "#22c55e" : row.compliance >= 65 ? "#f59e0b" : "#ef4444"
+                            width: `${row.complianceRate ?? row.compliance ?? 0}%`,
+                            background: (row.complianceRate ?? row.compliance ?? 0) >= 75 ? "#22c55e" : (row.complianceRate ?? row.compliance ?? 0) >= 65 ? "#f59e0b" : "#ef4444"
                           }} />
                       </div>
-                      <span className="font-medium text-white">{row.compliance}%</span>
+                      <span className="font-medium text-white">{row.complianceRate ?? row.compliance ?? 0}%</span>
                     </div>
                   </td>
                   <td className="px-6 py-3">
@@ -271,8 +324,8 @@ export default function ComplianceReport() {
               {
                 icon: <Activity className="w-5 h-5" />,
                 title: "Pain Signals This Week",
-                value: "47 athletes",
-                detail: "Reported soreness >7/10 — up 8% vs last week",
+                value: `${indicators.highPainSignals ?? 12} athletes`,
+                detail: `${indicators.painSignalsThisWeek ?? 47} total reports — soreness >7/10 flagged for follow-up`,
                 status: "AMBER",
                 colour: "#f59e0b",
                 bg: "rgba(245,158,11,0.08)",
@@ -280,17 +333,17 @@ export default function ComplianceReport() {
               {
                 icon: <TrendingUp className="w-5 h-5" />,
                 title: "Compliance Trend",
-                value: "+0.4pp",
-                detail: "Week-on-week improvement — on track for 75% target",
-                status: "GREEN",
-                colour: "#22c55e",
-                bg: "rgba(34,197,94,0.08)",
+                value: overview.averageComplianceRate >= 70 ? "+trending" : "Monitor",
+                detail: `${overview.activeThisWeek} athletes active this week — target: 75% compliance`,
+                status: overview.averageComplianceRate >= 70 ? "GREEN" : "AMBER",
+                colour: overview.averageComplianceRate >= 70 ? "#22c55e" : "#f59e0b",
+                bg: overview.averageComplianceRate >= 70 ? "rgba(34,197,94,0.08)" : "rgba(245,158,11,0.08)",
               },
               {
                 icon: <AlertTriangle className="w-5 h-5" />,
                 title: "At-Risk Cohort",
-                value: "312 athletes",
-                detail: "89 not logged in 14+ days — intervention recommended",
+                value: `${indicators.lapsedAthletes14Days ?? 89} athletes`,
+                detail: "Not logged in 14+ days — intervention recommended",
                 status: "RED",
                 colour: "#ef4444",
                 bg: "rgba(239,68,68,0.08)",

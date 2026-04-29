@@ -6197,6 +6197,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: e.message || "Failed to remove athlete" });
     }
   });
+  // ─── PUBLIC COMPLIANCE API (Berkshire / NSO partner access) ───────────────
+  // Token-authenticated — no login required, safe to share with insurers
+  // Token: set COMPLIANCE_API_TOKEN env var on Render (default: "p2p-berkshire-2025")
+
+  const COMPLIANCE_TOKEN = process.env.COMPLIANCE_API_TOKEN || "p2p-berkshire-2025";
+
+  const requireComplianceToken = (req: any, res: any, next: any) => {
+    const token = req.headers["x-compliance-token"] || req.query.token;
+    if (token !== COMPLIANCE_TOKEN) {
+      return res.status(401).json({ error: "Invalid or missing compliance token" });
+    }
+    next();
+  };
+
+  // GET /api/compliance/summary — full compliance dataset for insurer/NSO
+  app.get("/api/compliance/summary", requireComplianceToken, async (req: any, res) => {
+    try {
+      const analytics = await storage.getNSOAnalytics(undefined);
+
+      // Real injury/pain signal stats
+      const allInjuryReports = await db.select().from(injuryReports);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const recentPainSignals = allInjuryReports.filter(
+        (r: any) => r.createdAt && new Date(r.createdAt) >= sevenDaysAgo
+      );
+      const highPainSignals = recentPainSignals.filter((r: any) => r.painRating >= 7);
+
+      // Athletes with zero sessions in 14+ days
+      const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+      const allCompletions = await db.select().from(athleteSessionCompletions);
+      const activeUserIds = new Set(
+        allCompletions
+          .filter((c: any) => c.completedAt && new Date(c.completedAt) >= fourteenDaysAgo)
+          .map((c: any) => c.userId)
+      );
+      const allAthletes = await db.select().from(users).where(
+        and(eq(users.role, "athlete"), eq(users.isActive, true))
+      );
+      const lapsedAthletes = allAthletes.filter((a: any) => !activeUserIds.has(a.id));
+
+      res.json({
+        generatedAt: new Date().toISOString(),
+        programme: "Motion Code — Netball ACL Prevention",
+        season: "2025",
+        overview: {
+          totalAthletes: analytics.totalAthletes,
+          activeThisWeek: analytics.activeThisWeek,
+          averageComplianceRate: analytics.averageCompliance,
+          totalSessionsThisMonth: analytics.totalSessionsMonth,
+        },
+        leadingIndicators: {
+          painSignalsThisWeek: recentPainSignals.length,
+          highPainSignals: highPainSignals.length,
+          lapsedAthletes14Days: lapsedAthletes.length,
+          weekOnWeekComplianceDelta: null, // requires historical baseline
+        },
+        regional: analytics.byState.map(s => ({
+          state: s.state,
+          athletes: s.athleteCount,
+          activeThisWeek: s.activeCount,
+          complianceRate: s.activePercent,
+          avgSessionsPerWeek: s.avgSessionsWeek,
+        })),
+        weeklyTrend: analytics.weeklyTrend,
+      });
+    } catch (error: any) {
+      console.error("Compliance API error:", error);
+      res.status(500).json({ error: "Failed to generate compliance report" });
+    }
+  });
+
+  // GET /api/compliance/athletes — de-identified athlete-level dataset
+  app.get("/api/compliance/athletes", requireComplianceToken, async (req: any, res) => {
+    try {
+      const allAthletes = await db.select().from(users).where(
+        and(eq(users.role, "athlete"), eq(users.isActive, true))
+      );
+      const allCompletions = await db.select().from(athleteSessionCompletions);
+      const allInjury = await db.select().from(injuryReports);
+
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const report = allAthletes.map((athlete: any, idx: number) => {
+        const completions = allCompletions.filter((c: any) => c.userId === athlete.id);
+        const thisWeek = completions.filter((c: any) => c.completedAt && new Date(c.completedAt) >= weekAgo);
+        const thisMonth = completions.filter((c: any) => c.completedAt && new Date(c.completedAt) >= monthAgo);
+        const painReports = allInjury.filter((r: any) => r.userId === athlete.id);
+        const recentPain = painReports.filter((r: any) => r.createdAt && new Date(r.createdAt) >= weekAgo);
+        const maxPain = recentPain.length > 0 ? Math.max(...recentPain.map((r: any) => r.painRating || 0)) : 0;
+        const sessionsPerWeek = thisWeek.length;
+        const complianceRate = Math.min(100, Math.round((sessionsPerWeek / 2) * 100)); // target: 2/week
+
+        return {
+          athleteRef: `ATH-${String(idx + 1).padStart(4, "0")}`, // de-identified
+          state: athlete.state || "Unknown",
+          club: athlete.club || "Unknown",
+          position: null, // not collected at signup yet
+          sessionsThisWeek: sessionsPerWeek,
+          sessionsThisMonth: thisMonth.length,
+          totalSessionsEver: completions.length,
+          weeklyComplianceRate: complianceRate,
+          peakPainScoreThisWeek: maxPain,
+          painSignalsThisWeek: recentPain.length,
+          riskTier: complianceRate >= 75 ? "low" : complianceRate >= 40 ? "moderate" : "high",
+          lastSessionDate: completions.length > 0
+            ? completions.sort((a: any, b: any) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0].completedAt
+            : null,
+        };
+      });
+
+      res.json({
+        generatedAt: new Date().toISOString(),
+        totalRecords: report.length,
+        note: "All records de-identified per Privacy Act 1988 (Cth). Athlete references are session-specific and cannot be reverse-mapped without P2P cooperation.",
+        athletes: report,
+      });
+    } catch (error: any) {
+      console.error("Compliance athletes API error:", error);
+      res.status(500).json({ error: "Failed to generate athlete report" });
+    }
+  });
+
+  // GET /api/compliance/export.csv — CSV download for actuaries
+  app.get("/api/compliance/export.csv", requireComplianceToken, async (req: any, res) => {
+    try {
+      const analytics = await storage.getNSOAnalytics(undefined);
+      const lines = [
+        "MOTION CODE — COMPLIANCE EXPORT",
+        `Generated: ${new Date().toISOString()}`,
+        "",
+        "OVERVIEW",
+        "Metric,Value",
+        `Total Athletes,${analytics.totalAthletes}`,
+        `Active This Week,${analytics.activeThisWeek}`,
+        `Average Compliance Rate,${analytics.averageCompliance}%`,
+        `Total Sessions This Month,${analytics.totalSessionsMonth}`,
+        "",
+        "REGIONAL BREAKDOWN",
+        "State,Athletes,Active This Week,Compliance Rate,Avg Sessions/Week",
+        ...analytics.byState.map(s =>
+          `${s.state},${s.athleteCount},${s.activeCount},${s.activePercent}%,${s.avgSessionsWeek}`
+        ),
+        "",
+        "WEEKLY COMPLIANCE TREND",
+        "Week,Compliance %",
+        ...analytics.weeklyTrend.map(t => `${t.week},${t.compliance}%`),
+      ];
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename=motioncode-compliance-${new Date().toISOString().split("T")[0]}.csv`);
+      res.send(lines.join("\n"));
+    } catch (error: any) {
+      console.error("CSV export error:", error);
+      res.status(500).json({ error: "Export failed" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
