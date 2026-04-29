@@ -465,7 +465,7 @@ export default function MotionCodeLanding() {
       `}</style>
 
       {/* ── NAV ── */}
-      <nav className="sticky top-0 z-[100] flex items-center justify-between px-10 py-[18px] bg-[#0C1A27]/95 backdrop-blur-2xl border-b border-white/[0.08]">
+      <nav className="sticky top-0 z-[100] flex items-center justify-between px-5 sm:px-10 py-[18px] bg-[#0C1A27]/95 backdrop-blur-2xl border-b border-white/[0.08]">
         <div className="flex items-center gap-2.5 font-heading text-[1.4rem] font-extrabold tracking-[0.06em] uppercase">
           <div className="w-6 h-6 bg-p2p-orange flex items-center justify-center text-[0.7rem] font-extrabold text-p2p-dark"
             style={{ clipPath: "polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)" }}>
@@ -473,11 +473,14 @@ export default function MotionCodeLanding() {
           </div>
           Motion Code
         </div>
-        <div className="flex items-center gap-7">
+        <div className="hidden md:flex items-center gap-7">
           <button onClick={() => scrollTo("how")} className="bg-transparent border-0 text-p2p-muted hover:text-p2p-text text-sm font-medium cursor-pointer transition-colors duration-200">How it works</button>
           <button onClick={() => scrollTo("audience")} className="bg-transparent border-0 text-p2p-muted hover:text-p2p-text text-sm font-medium cursor-pointer transition-colors duration-200">For Athletes</button>
           <button onClick={() => scrollTo("audience")} className="bg-transparent border-0 text-p2p-muted hover:text-p2p-text text-sm font-medium cursor-pointer transition-colors duration-200">For Coaches</button>
           <button onClick={() => openModal("org")} className="bg-transparent border-0 text-p2p-muted hover:text-p2p-text text-sm font-medium cursor-pointer transition-colors duration-200">Organisations</button>
+          <Link href="/login"><NavCta>Log in</NavCta></Link>
+        </div>
+        <div className="flex md:hidden items-center gap-3">
           <Link href="/login"><NavCta>Log in</NavCta></Link>
         </div>
       </nav>
@@ -490,7 +493,7 @@ export default function MotionCodeLanding() {
         <div className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: "linear-gradient(rgba(255,100,50,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,100,50,0.025) 1px,transparent 1px)", backgroundSize: "72px 72px" }} />
 
-        <div className="mc-anim mc-d1 relative z-[5] px-10 pt-[60px] pb-10 max-w-[900px]">
+        <div className="mc-anim mc-d1 relative z-[5] px-5 sm:px-10 pt-[60px] pb-10 max-w-[900px]">
           <div className="mc-anim mc-d1 inline-flex items-center gap-2.5 font-mono text-[0.68rem] tracking-[0.25em] uppercase text-p2p-orange mb-6">
             <span className="inline-block w-6 h-px bg-p2p-orange" />
             Strength &amp; Movement for Sport
@@ -524,7 +527,7 @@ export default function MotionCodeLanding() {
         </div>
 
         {/* Stats bar */}
-        <div className="mc-anim mc-d6 relative z-[5] grid grid-cols-4 border-t border-white/[0.08] mx-10 mt-11">
+        <div className="mc-anim mc-d6 relative z-[5] grid grid-cols-2 sm:grid-cols-4 border-t border-white/[0.08] mx-5 sm:mx-10 mt-11">
           {[
             { n: "6", l: "Sports covered" },
             { n: "40+", l: "Prescribed exercises" },
@@ -543,7 +546,7 @@ export default function MotionCodeLanding() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how" className="px-10 py-20">
+      <section id="how" className="px-5 sm:px-10 py-20">
         <div className="font-mono text-[0.65rem] tracking-[0.25em] uppercase text-p2p-orange flex items-center gap-2.5 mb-4">
           <span className="inline-block w-5 h-px bg-p2p-orange" />
           How it works
@@ -553,7 +556,7 @@ export default function MotionCodeLanding() {
           Simple. Specific.<br />Effective.
         </h2>
 
-        <div className="grid grid-cols-3 gap-0.5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-0.5">
           {[
             { n: "01", title: "Know Your Movement", desc: "Tell us your sport, your position, and your goals. Motion Code builds your profile and understands the physical demands you face every game." },
             { n: "02", title: "Get Your Program", desc: "Receive strength and power exercises built for exactly how you run and play. No generic gym plans. Every exercise has a reason." },
@@ -576,7 +579,7 @@ export default function MotionCodeLanding() {
       </section>
 
       {/* ── AUDIENCE ── */}
-      <div id="audience" className="px-10 pb-20 grid grid-cols-2 gap-0.5">
+      <div id="audience" className="px-5 sm:px-10 pb-20 grid grid-cols-1 sm:grid-cols-2 gap-0.5">
         {/* Athlete card */}
         <div className="bg-p2p-orange px-11 py-12 relative overflow-hidden">
           <div className="font-mono text-[0.62rem] tracking-[0.2em] uppercase text-p2p-dark/60 mb-4">For Athletes</div>
@@ -633,12 +636,12 @@ export default function MotionCodeLanding() {
       </div>
 
       {/* ── PROOF ── */}
-      <div className="px-10 pb-20">
+      <div className="px-5 sm:px-10 pb-20">
         <div className="font-mono text-[0.65rem] tracking-[0.25em] uppercase text-p2p-orange flex items-center gap-2.5 mb-6">
           <span className="inline-block w-5 h-px bg-p2p-orange" />
           What coaches say
         </div>
-        <div className="grid gap-0.5" style={{ gridTemplateColumns: "2fr 1fr" }}>
+        <div className="grid gap-0.5 grid-cols-1 sm:grid-cols-[2fr_1fr]">
           <div className="bg-p2p-surface2 border border-white/[0.08] px-[52px] py-12 flex flex-col justify-between min-h-[220px]">
             <div>
               <div className="font-heading text-[4.5rem] font-extrabold text-p2p-orange leading-[0.8] mb-2.5 opacity-50">"</div>
@@ -667,7 +670,7 @@ export default function MotionCodeLanding() {
       </div>
 
       {/* ── CREDIBILITY ── */}
-      <div className="border-t border-b border-white/[0.08] mx-10 py-8 flex items-center gap-9">
+      <div className="border-t border-b border-white/[0.08] mx-5 sm:mx-10 py-8 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-9">
         <p className="flex-1 text-[0.84rem] text-p2p-muted leading-[1.7]">
           Motion Code is built on the methodology behind{" "}
           <a href="https://preparedtoplay.replit.app" target="_blank" rel="noreferrer" className="text-p2p-orange no-underline font-medium hover:underline">
@@ -681,7 +684,7 @@ export default function MotionCodeLanding() {
       </div>
 
       {/* ── FINAL CTA ── */}
-      <section className="px-10 py-[90px] text-center relative overflow-hidden">
+      <section className="px-5 sm:px-10 py-[90px] text-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: "radial-gradient(ellipse 70% 60% at 50% 100%,rgba(255,100,50,0.07) 0%,transparent 65%)" }} />
         <h2 className="relative font-heading font-extrabold uppercase tracking-wide leading-[0.9] mb-4"
@@ -698,7 +701,7 @@ export default function MotionCodeLanding() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-white/[0.08] px-10 py-6 flex items-center justify-between flex-wrap gap-4">
+      <footer className="border-t border-white/[0.08] px-5 sm:px-10 py-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <span className="font-heading text-[0.9rem] font-bold tracking-[0.1em] uppercase text-p2p-muted">
           Motion Code · A Prepared to Play Platform
         </span>
