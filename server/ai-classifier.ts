@@ -1,10 +1,4 @@
-import OpenAI from "openai";
-
-// Using Replit's AI Integrations service (no API key required)
-const openai = new OpenAI({
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY
-});
+import { anthropic, CHAT_MODEL } from "./ai-client";
 
 export interface TeamBuildrExercise {
   id: string;
@@ -49,7 +43,7 @@ INTENSITY GUIDELINES:
 - Moderate Intensity: 75-85% 1RM, RPE 7-8, 6-8 reps, strength building
 - High Intensity: 85-100% 1RM, RPE 9-10, 1-5 reps, max strength/power
 
-Analyze the exercise and provide a classification in JSON format.`;
+Analyze the exercise and provide a classification as a JSON object.`;
 
 export async function classifyExercise(exercise: TeamBuildrExercise): Promise<AIClassification> {
   try {
@@ -62,14 +56,14 @@ Current Programming: Sets: ${exercise.variables_default?.sets || "N/A"}, Reps: $
 Current Belt Range: ${exercise.belt_min || "N/A"} to ${exercise.belt_max || "N/A"}
 `;
 
-    // the newest OpenAI model is "gpt-4.1" which was released August 7, 2025. do not change this unless explicitly requested by the user
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1",
+    const response = await anthropic.messages.create({
+      model: CHAT_MODEL,
+      max_tokens: 1024,
+      system: classificationPrompt,
       messages: [
-        { role: "system", content: classificationPrompt },
         {
           role: "user",
-          content: `Analyze this exercise and provide a detailed classification:\n\n${exerciseContext}\n\nProvide your response in the following JSON format:
+          content: `Analyze this exercise and provide a detailed classification:\n\n${exerciseContext}\n\nRespond with ONLY a JSON object in this exact format:
 {
   "exerciseName": "string",
   "recommendedBeltLevel": "White" | "Blue" | "Black",
@@ -82,21 +76,18 @@ Current Belt Range: ${exercise.belt_min || "N/A"} to ${exercise.belt_max || "N/A
   "movementComplexity": "Low" | "Moderate" | "High",
   "techniqueRequirements": "description of key technique points",
   "injuryRiskFactors": ["factor1", "factor2"],
-  "confidence": 0-100 (how confident in this classification)
+  "confidence": 0-100
 }`
         }
       ],
-      response_format: { type: "json_object" },
-      max_completion_tokens: 8192,
     });
 
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("No response from AI");
-    }
+    const content = response.content[0]?.type === "text" ? response.content[0].text : "";
+    if (!content) throw new Error("No response from AI");
 
-    const classification = JSON.parse(content) as AIClassification;
-    return classification;
+    // Strip markdown code fences if present
+    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(cleaned) as AIClassification;
   } catch (error) {
     console.error("AI Classification error:", error);
     throw error;
@@ -108,23 +99,23 @@ export async function classifyExerciseBatch(
   onProgress?: (current: number, total: number) => void
 ): Promise<Map<string, AIClassification>> {
   const results = new Map<string, AIClassification>();
-  
+
   for (let i = 0; i < exercises.length; i++) {
     const exercise = exercises[i];
     try {
       const classification = await classifyExercise(exercise);
       results.set(exercise.id, classification);
-      
+
       if (onProgress) {
         onProgress(i + 1, exercises.length);
       }
-      
+
       // Rate limiting: small delay between requests
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
       console.error(`Failed to classify ${exercise.name}:`, error);
     }
   }
-  
+
   return results;
 }

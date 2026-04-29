@@ -30,7 +30,7 @@ services:
         value: price_1TPDCyR3dygmxNOCEYICBBwB
       - key: STRIPE_PRICE_PRO_ANNUAL
         value: price_1TRAkHR3dygmxNOCQzM9ZoKP
-      - key: OPENAI_API_KEY
+      - key: ANTHROPIC_API_KEY
         sync: false
 
 databases:

@@ -1,10 +1,5 @@
-import OpenAI from "openai";
+import { anthropic, CHAT_MODEL } from "./ai-client";
 import { IStorage } from "./storage";
-
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
 
 interface ParsedAthleteData {
   name?: string;
@@ -58,25 +53,12 @@ NICE TO HAVE (extract if mentioned, but NOT required):
 - Any injury history (especially hamstring, calf, or groin issues — set recurrentHamstring/recurrentCalf/recurrentGroin booleans if relevant, plus include details in coachingAssessment)
 - Current training goals
 
-IMPORTANT: Set isComplete to TRUE as soon as you have at least a name. Do NOT ask unnecessary follow-up questions. Extract what's provided and let the coach decide when they're ready to create.
+IMPORTANT: Set isComplete to TRUE as soon as you have at least a name. Do NOT ask unnecessary follow-up questions.
 
-When a coach describes an athlete, extract all available data and format your response as JSON:
-1. "message": Your conversational response confirming what you captured
-2. "extractedData": An object containing all parsed athlete fields
-3. "isComplete": TRUE if you have at least a name, FALSE only if no name was provided
-
-Example response format:
+When a coach describes an athlete, extract all available data and respond with ONLY a JSON object:
 {
-  "message": "Got it! I've captured Jake Smith from the U21s - midfielder with 3 years training, 4/5 movement quality, and a hamstring history. Ready to create his profile!",
-  "extractedData": {
-    "name": "Jake Smith",
-    "team": "U21",
-    "position": "Midfielder",
-    "trainingAgeYears": 3,
-    "movementQualityScore": 4,
-    "recurrentHamstring": true,
-    "goals": ["Preseason preparation"]
-  },
+  "message": "Your conversational response confirming what you captured",
+  "extractedData": { ...all parsed athlete fields... },
   "isComplete": true
 }
 
@@ -92,26 +74,26 @@ export async function processOnboardingMessage(
   conversationHistory: Array<{ role: string; content: string }>,
   storage: any
 ): Promise<OnboardingResponse> {
-  const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [
-    { role: "system", content: SYSTEM_PROMPT },
+  const messages: Array<{ role: "user" | "assistant"; content: string }> = [
     ...conversationHistory.map(m => ({
       role: m.role as "user" | "assistant",
-      content: m.content
+      content: m.content,
     })),
-    { role: "user", content: userMessage }
+    { role: "user", content: userMessage },
   ];
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4.1",
+  const response = await anthropic.messages.create({
+    model: CHAT_MODEL,
+    max_tokens: 1024,
+    system: SYSTEM_PROMPT,
     messages,
-    max_completion_tokens: 1024,
-    response_format: { type: "json_object" },
   });
 
-  const content = response.choices[0]?.message?.content || "{}";
-  
+  const content = response.content[0]?.type === "text" ? response.content[0].text : "{}";
+
   try {
-    const parsed = JSON.parse(content);
+    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed = JSON.parse(cleaned);
     return {
       message: parsed.message || "I'm having trouble understanding. Could you describe the athlete again?",
       extractedData: parsed.extractedData,
@@ -135,21 +117,25 @@ export async function createAthleteFromOnboarding(
   }
 
   try {
-    const generatedEmail = data.email || `${data.name.toLowerCase().replace(/\s+/g, '.')}.${Date.now()}@athlete.local`;
-    
+    const generatedEmail =
+      data.email || `${data.name.toLowerCase().replace(/\s+/g, ".")}.${Date.now()}@athlete.local`;
+
     const athlete = await storage.createAthlete({
       name: data.name,
       email: generatedEmail,
       phone: data.phone || undefined,
       team: data.team || undefined,
       position: data.position || undefined,
-      notes: [
-        data.coachingAssessment,
-        data.goals?.length ? `Goals: ${data.goals.join(", ")}` : null,
-        data.injuryHistory?.length ? `Injury History: ${data.injuryHistory.join(", ")}` : null,
-        data.sport ? `Sport: ${data.sport}` : null,
-        !data.email ? `(Email auto-generated during AI onboarding)` : null,
-      ].filter(Boolean).join("\n") || undefined,
+      notes:
+        [
+          data.coachingAssessment,
+          data.goals?.length ? `Goals: ${data.goals.join(", ")}` : null,
+          data.injuryHistory?.length ? `Injury History: ${data.injuryHistory.join(", ")}` : null,
+          data.sport ? `Sport: ${data.sport}` : null,
+          !data.email ? `(Email auto-generated during AI onboarding)` : null,
+        ]
+          .filter(Boolean)
+          .join("\n") || undefined,
       status: "Registered",
     });
 
@@ -167,8 +153,12 @@ export async function createAthleteFromOnboarding(
       return isNaN(num) ? fallback : num;
     };
 
-    const hasProfileData = data.trainingAgeYears !== undefined || data.movementQualityScore !== undefined
-      || data.recurrentHamstring || data.recurrentCalf || data.recurrentGroin;
+    const hasProfileData =
+      data.trainingAgeYears !== undefined ||
+      data.movementQualityScore !== undefined ||
+      data.recurrentHamstring ||
+      data.recurrentCalf ||
+      data.recurrentGroin;
 
     if (athlete && hasProfileData) {
       await storage.upsertAthleteTrainingProfile({
@@ -193,63 +183,79 @@ export async function suggestProgramsForAthlete(
   storage: any
 ): Promise<Array<{ id: string; name: string; description?: string | null; matchReason: string }>> {
   const templates = await storage.getProgramTemplates();
-  
+
   const goals = data.goals || [];
   const hasInjury = data.recurrentHamstring || data.recurrentCalf || data.recurrentGroin;
   const trainingAge = data.trainingAgeYears || 0;
-  
-  const suggestions: Array<{ id: string; name: string; description?: string | null; matchReason: string; score: number }> = [];
-  
+
+  const suggestions: Array<{
+    id: string;
+    name: string;
+    description?: string | null;
+    matchReason: string;
+    score: number;
+  }> = [];
+
   for (const template of templates) {
     let score = 0;
     let reasons: string[] = [];
-    
+
     const templateTags = template.tags || [];
     const templateName = template.name.toLowerCase();
     const templateCategory = template.category?.toLowerCase() || "";
-    
-    if (hasInjury && data.recurrentHamstring && (
-      templateTags.some(t => t.toLowerCase().includes("hamstring")) ||
-      templateName.includes("hamstring") ||
-      templateCategory.includes("rtp")
-    )) {
+
+    if (
+      hasInjury &&
+      data.recurrentHamstring &&
+      (templateTags.some((t: string) => t.toLowerCase().includes("hamstring")) ||
+        templateName.includes("hamstring") ||
+        templateCategory.includes("rtp"))
+    ) {
       score += 5;
       reasons.push("Addresses hamstring recovery");
     }
-    
-    if (goals.some(g => g.toLowerCase().includes("return to play") || g.toLowerCase().includes("rtp"))) {
-      if (templateCategory.includes("rtp") || templateTags.some(t => t.toLowerCase().includes("rtp"))) {
+
+    if (
+      goals.some(g => g.toLowerCase().includes("return to play") || g.toLowerCase().includes("rtp"))
+    ) {
+      if (
+        templateCategory.includes("rtp") ||
+        templateTags.some((t: string) => t.toLowerCase().includes("rtp"))
+      ) {
         score += 4;
         reasons.push("Designed for return to play");
       }
     }
-    
+
     if (goals.some(g => g.toLowerCase().includes("performance") || g.toLowerCase().includes("strength"))) {
       if (templateCategory.includes("performance") || templateName.includes("performance")) {
         score += 3;
         reasons.push("Matches performance goals");
       }
     }
-    
-    if (trainingAge < 2 && templateTags.some(t => t.toLowerCase().includes("beginner"))) {
+
+    if (trainingAge < 2 && templateTags.some((t: string) => t.toLowerCase().includes("beginner"))) {
       score += 2;
       reasons.push("Suitable for training level");
-    } else if (trainingAge >= 4 && templateTags.some(t => t.toLowerCase().includes("advanced"))) {
+    } else if (
+      trainingAge >= 4 &&
+      templateTags.some((t: string) => t.toLowerCase().includes("advanced"))
+    ) {
       score += 2;
       reasons.push("Matches experience level");
     }
-    
+
     if (score > 0) {
       suggestions.push({
         id: template.id,
         name: template.name,
         description: template.description,
         matchReason: reasons.join("; "),
-        score
+        score,
       });
     }
   }
-  
+
   return suggestions
     .sort((a, b) => b.score - a.score)
     .slice(0, 5)

@@ -1,11 +1,6 @@
-import OpenAI from "openai";
+import { anthropic, INTELLIGENCE_MODEL } from "./ai-client";
 import { IStorage } from "./storage";
 import { Athlete, Program, Exercise } from "@shared/schema";
-
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-});
 
 export type AILevel = "athlete" | "program" | "exercise" | "team" | "analytics" | "coaching";
 
@@ -42,7 +37,7 @@ async function buildAthleteContext(storage: any, athleteId?: string): Promise<st
     const workoutLogs = await storage.getWorkoutLogs(athleteId);
     const surveys = await storage.getReadinessSurveys(athleteId);
     const prs = await storage.getPersonalRecords(athleteId);
-    
+
     return `
 ATHLETE PROFILE:
 - Name: ${athlete?.name}
@@ -51,18 +46,18 @@ ATHLETE PROFILE:
 - Status: ${athlete?.status || "Active"}
 
 RECENT WORKOUTS (last 10):
-${workoutLogs.slice(0, 10).map(w => `- Exercise ${w.exerciseId}: ${w.sets} sets @ ${w.weightPerSet}`).join("\n")}
+${workoutLogs.slice(0, 10).map((w: any) => `- Exercise ${w.exerciseId}: ${w.sets} sets @ ${w.weightPerSet}`).join("\n")}
 
 WELLNESS TRENDS (last 7 days):
-${surveys.slice(0, 7).map(s => `- Readiness: ${s.overallReadiness}/10, Sleep: ${s.sleepQuality}/10, Soreness: ${s.muscleSoreness}/10`).join("\n")}
+${surveys.slice(0, 7).map((s: any) => `- Readiness: ${s.overallReadiness}/10, Sleep: ${s.sleepQuality}/10, Soreness: ${s.muscleSoreness}/10`).join("\n")}
 
 PERSONAL RECORDS: ${prs.length} total
-${prs.slice(0, 5).map(pr => `- Exercise ${pr.exerciseId}: ${pr.maxWeight}kg`).join("\n")}
+${prs.slice(0, 5).map((pr: any) => `- Exercise ${pr.exerciseId}: ${pr.maxWeight}kg`).join("\n")}
 `;
   }
-  
+
   const athletes = await storage.getAthletes();
-  return `ROSTER: ${athletes.length} athletes\n${athletes.slice(0, 20).map(a => `- ${a.name} (${a.team || "No team"})`).join("\n")}`;
+  return `ROSTER: ${athletes.length} athletes\n${athletes.slice(0, 20).map((a: any) => `- ${a.name} (${a.team || "No team"})`).join("\n")}`;
 }
 
 async function buildProgramContext(storage: any, programId?: string): Promise<string> {
@@ -70,36 +65,37 @@ async function buildProgramContext(storage: any, programId?: string): Promise<st
     const program = await storage.getProgram(programId);
     const phases = await storage.getProgramPhases(programId);
     const weeks = await storage.getProgramWeeks(programId);
-    
+
     return `
 PROGRAM: ${program?.name}
 - Description: ${program?.description || "N/A"}
 - Duration: ${weeks.length} weeks across ${phases.length} phases
 
 PHASES:
-${phases.map(p => `- ${p.name}: Weeks ${p.startWeek}-${p.endWeek}`).join("\n")}
+${phases.map((p: any) => `- ${p.name}: Weeks ${p.startWeek}-${p.endWeek}`).join("\n")}
 `;
   }
-  
+
   const programs = await storage.getPrograms();
-  return `PROGRAMS: ${programs.length} total\n${programs.map(p => `- ${p.name}`).join("\n")}`;
+  return `PROGRAMS: ${programs.length} total\n${programs.map((p: any) => `- ${p.name}`).join("\n")}`;
 }
 
 async function buildTeamContext(storage: any): Promise<string> {
   const athletes = await storage.getAthletes();
   const allSurveys = await storage.getAllReadinessSurveys();
-  const recentSurveys = allSurveys.filter(s => {
+  const recentSurveys = allSurveys.filter((s: any) => {
     const surveyDate = new Date(s.surveyDate || Date.now());
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
     return surveyDate >= threeDaysAgo;
   });
-  
-  const avgReadiness = recentSurveys.length > 0 
-    ? (recentSurveys.reduce((sum, s) => sum + (s.overallReadiness || 0), 0) / recentSurveys.length).toFixed(1)
-    : "N/A";
-  
-  const sorenessAlerts = recentSurveys.filter(s => (s.muscleSoreness || 0) >= 7).length;
-  
+
+  const avgReadiness =
+    recentSurveys.length > 0
+      ? (recentSurveys.reduce((sum: number, s: any) => sum + (s.overallReadiness || 0), 0) / recentSurveys.length).toFixed(1)
+      : "N/A";
+
+  const sorenessAlerts = recentSurveys.filter((s: any) => (s.muscleSoreness || 0) >= 7).length;
+
   return `
 TEAM OVERVIEW:
 - Total Athletes: ${athletes.length}
@@ -109,12 +105,14 @@ TEAM OVERVIEW:
 
 ATHLETES BY STATUS:
 ${Object.entries(
-  athletes.reduce((acc, a) => {
+  athletes.reduce((acc: Record<string, number>, a: any) => {
     const status = a.status || "Unknown";
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {} as Record<string, number>)
-).map(([status, count]) => `- ${status}: ${count}`).join("\n")}
+)
+  .map(([status, count]) => `- ${status}: ${count}`)
+  .join("\n")}
 `;
 }
 
@@ -128,9 +126,9 @@ EXERCISE: ${exercise?.name}
 - Muscle Group: ${exercise?.muscleGroup || "N/A"}
 `;
   }
-  
+
   const exercises = await storage.getAllExercises();
-  const categorySet = new Set(exercises.map(e => e.category).filter(Boolean));
+  const categorySet = new Set(exercises.map((e: any) => e.category).filter(Boolean));
   return `EXERCISE LIBRARY: ${exercises.length} exercises across ${categorySet.size} categories`;
 }
 
@@ -138,30 +136,32 @@ async function buildAnalyticsContext(storage: any): Promise<string> {
   const workoutLogs = await storage.getWorkoutLogs();
   const prs = await storage.getPersonalRecords();
   const surveys = await storage.getAllReadinessSurveys();
-  
-  const last30Days = workoutLogs.filter(w => {
+
+  const last30Days = workoutLogs.filter((w: any) => {
     const logDate = new Date(w.completedAt || Date.now());
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     return logDate >= thirtyDaysAgo;
   });
-  
+
   return `
 ANALYTICS SUMMARY (30 days):
 - Total Workouts Logged: ${last30Days.length}
-- Total PRs Achieved: ${prs.filter(pr => {
-    const prDate = new Date(pr.achievedAt || Date.now());
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    return prDate >= thirtyDaysAgo;
-  }).length}
+- Total PRs Achieved: ${
+    prs.filter((pr: any) => {
+      const prDate = new Date(pr.achievedAt || Date.now());
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      return prDate >= thirtyDaysAgo;
+    }).length
+  }
 - Wellness Surveys: ${surveys.length}
-- Unique Athletes Training: ${new Set(last30Days.map(w => w.athleteId)).size}
+- Unique Athletes Training: ${new Set(last30Days.map((w: any) => w.athleteId)).size}
 `;
 }
 
 function getSystemPrompt(level: AILevel): string {
-  const basePrompt = `You are the AI Intelligence system for MotionCode Pro, an elite strength and conditioning platform. You provide intelligent insights, recommendations, and predictions to help coaches optimize athlete performance.
+  const basePrompt = `You are the AI Intelligence system for MotionCode Pro, an elite strength and conditioning platform. You provide intelligent insights, recommendations, and predictions to help coaches optimise athlete performance.
 
-Always respond with JSON in this format:
+Always respond with JSON in this exact format:
 {
   "message": "Your main response to the coach",
   "suggestions": [
@@ -176,65 +176,12 @@ Always respond with JSON in this format:
 }`;
 
   const levelPrompts: Record<AILevel, string> = {
-    athlete: `${basePrompt}
-
-ATHLETE-LEVEL INTELLIGENCE:
-Focus on individual athlete optimization:
-- Profile updates and recommendations
-- Injury risk assessment based on training load and wellness
-- Performance predictions based on trends
-- Readiness optimization suggestions
-- Belt progression recommendations`,
-
-    program: `${basePrompt}
-
-PROGRAM-LEVEL INTELLIGENCE:
-Focus on program design and optimization:
-- Smart exercise selection based on goals
-- Periodization recommendations
-- Volume and intensity balancing
-- Phase transition suggestions
-- Recovery week placement`,
-
-    exercise: `${basePrompt}
-
-EXERCISE-LEVEL INTELLIGENCE:
-Focus on exercise selection and modifications:
-- Context-aware exercise recommendations
-- Substitution suggestions for injuries/equipment
-- Progression pathways
-- Risk assessment for specific movements
-- Technique considerations`,
-
-    team: `${basePrompt}
-
-TEAM-LEVEL INTELLIGENCE:
-Focus on roster-wide insights:
-- Workload distribution analysis
-- Team readiness trends
-- Injury risk patterns across the roster
-- Training compliance monitoring
-- Resource allocation recommendations`,
-
-    analytics: `${basePrompt}
-
-ANALYTICS-LEVEL INTELLIGENCE:
-Answer natural language queries about data:
-- Interpret trends and patterns
-- Summarize performance data
-- Compare metrics across time periods
-- Identify anomalies and outliers
-- Provide actionable recommendations from data`,
-
-    coaching: `${basePrompt}
-
-COACHING-LEVEL INTELLIGENCE:
-Provide strategic coaching support:
-- Decision support for training modifications
-- What-if scenario analysis
-- Proactive alerts and warnings
-- Best practice recommendations
-- Competition preparation guidance`
+    athlete: `${basePrompt}\n\nATHLETE-LEVEL INTELLIGENCE:\nFocus on individual athlete optimisation: profile updates, injury risk, performance predictions, readiness, belt progression.`,
+    program: `${basePrompt}\n\nPROGRAM-LEVEL INTELLIGENCE:\nFocus on program design: smart exercise selection, periodisation, volume/intensity balance, phase transitions, recovery week placement.`,
+    exercise: `${basePrompt}\n\nEXERCISE-LEVEL INTELLIGENCE:\nFocus on exercise selection: context-aware recommendations, substitutions for injuries/equipment, progression pathways, risk assessment.`,
+    team: `${basePrompt}\n\nTEAM-LEVEL INTELLIGENCE:\nFocus on roster-wide insights: workload distribution, readiness trends, injury risk patterns, compliance, resource allocation.`,
+    analytics: `${basePrompt}\n\nANALYTICS-LEVEL INTELLIGENCE:\nAnswer natural language queries: interpret trends, summarise performance, compare metrics, identify anomalies, provide actionable recommendations.`,
+    coaching: `${basePrompt}\n\nCOACHING-LEVEL INTELLIGENCE:\nStrategic coaching support: decision support, what-if scenarios, proactive alerts, best practices, competition preparation.`,
   };
 
   return levelPrompts[level];
@@ -246,7 +193,7 @@ export async function processAIQuery(
   storage: any
 ): Promise<AIResponse> {
   let contextString = "";
-  
+
   switch (context.level) {
     case "athlete":
       contextString = await buildAthleteContext(storage, context.entityId);
@@ -264,33 +211,30 @@ export async function processAIQuery(
       contextString = await buildAnalyticsContext(storage);
       break;
     case "coaching":
-      contextString = await buildTeamContext(storage) + "\n" + await buildAnalyticsContext(storage);
+      contextString = (await buildTeamContext(storage)) + "\n" + (await buildAnalyticsContext(storage));
       break;
   }
 
-  const messages: Array<{ role: "system" | "user"; content: string }> = [
-    { role: "system", content: getSystemPrompt(context.level) },
-    { role: "user", content: `CONTEXT:\n${contextString}\n\nQUERY: ${query}` }
-  ];
-
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1",
-      messages,
-      temperature: 0.7,
+    const response = await anthropic.messages.create({
+      model: INTELLIGENCE_MODEL,
       max_tokens: 1500,
-      response_format: { type: "json_object" }
+      system: getSystemPrompt(context.level),
+      messages: [
+        { role: "user", content: `CONTEXT:\n${contextString}\n\nQUERY: ${query}\n\nRespond with valid JSON only.` },
+      ],
     });
 
-    const content = response.choices[0]?.message?.content || "{}";
-    
+    const content = response.content[0]?.type === "text" ? response.content[0].text : "{}";
+
     try {
-      const parsed = JSON.parse(content);
+      const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const parsed = JSON.parse(cleaned);
       return {
         message: parsed.message || "Analysis complete",
         insights: Array.isArray(parsed.insights) ? parsed.insights : [],
         suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions : [],
-        predictions: Array.isArray(parsed.predictions) ? parsed.predictions : []
+        predictions: Array.isArray(parsed.predictions) ? parsed.predictions : [],
       };
     } catch {
       return { message: content, insights: [], suggestions: [], predictions: [] };
@@ -301,23 +245,17 @@ export async function processAIQuery(
   }
 }
 
-export async function getAthleteInsights(
-  athleteId: string,
-  storage: any
-): Promise<AIResponse> {
+export async function getAthleteInsights(athleteId: string, storage: any): Promise<AIResponse> {
   return processAIQuery(
-    "Analyze this athlete's recent performance, wellness trends, and provide actionable recommendations. Identify any injury risks or areas for improvement.",
+    "Analyse this athlete's recent performance, wellness trends, and provide actionable recommendations. Identify any injury risks or areas for improvement.",
     { level: "athlete", entityId: athleteId },
     storage
   );
 }
 
-export async function getProgramSuggestions(
-  programId: string,
-  storage: any
-): Promise<AIResponse> {
+export async function getProgramSuggestions(programId: string, storage: any): Promise<AIResponse> {
   return processAIQuery(
-    "Review this program structure and suggest optimizations for periodization, exercise selection, and recovery placement.",
+    "Review this program structure and suggest optimisations for periodisation, exercise selection, and recovery placement.",
     { level: "program", entityId: programId },
     storage
   );
@@ -329,7 +267,7 @@ export async function getExerciseRecommendations(
   storage: any
 ): Promise<AIResponse> {
   let athleteContext = "";
-  
+
   if (constraints.athleteId) {
     const athlete = await storage.getAthlete(constraints.athleteId);
     const profile = await storage.getAthleteTrainingProfile(constraints.athleteId);
@@ -343,7 +281,7 @@ Injury Flags: ${profile.injuryFlags?.join(", ") || "None"}`;
     }
   }
 
-  const query = `Recommend exercises for these goals: ${goals.join(", ")}. 
+  const query = `Recommend exercises for these goals: ${goals.join(", ")}.
 ${athleteContext}
 Constraints: ${constraints.injuries?.length ? `Avoid movements that stress: ${constraints.injuries.join(", ")}` : "No injury restrictions"}
 Equipment available: ${constraints.equipment?.join(", ") || "Full gym"}
@@ -362,85 +300,86 @@ export async function getTeamInsights(storage: any): Promise<AIResponse> {
   const athletes = await storage.getAllAthletes();
   const surveys = await storage.getAllReadinessSurveys();
   const workoutLogs = await storage.getWorkoutLogs();
-  
+
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  
-  const athleteStats = await Promise.all(athletes.map(async (athlete) => {
-    const profile = await storage.getAthleteTrainingProfile(athlete.id);
-    const athleteSurveys = surveys.filter(s => s.athleteId === athlete.id);
-    const recentSurveys = athleteSurveys.filter(s => new Date(s.createdAt || 0) >= sevenDaysAgo);
-    const athleteWorkouts = workoutLogs.filter(w => w.athleteId === athlete.id);
-    const recentWorkouts = athleteWorkouts.filter(w => new Date(w.completedAt || 0) >= sevenDaysAgo);
-    
-    const avgReadiness = recentSurveys.length > 0 
-      ? recentSurveys.reduce((sum, s) => sum + (s.readinessScore || 0), 0) / recentSurveys.length 
-      : 0;
-    
-    const avgSoreness = recentSurveys.length > 0
-      ? recentSurveys.reduce((sum, s) => sum + (s.sorenessScore || 0), 0) / recentSurveys.length
-      : 0;
-    
-    return {
-      name: athlete.name,
-      beltLevel: profile?.beltLevel || "BLUE",
-      avgReadiness: avgReadiness.toFixed(1),
-      avgSoreness: avgSoreness.toFixed(1),
-      workoutsThisWeek: recentWorkouts.length,
-      hasSurveysThisWeek: recentSurveys.length > 0,
-      injuryFlags: profile?.injuryFlags || []
-    };
-  }));
-  
+
+  const athleteStats = await Promise.all(
+    athletes.map(async (athlete: any) => {
+      const profile = await storage.getAthleteTrainingProfile(athlete.id);
+      const athleteSurveys = surveys.filter((s: any) => s.athleteId === athlete.id);
+      const recentSurveys = athleteSurveys.filter((s: any) => new Date(s.createdAt || 0) >= sevenDaysAgo);
+      const athleteWorkouts = workoutLogs.filter((w: any) => w.athleteId === athlete.id);
+      const recentWorkouts = athleteWorkouts.filter((w: any) => new Date(w.completedAt || 0) >= sevenDaysAgo);
+
+      const avgReadiness =
+        recentSurveys.length > 0
+          ? recentSurveys.reduce((sum: number, s: any) => sum + (s.readinessScore || 0), 0) / recentSurveys.length
+          : 0;
+
+      const avgSoreness =
+        recentSurveys.length > 0
+          ? recentSurveys.reduce((sum: number, s: any) => sum + (s.sorenessScore || 0), 0) / recentSurveys.length
+          : 0;
+
+      return {
+        name: athlete.name,
+        beltLevel: profile?.beltLevel || "BLUE",
+        avgReadiness: avgReadiness.toFixed(1),
+        avgSoreness: avgSoreness.toFixed(1),
+        workoutsThisWeek: recentWorkouts.length,
+        hasSurveysThisWeek: recentSurveys.length > 0,
+        injuryFlags: profile?.injuryFlags || [],
+      };
+    })
+  );
+
   const teamContext = `
 TEAM ROSTER ANALYSIS (${athletes.length} athletes):
-${athleteStats.map(a => `- ${a.name} (${a.beltLevel}): Readiness ${a.avgReadiness}/10, Soreness ${a.avgSoreness}/10, Workouts: ${a.workoutsThisWeek}/week${a.injuryFlags.length ? `, Flags: ${a.injuryFlags.join(", ")}` : ""}`).join("\n")}
+${athleteStats
+  .map(
+    (a: any) =>
+      `- ${a.name} (${a.beltLevel}): Readiness ${a.avgReadiness}/10, Soreness ${a.avgSoreness}/10, Workouts: ${a.workoutsThisWeek}/week${
+        a.injuryFlags.length ? `, Flags: ${a.injuryFlags.join(", ")}` : ""
+      }`
+  )
+  .join("\n")}
 `;
-  
-  return processAIQuery(
-    `${teamContext}
 
-Analyze this team and provide:
-1. Overall team health status
-2. Athletes requiring immediate attention (high soreness, low readiness, missed workouts)
-3. Workload distribution analysis
-4. Specific recommendations for this week
-5. Risk assessment for upcoming training`,
+  return processAIQuery(
+    `${teamContext}\n\nAnalyse this team and provide:\n1. Overall team health status\n2. Athletes requiring immediate attention\n3. Workload distribution analysis\n4. Specific recommendations for this week\n5. Risk assessment for upcoming training`,
     { level: "team" },
     storage
   );
 }
 
-export async function queryAnalytics(
-  naturalLanguageQuery: string,
-  storage: any
-): Promise<AIResponse> {
+export async function queryAnalytics(naturalLanguageQuery: string, storage: any): Promise<AIResponse> {
   return processAIQuery(naturalLanguageQuery, { level: "analytics" }, storage);
 }
 
-export async function getCoachingDecisionSupport(
-  scenario: string,
-  storage: any
-): Promise<AIResponse> {
+export async function getCoachingDecisionSupport(scenario: string, storage: any): Promise<AIResponse> {
   const heuristics = await storage.getActiveHeuristics();
   const athletes = await storage.getAllAthletes();
   const surveys = await storage.getAllReadinessSurveys();
-  
+
   const now = new Date();
   const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
-  
-  const recentSurveys = surveys.filter(s => new Date(s.createdAt || 0) >= threeDaysAgo);
-  const avgReadiness = recentSurveys.length > 0
-    ? recentSurveys.reduce((sum, s) => sum + (s.readinessScore || 0), 0) / recentSurveys.length
-    : 0;
-  const avgSoreness = recentSurveys.length > 0
-    ? recentSurveys.reduce((sum, s) => sum + (s.sorenessScore || 0), 0) / recentSurveys.length
-    : 0;
-  
-  const heuristicsContext = heuristics.length > 0
-    ? `\nACTIVE COACHING RULES:\n${heuristics.map(h => `- ${h.name}: When ${h.triggerType} triggers, ${h.actionType} (Priority: ${h.priority})`).join("\n")}`
-    : "";
-  
+
+  const recentSurveys = surveys.filter((s: any) => new Date(s.createdAt || 0) >= threeDaysAgo);
+  const avgReadiness =
+    recentSurveys.length > 0
+      ? recentSurveys.reduce((sum: number, s: any) => sum + (s.readinessScore || 0), 0) / recentSurveys.length
+      : 0;
+  const avgSoreness =
+    recentSurveys.length > 0
+      ? recentSurveys.reduce((sum: number, s: any) => sum + (s.sorenessScore || 0), 0) / recentSurveys.length
+      : 0;
+
+  const heuristicsContext =
+    heuristics.length > 0
+      ? `\nACTIVE COACHING RULES:\n${heuristics.map((h: any) => `- ${h.name}: When ${h.triggerType} triggers, ${h.actionType} (Priority: ${h.priority})`).join("\n")}`
+      : "";
+
   const decisionContext = `
 CURRENT TEAM STATUS:
 - Active Athletes: ${athletes.length}
@@ -480,40 +419,38 @@ ${JSON.stringify(athlete, null, 2)}
 
 Update request: "${updateDescription}"
 
-Extract the proposed changes and return JSON:
+Extract the proposed changes and return ONLY a JSON object:
 {
   "message": "Summary of what will be updated",
   "proposedChanges": {
-    "field1": "newValue1",
-    "field2": "newValue2"
+    "field1": "newValue1"
   },
   "trainingProfileUpdates": {
-    "trainingAgeYears": number or null,
-    "movementQualityScore": number or null,
-    "recurrentHamstring": boolean or null,
-    "recurrentCalf": boolean or null,
-    "recurrentGroin": boolean or null
+    "trainingAgeYears": null,
+    "movementQualityScore": null,
+    "recurrentHamstring": null,
+    "recurrentCalf": null,
+    "recurrentGroin": null
   }
 }`;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4.1",
-      messages: [
-        { role: "system", content: "You extract structured updates from natural language. Respond only with valid JSON." },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.3,
+    const response = await anthropic.messages.create({
+      model: INTELLIGENCE_MODEL,
+      max_tokens: 512,
+      system: "You extract structured updates from natural language. Respond only with valid JSON.",
+      messages: [{ role: "user", content: prompt }],
     });
 
-    const content = response.choices[0]?.message?.content || "{}";
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const content = response.content[0]?.type === "text" ? response.content[0].text : "{}";
+    const cleaned = content.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
 
     return {
       proposedChanges: parsed.proposedChanges || {},
       message: parsed.message || "Unable to parse update request",
-      confirmed: false
+      confirmed: false,
     };
   } catch (error) {
     console.error("Failed to process athlete update:", error);
